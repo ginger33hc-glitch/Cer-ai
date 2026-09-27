@@ -11,7 +11,7 @@ the working staging branch/service remains separate from production.
 | Target | Branch / commit | Railway deployment | Verified state |
 |---|---|---|---|
 | Staging | `staging/canonical-validation-2026-09-08` / `0d36e06981b48d1147eb2123c2b46a0df077f70a` | `a4fa9194-f66f-4f6b-ae6b-2ea053457bf7` | SUCCESS; service `cer-ai-staging`, environment `staging` |
-| Production | `main` / `7b157014c507a83865d7d8332c71c324aa792456` | `1581f239-cce7-410a-9c20-892fff1bbc4f` | SUCCESS since September 6; service `hc-ectasia-app`, environment `production` |
+| Production | `main` / `7b157014c507a83865d7d8332c71c324aa792456` | `1581f239-cce7-410a-9c20-892fff1bbc4f` | SUCCESS since September 6; service `cer-ai`, environment `production` |
 
 The original local checkout at `8c86378960a17102179e2dc98b13257272b38bc6` has the same tree as
 GitHub staging: `4628b13bc6ec02c796b8cc55d9016665cc149c11`. Different local/remote commit
@@ -128,8 +128,8 @@ that rollback or archive compatibility has been exercised. No archive migration 
 
 ## Source references
 
-- [Staging checkpoint](https://github.com/ginger33hc-glitch/hc-ectasia-app/commit/0d36e06981b48d1147eb2123c2b46a0df077f70a)
-- [Production baseline](https://github.com/ginger33hc-glitch/hc-ectasia-app/commit/7b157014c507a83865d7d8332c71c324aa792456)
+- [Staging checkpoint](https://github.com/ginger33hc-glitch/Cer-ai/commit/0d36e06981b48d1147eb2123c2b46a0df077f70a)
+- [Production baseline](https://github.com/ginger33hc-glitch/Cer-ai/commit/7b157014c507a83865d7d8332c71c324aa792456)
 - [Verified staging deployment](https://railway.com/project/7684f33d-d931-469c-ad1c-a5b7fd4c506e/service/7a90cee1-b5b9-46fe-854f-4018f1e73175?id=a4fa9194-f66f-4f6b-ae6b-2ea053457bf7&environmentId=8361baab-5c69-4ab7-869b-3ba4213e444b)
 - Repository: `CERAI_MASTER_ORDER_66_ITEM_EVIDENCE_MATRIX.md`, `CERAI_STEP1_TEST_RETIREMENTS.md`,
   `CER-AI_PROTOCOL_v0.7.md`, canonical source registry and owning clinical modules.
