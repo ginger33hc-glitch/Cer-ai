@@ -216,13 +216,13 @@ requires explicit non-clinical override and revalidation.
 For this project, do not use the cloud-browser GitHub username/password form and do not rely on a
 local HTTPS `git push` credential. Use the connected GitHub application:
 
-1. Read the current target file from `ginger33hc-glitch/hc-ectasia-app` on `main` and retain its
+1. Read the current target file from `ginger33hc-glitch/Cer-ai` on `main` and retain its
    current blob SHA.
 2. Make and validate the change in the local project copy.
 3. Replace the target file on `main` through the connected GitHub application's file-update
    capability, supplying the retained SHA and a descriptive commit message.
 4. Verify the returned commit SHA, then allow the linked Railway service to deploy automatically.
-5. Reload `https://hc-ectasia-app-production.up.railway.app/` and verify the live application.
+5. Reload `https://cer-ai.com/` and verify the live application.
 
 Never place GitHub passwords, tokens, API keys, or other credentials in this repository.
 
