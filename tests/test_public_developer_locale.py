@@ -45,7 +45,7 @@ def test_every_developer_text_fragment_has_a_canonical_turkish_translation():
     language_neutral = {"Hüseyin Cengiz, M.D.", "2.0"}
     missing = [text for text in texts if text not in language_neutral and text not in translations]
     assert not missing, missing
-    assert any(text.startswith(". Rather than") for text in texts)
+    assert any(text.startswith(". CER-AI does not merge") for text in texts)
     assert any(text.startswith(", to organize") for text in texts)
 
 

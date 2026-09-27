@@ -218,7 +218,10 @@ def test_production_canonical_and_real_software_identity_remain_intact(public_ap
     graph = json.loads(match.group(1))["@graph"]
     software = next(item for item in graph if item["@type"] == "SoftwareApplication")
     assert software["name"] == "CER-AI"
-    assert software["url"] == "https://cer-ai.com/"
+    assert software["url"] == (
+        "https://cer-ai.com/corneal-ectasia-risk-assessment"
+    )
+    assert "does not merge, blend, harmonize, average, or add" in software["description"]
     home_structure = PageStructure(home.text)
     assert [
         meta["content"]
@@ -283,7 +286,7 @@ def test_static_public_pages_have_page_specific_discovery_identity(
     assert schema["url"] == f"https://cer-ai.com{path}"
     assert schema["name"] == title
     expected_date = (
-        "2026-09-26"
+        "2026-09-27"
         if path == "/corneal-ectasia-risk-assessment"
         else "2026-09-12"
         if path in {"/clinical-evidence", "/references"}
@@ -309,6 +312,16 @@ def test_product_page_discovery_schema_points_to_canonical_software(public_app):
         "corneal ectasia risk assessment",
         "corneal ectasia screening",
     ]
+    software_match = re.search(
+        r'<script id="cerai-software-identity" type="application/ld\+json">(.*?)</script>',
+        response.text,
+        re.S,
+    )
+    assert software_match is not None
+    software = json.loads(software_match.group(1))
+    assert software["@id"] == "https://cer-ai.com/#software"
+    assert software["url"] == "https://cer-ai.com/corneal-ectasia-risk-assessment"
+    assert "does not merge, blend, harmonize, average, or add" in software["description"]
 
 
 def test_product_page_serves_physician_ectasia_intent_without_topography_repositioning(

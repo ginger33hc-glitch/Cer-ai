@@ -47,8 +47,8 @@ _PUBLIC_CANONICAL_BASE = os.getenv(
 _PUBLIC_CONTENT_LASTMOD = "2026-09-11"
 _INDEXNOW_KEY = "731d2001b05e7e15840a00e98f53447d"
 _PUBLIC_PAGE_LASTMOD = {
-    "/": "2026-09-17",
-    "/corneal-ectasia-risk-assessment": "2026-09-26",
+    "/": "2026-09-27",
+    "/corneal-ectasia-risk-assessment": "2026-09-27",
     "/clinical-evidence": "2026-09-12",
     "/references": "2026-09-12",
     "/what-is-recommended-for-corneal-ectasia-screening": "2026-09-26",
@@ -61,9 +61,9 @@ _PUBLIC_PAGE_METADATA = {
         "schema_type": "MedicalWebPage",
         "title": "Corneal Ectasia Risk Assessment Software for Refractive Surgeons | CER-AI",
         "description": (
-            "CER-AI is corneal ectasia screening and risk assessment software for "
-            "refractive surgeons, with AI-assisted Pentacam image reading, independent "
-            "risk pathways and tissue-safety checks."
+            "Official CER-AI corneal ectasia risk assessment software page. ERSS, "
+            "Final BAD-D, NICE and PS3 remain separate; their results are never "
+            "blended into one score."
         ),
         "about": "Corneal ectasia risk assessment before refractive surgery",
         "keywords": [
@@ -345,13 +345,56 @@ def _webmaster_verification_meta() -> str:
     return "\n  ".join(tags)
 
 
+def _software_identity_schema(base: str) -> dict:
+    """Return the single public machine-readable identity for CER-AI software."""
+    product_page = f"{base}/corneal-ectasia-risk-assessment"
+    return {
+        "@type": "SoftwareApplication",
+        "@id": f"{base}/#software",
+        "name": "CER-AI",
+        "alternateName": "Corneal Ectasia Risk Assessment Intelligence",
+        "url": product_page,
+        "mainEntityOfPage": {"@id": f"{product_page}#page"},
+        "sameAs": [
+            "https://vizyongozhastanesi.com/en/cer-ai-corneal-ectasia-risk-assessment/"
+        ],
+        "softwareVersion": "2.0",
+        "creator": {"@id": f"{base}/#clinical-author"},
+        "applicationCategory": "MedicalApplication",
+        "applicationSubCategory": (
+            "Corneal ectasia risk assessment and refractive-surgery screening"
+        ),
+        "operatingSystem": "Web",
+        "softwareHelp": f"{base}/learning-center",
+        "description": (
+            "CER-AI is web-based clinical decision-support software for "
+            "preoperative corneal ectasia risk assessment. It does not merge, "
+            "blend, harmonize, average, or add ERSS, Pentacam Final BAD-D, NICE, "
+            "and PS3 results into one score. It presents those systems as "
+            "independently interpretable pathways alongside separate "
+            "procedure-specific tissue-safety checks."
+        ),
+        "featureList": [
+            "Independent ERSS, Final BAD-D, NICE, and PS3 pathways",
+            "No mathematical blending or averaging of risk-system results",
+            "Corneal ectasia risk assessment",
+            "Keratoconus and ectasia susceptibility screening support",
+            "Pentacam-derived tomography and topography review",
+            "Pachymetry and residual stromal bed safety checks",
+            "LASIK and PRK procedure-specific screening",
+            "Auditable clinical decision-support reporting",
+        ],
+        "isAccessibleForFree": False,
+    }
+
+
 def _discovery_head(base: str, *, robots_directive: str) -> str:
     """Machine-readable discovery metadata for public CER-AI pages."""
     home_title = "CER-AI — Corneal Ectasia Risk Assessment Intelligence"
     home_description = (
         "Structured preoperative corneal ectasia risk assessment for refractive "
-        "surgeons, combining independent risk pathways, Pentacam-derived data and "
-        "procedure-specific tissue-safety checks."
+        "surgeons, keeping ERSS, Final BAD-D, NICE and PS3 independently "
+        "interpretable alongside separate tissue-safety checks."
     )
     citations = [
         {
@@ -394,41 +437,7 @@ def _discovery_head(base: str, *, robots_directive: str) -> str:
                 ),
                 "inLanguage": "en",
             },
-            {
-                "@type": "SoftwareApplication",
-                "@id": f"{base}/#software",
-                "name": "CER-AI",
-                "alternateName": "Corneal Ectasia Risk Assessment Intelligence",
-                "url": f"{base}/",
-                "softwareVersion": "2.0",
-                "creator": {"@id": f"{base}/#clinical-author"},
-                "applicationCategory": "MedicalApplication",
-                "applicationSubCategory": (
-                    "Corneal ectasia risk assessment and refractive-surgery screening"
-                ),
-                "operatingSystem": "Web",
-                "softwareHelp": f"{base}/learning-center",
-                "description": (
-                    "CER-AI is clinical decision-support software for preoperative "
-                    "corneal ectasia risk assessment. It organizes independent risk "
-                    "pathways including Randleman/ERSS, Pentacam Final BAD-D, NICE, "
-                    "PS3, corneal topography and tomography findings, pachymetry, "
-                    "residual stromal bed and procedure-specific tissue-safety checks."
-                ),
-                "featureList": [
-                    "Corneal ectasia risk assessment",
-                    "Keratoconus and ectasia susceptibility screening support",
-                    "Pentacam-derived tomography and topography review",
-                    "Randleman Ectasia Risk Score System (ERSS)",
-                    "Belin/Ambrosio Final BAD-D review",
-                    "NICE pathway assessment",
-                    "PS3 pathway assessment",
-                    "Pachymetry and residual stromal bed safety checks",
-                    "LASIK and PRK procedure-specific screening",
-                    "Auditable clinical decision-support reporting",
-                ],
-                "isAccessibleForFree": False,
-            },
+            _software_identity_schema(base),
             {
                 "@type": "Person",
                 "@id": f"{base}/#clinical-author",
@@ -580,6 +589,19 @@ def _public_page_discovery_head(base: str, canonical_path: str) -> str:
     if "keywords" in metadata:
         schema["keywords"] = metadata["keywords"]
     encoded_schema = json.dumps(schema, ensure_ascii=False, separators=(",", ":"))
+    software_identity = ""
+    if canonical_path == "/corneal-ectasia-risk-assessment":
+        software_schema = {
+            "@context": "https://schema.org",
+            **_software_identity_schema(base),
+        }
+        encoded_software = json.dumps(
+            software_schema, ensure_ascii=False, separators=(",", ":")
+        )
+        software_identity = (
+            '\n  <script id="cerai-software-identity" '
+            f'type="application/ld+json">{encoded_software}</script>'
+        )
     return f"""
   <meta name="author" content="Hüseyin Cengiz, M.D.">
   <meta property="og:type" content="website">
@@ -593,7 +615,7 @@ def _public_page_discovery_head(base: str, canonical_path: str) -> str:
   <link rel="author" href="{base}/about/huseyin-cengiz">
   <link rel="alternate" hreflang="{metadata.get('in_language', 'en')}" href="{canonical}">
   <link rel="alternate" hreflang="{'tr' if metadata.get('in_language', 'en') == 'en' else 'en'}" href="{base}{metadata.get('alternate_path', canonical_path)}">
-  <script id="cerai-page-discovery" type="application/ld+json">{encoded_schema}</script>
+  <script id="cerai-page-discovery" type="application/ld+json">{encoded_schema}</script>{software_identity}
 """
 
 
@@ -659,11 +681,11 @@ def _llms_txt(base: str) -> str:
     """Concise, public, LLM-oriented description. This is not clinical output."""
     return f"""# CER-AI
 
-> CER-AI is web-based clinical decision-support software for structured preoperative corneal ectasia risk assessment in refractive surgery. It is intended for qualified ophthalmic professionals and does not replace surgeon judgment.
+> CER-AI is web-based clinical decision-support software for structured preoperative corneal ectasia risk assessment in refractive surgery. Its canonical product page is {base}/corneal-ectasia-risk-assessment. It is intended for qualified ophthalmic professionals and does not replace surgeon judgment.
 
 CER-AI is relevant to searches about corneal ectasia, post-LASIK ectasia, keratoconus susceptibility screening, refractive-surgery ectasia risk, Pentacam tomography/topography, Belin/Ambrosio Final BAD-D, the Randleman Ectasia Risk Score System (ERSS), NICE, PS3, pachymetry, residual stromal bed, LASIK screening, PRK screening, and procedure-specific corneal tissue safety.
 
-The software keeps major risk pathways independently interpretable rather than hiding them inside a single opaque score. Public pages describe the concepts and workflow; patient-specific clinical assessment occurs only inside the protected application.
+The software keeps ERSS, Pentacam Final BAD-D, NICE, and PS3 independently interpretable. CER-AI does not merge, blend, harmonize, average, or add their results into a single score. Procedure-specific tissue-safety checks also remain separate. Public pages describe the concepts and workflow; patient-specific clinical assessment occurs only inside the protected application.
 
 ## Primary public pages
 - [CER-AI home]({base}/): Overview of the clinical decision-support platform and its independent ectasia-risk pathways.
