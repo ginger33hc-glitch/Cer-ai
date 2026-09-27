@@ -22,6 +22,7 @@ import audit_log  # noqa: E402
 import case_catalog  # noqa: E402
 import historical_report  # noqa: E402
 import research_export  # noqa: E402
+import demo_access  # noqa: E402
 import named_user_ui  # noqa: E402
 import clinical_entry  # noqa: E402
 from iol_module import web as iol_web  # noqa: E402
@@ -36,7 +37,7 @@ COMPOSITION_PHASES = {
         "user_access", "operational_security", "public_site", "clinical_entry",
         "analysis_job_service",
         "case_archive", "audit_log", "case_catalog",
-        "historical_report", "research_export", "named_user_ui",
+        "historical_report", "research_export", "demo_access", "named_user_ui",
     ),
 }
 
@@ -78,6 +79,7 @@ def compose(version: str):
     case_catalog.install(core, archive_runtime)
     historical_report.install(core, archive_runtime)
     research_export.install(core, archive_runtime)
+    demo_access.install(core)
     named_user_ui.install(core)
 
 

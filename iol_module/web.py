@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from fastapi import Body, File, HTTPException, UploadFile
+from fastapi import Body, File, Form, HTTPException, UploadFile
 from fastapi.responses import HTMLResponse
 from pydantic import ValidationError
 
@@ -35,7 +35,17 @@ def install(core: Any) -> None:
         )
 
     @core.app.post("/iol/extract")
-    async def iol_extract(images: list[UploadFile] = File(...)):
+    async def iol_extract(
+        images: list[UploadFile] = File(...),
+        assessment_request_id: str | None = Form(None),
+    ):
+        current_principal = getattr(core, "_cerai_current_principal", None)
+        principal = current_principal() if callable(current_principal) else None
+        if principal is not None and principal.access_plan == "DEMO" and not str(assessment_request_id or "").strip():
+            raise HTTPException(422, "Demo IOL assessment identifier is required.")
+        assert_demo_credit = getattr(core, "_cerai_assert_demo_credit", None)
+        if principal is not None and callable(assert_demo_credit):
+            assert_demo_credit(principal.user_id)
         if len(images) != 3:
             raise HTTPException(422, "Exactly three IOL source images are required.")
         payloads = await operational_security.read_uploads(images)
@@ -50,6 +60,13 @@ def install(core: Any) -> None:
             identity = validate_source_bundle(results)
         except ValueError as exc:
             raise HTTPException(422, str(exc)) from exc
+        consume_demo_credit = getattr(core, "_cerai_consume_demo_credit", None)
+        if principal is not None and callable(consume_demo_credit):
+            consume_demo_credit(
+                principal.user_id,
+                str(assessment_request_id or "iol-full-account"),
+                "IOL",
+            )
         return {"sources": results, "identity": identity}
 
     @core.app.post("/iol/evaluate")

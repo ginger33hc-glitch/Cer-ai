@@ -18,7 +18,7 @@ import secrets
 import unicodedata
 from threading import RLock
 from time import monotonic
-from typing import Any, Dict, Optional
+from typing import Any, Callable, Dict, Optional
 
 from fastapi import Body, HTTPException, Request
 from fastapi.responses import JSONResponse
@@ -57,6 +57,9 @@ class Principal:
     username: str
     display_name: str
     role: str
+    access_plan: str = "FULL"
+    demo_quota_limit: Optional[int] = None
+    demo_request_id: Optional[str] = None
 
     def public(self) -> Dict[str, str]:
         return {
@@ -64,6 +67,8 @@ class Principal:
             "username": self.username,
             "display_name": self.display_name,
             "role": self.role,
+            "access_plan": self.access_plan,
+            "demo_quota_limit": self.demo_quota_limit,
         }
 
 
@@ -82,6 +87,7 @@ _current_principal: ContextVar[Optional[Principal]] = ContextVar(
     "cer_ai_current_principal",
     default=None,
 )
+_dynamic_account_lookup: Optional[Callable[[str], Optional[UserAccount]]] = None
 
 
 def normalize_username(value: Any) -> str:
@@ -254,11 +260,34 @@ def authenticate_credentials(username: Any, password: Any) -> Principal:
             )
         raise HTTPException(401, "Invalid username or password.")
     account = _users_by_username.get(normalized)
+    if account is None and _dynamic_account_lookup is not None:
+        account = _dynamic_account_lookup(normalized)
     if not account or not account.enabled or not verify_password(str(password or ""), account.password_hash):
         _record_login_failure(normalized)
         raise HTTPException(401, "Invalid username or password.")
     _clear_login_failures(normalized)
     return account.principal
+
+
+def set_dynamic_account_lookup(
+    lookup: Optional[Callable[[str], Optional[UserAccount]]],
+) -> None:
+    """Attach the persistent account provider owned by the access layer."""
+    global _dynamic_account_lookup
+    _dynamic_account_lookup = lookup
+
+
+def configured_username_exists(username: Any) -> bool:
+    """Check both deployment-defined and owner-approved persistent accounts."""
+    normalized = normalize_username(username)
+    if not normalized:
+        return False
+    if normalized in _users_by_username:
+        return True
+    return bool(
+        _dynamic_account_lookup is not None
+        and _dynamic_account_lookup(normalized) is not None
+    )
 
 
 def authenticate_trial_name(value: Any) -> Principal:
@@ -412,9 +441,11 @@ def _configure_for_tests(
 
 def _reset_for_tests() -> None:
     global _users_by_username, NAMED_USERS_ENABLED, TRIAL_NAME_LOGIN_ENABLED
+    global _dynamic_account_lookup
     with _lock:
         _users_by_username = {}
         _sessions.clear()
         _failed_logins.clear()
     NAMED_USERS_ENABLED = False
     TRIAL_NAME_LOGIN_ENABLED = False
+    _dynamic_account_lookup = None

@@ -59,8 +59,10 @@ PROTECTED_PATHS = frozenset({
     "/iol/lenses",
     "/iol/power/plan",
     "/iol/escrs-transfer",
+    "/demo-admin",
+    "/demo-access/status",
 })
-PROTECTED_PREFIXES = ("/archive/", "/analysis/jobs")
+PROTECTED_PREFIXES = ("/archive/", "/analysis/jobs", "/demo-access/admin/")
 
 _rate_lock = RLock()
 _analysis_starts: deque[float] = deque()

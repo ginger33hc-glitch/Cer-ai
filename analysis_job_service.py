@@ -133,6 +133,9 @@ async def _run(core, job_id: str) -> None:
                 patient_metadata=payload["patient_metadata"],
                 assessment_request_id=job_id,
             )
+        consume_demo_credit = getattr(core, "_cerai_consume_demo_credit", None)
+        if callable(consume_demo_credit):
+            consume_demo_credit(str(job.get("actor_id") or ""), job_id, "REFRACTIVE")
     except HTTPException as exc:
         async with _lock:
             job = _jobs.get(job_id)
@@ -199,8 +202,11 @@ def install(core) -> None:
         patient_metadata: str = Form("{}"),
         assessment_request_id: str | None = Form(None),
     ) -> JSONResponse:
-        captured = await _capture_uploads(images)
         actor_id = _actor_id(core)
+        assert_demo_credit = getattr(core, "_cerai_assert_demo_credit", None)
+        if callable(assert_demo_credit):
+            assert_demo_credit(actor_id)
+        captured = await _capture_uploads(images)
         job_id = _job_id(actor_id, assessment_request_id)
         now = monotonic()
         async with _lock:

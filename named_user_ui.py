@@ -239,7 +239,7 @@ def install(core: Any) -> None:
         @core.app.middleware("http")
         async def named_user_page_gate(request, call_next):
             path = request.url.path
-            if request.method == "GET" and path in {"/app", "/iol", "/archive-ui"}:
+            if request.method == "GET" and path in {"/app", "/iol", "/archive-ui", "/demo-admin"}:
                 principal = core._cerai_authenticate_request(request)
                 if principal is None:
                     destination = "/auth/login-page?next=" + quote(

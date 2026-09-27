@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def test_all_secure_interfaces_load_the_canonical_language_controller():
     for filename in ("index.html", "iol.html", "login.html", "module-select.html", "archive.html", "trial-login.html"):
         html = (ROOT / "static" / filename).read_text(encoding="utf-8")
-        assert html.count('/static/i18n.js?v=21') == 1, filename
+        assert html.count('/static/i18n.js?v=24') == 1, filename
 
 
 def test_secure_source_markup_is_english_only_and_turkish_is_canonicalized():

@@ -253,6 +253,9 @@ _PRIVATE_CRAWL_PATHS = (
     "/dashboard",
     "/login",
     "/account",
+    "/demo-membership",
+    "/demo-access",
+    "/demo-admin",
 )
 _AI_CRAWLERS = (
     "GPTBot",

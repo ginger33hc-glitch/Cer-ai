@@ -9,6 +9,7 @@
   let pentacamEyeConfirmed = false;
   let recommendation = null;
   let lensCatalog = [];
+  let iolAssessmentRequestId = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
   const tr = value => window.CERAI_I18N?.translate(value) ?? String(value ?? "");
   const warningLabel = code => ({
     WARN_RETINA_SIGNIFICANT:"Significant retinal disease: multifocal IOL excluded.",
@@ -90,6 +91,7 @@
   $("priorSurgery").addEventListener("change", () => { $("historyField").hidden = !["MYOPIC_LASIK_PRK","HYPEROPIC_LASIK_PRK"].includes($("priorSurgery").value); });
   $("eye").addEventListener("change", populateEye); $("k1").addEventListener("input", updateAstigmatism); $("k2").addEventListener("input", updateAstigmatism); $("k2Axis").addEventListener("input", updateAstigmatism);
   $("sourceImages").addEventListener("change", () => {
+    iolAssessmentRequestId = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
     clearSourceCase();
     const files = [...$("sourceImages").files];
     $("selectedFiles").textContent = files.length ? `Selected images (${files.length}): ${files.map(file => file.name).join(", ")}` : "";
@@ -100,7 +102,7 @@
     const files = [...$("sourceImages").files];
     const status = $("extractStatus"); status.className = "status";
     if (files.length !== 3) { status.textContent = "Select exactly three images: Pentacam Cataract Pre-Op, same-eye 4 Maps Refractive, and IOLMaster 500."; status.classList.add("error"); return; }
-    const form = new FormData(); files.forEach(file => form.append("images", file));
+    const form = new FormData(); files.forEach(file => form.append("images", file)); form.append("assessment_request_id", iolAssessmentRequestId);
     clearSourceCase();
     $("extractButton").disabled = true; status.textContent = "Transcribing source-locked fields…";
     try {

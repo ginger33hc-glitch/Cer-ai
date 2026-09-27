@@ -12,7 +12,7 @@
     h1{margin:0 0 5px;color:var(--navy);font-size:26px}.sub{margin:0 0 22px;color:var(--muted);font-size:13px}.field{margin:14px 0}.field label{display:block;font-weight:700;margin-bottom:6px;color:var(--navy)}
     input{width:100%;padding:11px;border:1px solid #b9c5ce;border-radius:7px;font-size:16px;background:#fff}input:focus{outline:2px solid #8ab6d3;outline-offset:1px}
     button{width:100%;padding:12px;border:0;border-radius:8px;background:var(--navy);color:#fff;font-weight:700;font-size:15px;cursor:pointer;margin-top:8px}button:disabled{opacity:.6;cursor:wait}
-    .error{min-height:20px;margin-top:12px;color:var(--red);font-size:13px;font-weight:700}.note{margin-top:18px;padding-top:14px;border-top:1px solid var(--line);color:var(--muted);font-size:11px;line-height:1.45}
+    .error{min-height:20px;margin-top:12px;color:var(--red);font-size:13px;font-weight:700}.demo-link{display:block;margin:3px 0 18px;text-align:center;color:var(--blue);font-size:13px;font-weight:700}.note{margin-top:18px;padding-top:14px;border-top:1px solid var(--line);color:var(--muted);font-size:11px;line-height:1.45}
   </style>
 </head>
 <body>
@@ -25,9 +25,10 @@
       <button id="submitButton" type="submit">Sign in</button>
       <div id="error" class="error" role="alert" aria-live="polite"></div>
     </form>
+    <a class="demo-link" href="/demo-membership">Not a member yet? Click here to request a free 10-patient demo membership.</a>
     <div class="note">Credentials are sent only to this CER-AI server over the active HTTPS session. The password is not stored in browser storage.</div>
   </main>
-<script src="/static/i18n.js?v=21"></script>
+<script src="/static/i18n.js?v=24"></script>
 <script>
 (() => {
   const allowedNext = new Set(["/", "/clinical-modules", "/app", "/iol", "/clinical-app", "/archive-ui"]);

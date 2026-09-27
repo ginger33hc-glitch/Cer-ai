@@ -1294,6 +1294,12 @@ async def analyze(
     patient_metadata: str = Form("{}"),
     assessment_request_id: Optional[str] = Form(None),
 ):
+    from user_access import current_principal
+
+    principal = current_principal()
+    assert_demo_credit = getattr(sys.modules[__name__], "_cerai_assert_demo_credit", None)
+    if principal is not None and callable(assert_demo_credit):
+        assert_demo_credit(principal.user_id)
     if not images:
         raise HTTPException(400, "No images supplied.")
     try:
@@ -1313,7 +1319,11 @@ async def analyze(
     if request_key is not None:
         existing = _cached_analysis_task(request_key)
         if existing is not None:
-            return await _await_analysis_task(existing, request_key)
+            result = await _await_analysis_task(existing, request_key)
+            consume_demo_credit = getattr(sys.modules[__name__], "_cerai_consume_demo_credit", None)
+            if principal is not None and callable(consume_demo_credit):
+                consume_demo_credit(principal.user_id, str(assessment_request_id), "REFRACTIVE")
+            return result
 
     image_payloads = await read_uploads(images)
     task = None
@@ -1331,4 +1341,9 @@ async def analyze(
         task = asyncio.create_task(
             _run_image_assessment(image_payloads, age, plans, modifiers, metadata)
         )
-    return await _await_analysis_task(task, request_key)
+    result = await _await_analysis_task(task, request_key)
+    consume_demo_credit = getattr(sys.modules[__name__], "_cerai_consume_demo_credit", None)
+    if principal is not None and callable(consume_demo_credit):
+        usage_id = str(assessment_request_id or result.get("assessment_token") or "")
+        consume_demo_credit(principal.user_id, usage_id, "REFRACTIVE")
+    return result
