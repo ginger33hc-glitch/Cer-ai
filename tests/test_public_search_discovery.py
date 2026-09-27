@@ -216,11 +216,9 @@ def test_production_canonical_and_real_software_identity_remain_intact(public_ap
     match = re.search(r'<script type="application/ld\+json">(.*?)</script>', home.text, re.S)
     assert match
     graph = json.loads(match.group(1))["@graph"]
-    software = next(item for item in graph if item["@type"] == "SoftwareApplication")
+    software = next(item for item in graph if item.get("@id") == "https://cer-ai.com/#software")
     assert software["name"] == "CER-AI"
-    assert software["url"] == (
-        "https://cer-ai.com/corneal-ectasia-risk-assessment"
-    )
+    assert software["url"] == "https://cer-ai.com/"
     assert "does not merge, blend, harmonize, average, or add" in software["description"]
     home_structure = PageStructure(home.text)
     assert [
@@ -242,6 +240,16 @@ def test_production_canonical_and_real_software_identity_remain_intact(public_ap
             "/corneal-ectasia-risk-assessment",
             "MedicalWebPage",
             "Corneal Ectasia Risk Assessment Software for Refractive Surgeons | CER-AI",
+        ),
+        (
+            "/iol-calculation-software",
+            "MedicalWebPage",
+            "IOL Calculation Software and Lens Decision Support | CER-AI",
+        ),
+        (
+            "/toric-iol-calculator",
+            "MedicalWebPage",
+            "Toric IOL Calculator and Astigmatism Planning Software | CER-AI",
         ),
         (
             "/clinical-evidence",
@@ -287,7 +295,11 @@ def test_static_public_pages_have_page_specific_discovery_identity(
     assert schema["name"] == title
     expected_date = (
         "2026-09-27"
-        if path == "/corneal-ectasia-risk-assessment"
+        if path in {
+            "/corneal-ectasia-risk-assessment",
+            "/iol-calculation-software",
+            "/toric-iol-calculator",
+        }
         else "2026-09-12"
         if path in {"/clinical-evidence", "/references"}
         else "2026-09-11"
@@ -306,7 +318,7 @@ def test_product_page_discovery_schema_points_to_canonical_software(public_app):
     )
     assert schema_match is not None
     schema = json.loads(schema_match.group(1))
-    assert schema["mainEntity"] == {"@id": "https://cer-ai.com/#software"}
+    assert schema["mainEntity"] == {"@id": "https://cer-ai.com/#ectasia-risk-assessment"}
     assert schema["keywords"][:3] == [
         "corneal ectasia",
         "corneal ectasia risk assessment",
@@ -319,9 +331,9 @@ def test_product_page_discovery_schema_points_to_canonical_software(public_app):
     )
     assert software_match is not None
     software = json.loads(software_match.group(1))
-    assert software["@id"] == "https://cer-ai.com/#software"
+    assert software["@id"] == "https://cer-ai.com/#ectasia-risk-assessment"
     assert software["url"] == "https://cer-ai.com/corneal-ectasia-risk-assessment"
-    assert "does not merge, blend, harmonize, average, or add" in software["description"]
+    assert "independently interpretable pathways" in software["description"]
 
 
 def test_product_page_serves_physician_ectasia_intent_without_topography_repositioning(
@@ -335,6 +347,43 @@ def test_product_page_serves_physician_ectasia_intent_without_topography_reposit
     assert "Pentacam ectasia screening is therefore one evidence source" in response.text
     assert 'href="/learning/corneal-ectasia-basics">corneal ectasia screening guide</a>' in response.text
     assert "Corneal topography risk assessment software" not in response.text
+
+
+def test_iol_product_page_states_the_integrated_lens_decision_workflow(public_app):
+    with TestClient(public_app, base_url="https://cer-ai.com") as client:
+        response = client.get("/iol-calculation-software")
+    assert response.status_code == 200
+    for text in (
+        "IOL calculation begins with lens eligibility",
+        "EDOF, or multifocal categories",
+        "whether the measured regular corneal astigmatism requires toric planning",
+        "The surgeon selects the preferred lens family",
+        "Calculate spherical IOL power with Cooke K6",
+    ):
+        assert text in response.text
+    assert "not a claim that competing systems lack IOL or toric calculation" in response.text
+
+
+def test_toric_product_page_exposes_prototype_validation_boundary(public_app):
+    with TestClient(public_app, base_url="https://cer-ai.com") as client:
+        response = client.get("/toric-iol-calculator")
+    assert response.status_code == 200
+    for text in (
+        "Toric need, model and axis in the cataract workflow",
+        "toric model candidate, marker axis and predicted residual astigmatism",
+        "TEST ONLY — NOT CLINICALLY VALIDATED",
+        "manufacturer’s validated calculator",
+    ):
+        assert text in response.text
+    schema_match = re.search(
+        r'<script id="cerai-software-identity" type="application/ld\+json">(.*?)</script>',
+        response.text,
+        re.S,
+    )
+    assert schema_match is not None
+    software = json.loads(schema_match.group(1))
+    assert software["@id"] == "https://cer-ai.com/#toric-calculator"
+    assert "test-only, clinically unvalidated prototype" in software["description"]
 
 
 @pytest.mark.parametrize(

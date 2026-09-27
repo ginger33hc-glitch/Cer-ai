@@ -28,7 +28,7 @@ def test_public_homepage_uses_bad_d_for_both_pathway_labels():
     with TestClient(canonical_engine.app, base_url="https://cer-ai.com") as client:
         response = client.get("/")
         assert response.status_code == 200
-        assert response.text.count('class="pill">BAD-D</span>') == 1
+        assert response.text.count('class="pill">BAD-D</span>') == 0
         assert response.text.count('class="risk-label">BAD-D</span>') == 1
         assert 'class="pill">Final BAD-D</span>' not in response.text
         assert 'class="risk-label">Final BAD-D</span>' not in response.text
@@ -67,11 +67,18 @@ def test_public_homepage_identifies_software_and_clinical_author():
         )
         assert match is not None
         graph = json.loads(match.group(1))["@graph"]
-        by_type = {item["@type"]: item for item in graph}
-        assert by_type["SoftwareApplication"]["softwareVersion"] == "2.0"
-        assert by_type["SoftwareApplication"]["alternateName"] == (
+        by_type = {item["@type"]: item for item in graph if item["@type"] != "SoftwareApplication"}
+        software = next(item for item in graph if item.get("@id") == "https://cer-ai.com/#software")
+        assert software["softwareVersion"] == "2.0"
+        assert software["alternateName"] == (
             "Corneal Ectasia Risk Assessment Intelligence"
         )
+        assert software["url"] == "https://cer-ai.com/"
+        assert {part["@id"] for part in software["hasPart"]} == {
+            "https://cer-ai.com/#ectasia-risk-assessment",
+            "https://cer-ai.com/#iol-calculation-software",
+            "https://cer-ai.com/#toric-calculator",
+        }
         assert by_type["Person"]["name"] == "Hüseyin Cengiz, M.D."
         assert by_type["Person"]["url"] == "https://cer-ai.com/about/huseyin-cengiz"
         assert by_type["Person"]["sameAs"] == [
@@ -122,6 +129,7 @@ def test_sitemap_contains_only_public_discovery_pages():
             "/learning/surgical-safety-concepts", "/learning/clinical-cases",
             "/learning/cer-ai-methodology", "/learning/surgeon-learning-modules",
             "/learning/faq", "/corneal-ectasia-risk-assessment",
+            "/iol-calculation-software", "/toric-iol-calculator",
             "/clinical-evidence", "/references", "/about/huseyin-cengiz",
             "/editorial-policy",
             "/what-is-recommended-for-corneal-ectasia-screening",
@@ -156,6 +164,8 @@ def test_all_public_pages_have_absolute_https_canonicals():
             "/corneal-ectasia-risk-assessment": (
                 "https://cer-ai.com/corneal-ectasia-risk-assessment"
             ),
+            "/iol-calculation-software": "https://cer-ai.com/iol-calculation-software",
+            "/toric-iol-calculator": "https://cer-ai.com/toric-iol-calculator",
             "/clinical-evidence": "https://cer-ai.com/clinical-evidence",
             "/references": "https://cer-ai.com/references",
             "/about/huseyin-cengiz": "https://cer-ai.com/about/huseyin-cengiz",
