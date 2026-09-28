@@ -37,6 +37,7 @@ def install(core: Any) -> None:
     @core.app.post("/iol/extract")
     async def iol_extract(
         images: list[UploadFile] = File(...),
+        patient_name: str | None = Form(None),
         assessment_request_id: str | None = Form(None),
     ):
         current_principal = getattr(core, "_cerai_current_principal", None)
@@ -57,7 +58,10 @@ def install(core: Any) -> None:
                 raise HTTPException(502, f"Unable to transcribe {filename}.") from exc
             results.append({"filename": filename, "extraction": result})
         try:
-            identity = validate_source_bundle(results)
+            identity = validate_source_bundle(
+                results,
+                surgeon_patient_name=patient_name,
+            )
         except ValueError as exc:
             raise HTTPException(422, str(exc)) from exc
         consume_demo_credit = getattr(core, "_cerai_consume_demo_credit", None)

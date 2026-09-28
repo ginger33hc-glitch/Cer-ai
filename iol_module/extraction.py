@@ -100,7 +100,11 @@ unreadable_fields.
 """
 
 
-def validate_source_bundle(sources: list[dict[str, Any]]) -> dict[str, str]:
+def validate_source_bundle(
+    sources: list[dict[str, Any]],
+    *,
+    surgeon_patient_name: str | None = None,
+) -> dict[str, Any]:
     """Fail closed before values from different IOL reports can be combined."""
     expected = {
         "PENTACAM_CATARACT_PREOP", "PENTACAM_4_MAPS_REFRACTIVE",
@@ -111,12 +115,26 @@ def validate_source_bundle(sources: list[dict[str, Any]]) -> dict[str, str]:
     if len(types) != 3 or set(types) != expected or len(set(types)) != 3:
         raise ValueError("Upload exactly one Cataract Pre-Op, one same-eye 4 Maps Refractive, and one IOLMaster 500 report.")
 
+    authoritative_name = " ".join(str(surgeon_patient_name or "").split())
     names = [" ".join(str(item.get("patient_name") or "").split()) for item in documents]
-    if any(not name for name in names):
-        raise ValueError("Patient name must be readable on all three reports before combining their measurements.")
-    normalized = {unicodedata.normalize("NFKC", name).casefold() for name in names}
-    if len(normalized) != 1:
-        raise ValueError("Patient names differ across the three reports. Check the source images.")
+    source_name_review_required = False
+    if not authoritative_name:
+        if any(not name for name in names):
+            raise ValueError("Patient name must be readable on all three reports before combining their measurements.")
+        normalized = {unicodedata.normalize("NFKC", name).casefold() for name in names}
+        if len(normalized) != 1:
+            raise ValueError("Patient names differ across the three reports. Check the source images.")
+        authoritative_name = names[types.index("PENTACAM_CATARACT_PREOP")]
+    else:
+        authoritative_normalized = unicodedata.normalize(
+            "NFKC", authoritative_name
+        ).casefold()
+        source_name_review_required = any(
+            not name
+            or unicodedata.normalize("NFKC", name).casefold()
+            != authoritative_normalized
+            for name in names
+        )
 
     by_type = dict(zip(types, documents))
     eye = by_type["PENTACAM_CATARACT_PREOP"].get("eye")
@@ -127,7 +145,10 @@ def validate_source_bundle(sources: list[dict[str, Any]]) -> dict[str, str]:
     iolmaster = by_type["IOLMASTER_500_BIOMETRY"]
     if iolmaster.get("eye") not in {"BOTH", eye} or not isinstance((iolmaster.get("iolmaster500") or {}).get(eye), dict):
         raise ValueError("The IOLMaster report must include biometry for the operative eye.")
-    return {"patient_name": names[types.index("PENTACAM_CATARACT_PREOP")], "eye": eye}
+    identity: dict[str, Any] = {"patient_name": authoritative_name, "eye": eye}
+    if source_name_review_required:
+        identity["source_name_review_required"] = True
+    return identity
 
 
 def extract_image(core: Any, raw: bytes, filename: str) -> dict[str, Any]:

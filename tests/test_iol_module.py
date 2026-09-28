@@ -109,6 +109,24 @@ def test_three_iol_sources_require_one_readable_patient_and_operative_eye():
         validate_source_bundle(_source_bundle(four_maps_eye="OS"))
 
 
+def test_surgeon_entered_patient_name_is_authoritative_but_source_names_are_flagged():
+    assert validate_source_bundle(
+        _source_bundle(names=("OCR Patient", "Different OCR", None)),
+        surgeon_patient_name="  Surgeon   Confirmed Patient  ",
+    ) == {
+        "patient_name": "Surgeon Confirmed Patient",
+        "eye": "OD",
+        "source_name_review_required": True,
+    }
+    assert validate_source_bundle(
+        _source_bundle(names=("Surgeon Confirmed Patient",) * 3),
+        surgeon_patient_name="Surgeon Confirmed Patient",
+    ) == {
+        "patient_name": "Surgeon Confirmed Patient",
+        "eye": "OD",
+    }
+
+
 def test_iol_upload_over_two_megabytes_checks_identity_before_returning_values(monkeypatch):
     reports = _source_bundle()
     outcomes = iter(item["extraction"] for item in reports)
@@ -123,6 +141,19 @@ def test_iol_upload_over_two_megabytes_checks_identity_before_returning_values(m
     response = TestClient(canonical_engine.app).post("/iol/extract", files=files)
     assert response.status_code == 422
     assert "Patient names differ" in response.json()["detail"]
+
+    outcomes = iter(item["extraction"] for item in reports)
+    response = TestClient(canonical_engine.app).post(
+        "/iol/extract",
+        files=files,
+        data={"patient_name": "Surgeon Confirmed Patient"},
+    )
+    assert response.status_code == 200
+    assert response.json()["identity"] == {
+        "patient_name": "Surgeon Confirmed Patient",
+        "eye": "OD",
+        "source_name_review_required": True,
+    }
 
 
 def test_surgeon_k_power_override_retains_locked_iolmaster_axes():
@@ -313,6 +344,19 @@ def test_single_upload_accepts_three_distinct_reports_and_enforces_same_eye():
         assert document_type in script
     assert 'typeCounts[type] !== 1' in script
     assert 'corneaBackByEye[$("eye").value]' in script
+
+
+def test_iol_ui_keeps_surgeon_name_and_shows_nonblocking_source_name_review():
+    html = Path("static/iol.html").read_text(encoding="utf-8")
+    script = Path("static/iol.js").read_text(encoding="utf-8")
+    translations = Path("static/i18n.js").read_text(encoding="utf-8")
+    assert 'form.append("patient_name", surgeonPatientName)' in script
+    assert '$("patientName").value = surgeonPatientName' in script
+    assert "source_name_review_required" in script
+    assert "Check the patient names printed on the source reports." in script
+    assert "Patient names must be readable and match" not in html
+    assert "The patient name entered by the surgeon is authoritative" in html
+    assert "Kaynak tetkiklerde yazan hasta adlarını kontrol edin." in translations
 
 
 def test_escrs_transfer_is_deidentified_and_kane_is_removed():

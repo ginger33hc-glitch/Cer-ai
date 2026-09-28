@@ -35,7 +35,7 @@
     corneaBackByEye.OD = null; corneaBackByEye.OS = null;
     pentacamEyeConfirmed = false; recommendation = null;
     $("eye").value = "";
-    for (const id of ["patientName", "patientAge", "al", "k1", "k1Axis", "k2", "k2Axis", "lensThickness", "hoa", "kappa", "alpha", "pupil3d", "cct", "wtw", "acd"]) {
+    for (const id of ["al", "k1", "k1Axis", "k2", "k2Axis", "lensThickness", "hoa", "kappa", "alpha", "pupil3d", "cct", "wtw", "acd"]) {
       $(id).value = ""; $(id).readOnly = false;
     }
     $("result").hidden = true; $("powerSection").hidden = true;
@@ -101,8 +101,10 @@
   $("extractButton").addEventListener("click", async () => {
     const files = [...$("sourceImages").files];
     const status = $("extractStatus"); status.className = "status";
+    const surgeonPatientName = $("patientName").value.trim();
+    if (!surgeonPatientName) { status.textContent = "Enter the patient name before extracting source images."; status.classList.add("error"); return; }
     if (files.length !== 3) { status.textContent = "Select exactly three images: Pentacam Cataract Pre-Op, same-eye 4 Maps Refractive, and IOLMaster 500."; status.classList.add("error"); return; }
-    const form = new FormData(); files.forEach(file => form.append("images", file)); form.append("assessment_request_id", iolAssessmentRequestId);
+    const form = new FormData(); files.forEach(file => form.append("images", file)); form.append("patient_name", surgeonPatientName); form.append("assessment_request_id", iolAssessmentRequestId);
     clearSourceCase();
     $("extractButton").disabled = true; status.textContent = "Transcribing source-locked fields…";
     try {
@@ -133,12 +135,15 @@
       if (unreadablePentacamLaterality || pentacamEyes.size === 0) throw new Error("Pentacam laterality was not read. Upload a readable Pentacam Cataract Pre-Op report showing OD or OS.");
       if (pentacamEyes.size > 1) throw new Error("Conflicting Pentacam laterality was detected. Upload the Cataract Pre-Op report for one operative eye only.");
       if (![...pentacamEyes].includes(data.identity.eye)) throw new Error("Operative eye verification failed. Check all three reports.");
-      setIfPresent("patientName", data.identity.patient_name);
+      $("patientName").value = surgeonPatientName;
       $("eye").value = [...pentacamEyes][0];
       if (!corneaBackByEye[$("eye").value]) throw new Error("4 Maps Refractive Cornea Back could not be assigned to the operative eye.");
       pentacamEyeConfirmed = true;
       populateEye();
-      status.textContent = unreadable.length ? `Extraction completed. Surgeon entry is required only for unreadable fields: ${unreadable.join(", ")}.` : "Three reports extracted. Review values before evaluation.";
+      const nameReview = data.identity.source_name_review_required
+        ? " The surgeon-entered patient name was retained. Check the patient names printed on the source reports."
+        : "";
+      status.textContent = (unreadable.length ? `Extraction completed. Surgeon entry is required only for unreadable fields: ${unreadable.join(", ")}.` : "Three reports extracted. Review values before evaluation.") + nameReview;
     } catch (error) { status.textContent = error.message || "Image transcription failed."; status.classList.add("error"); }
     finally { $("extractButton").disabled = false; }
   });
