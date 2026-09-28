@@ -34,6 +34,18 @@ def test_public_homepage_uses_bad_d_for_both_pathway_labels():
         assert 'class="risk-label">Final BAD-D</span>' not in response.text
 
 
+def test_public_homepage_presents_two_modules_with_ectasia_first():
+    with TestClient(canonical_engine.app, base_url="https://cer-ai.com") as client:
+        response = client.get("/")
+    assert response.status_code == 200
+    text = response.text
+    assert "CER-AI has two main modules" in text
+    assert "The first and primary module is Corneal Ectasia Risk Assessment" in text
+    assert "The second module is IOL Selection &amp; Calculation" in text
+    assert text.index('id="evaluation"') < text.index('id="iol-module"')
+    assert "Toric planning is a capability within the IOL module, not a separate third module." in text
+
+
 def test_public_homepage_mobile_navigation_exposes_learning_resources():
     with TestClient(canonical_engine.app, base_url="https://cer-ai.com") as client:
         response = client.get("/")
@@ -77,14 +89,15 @@ def test_public_homepage_identifies_software_and_clinical_author():
         assert {part["@id"] for part in software["hasPart"]} == {
             "https://cer-ai.com/#ectasia-risk-assessment",
             "https://cer-ai.com/#iol-calculation-software",
-            "https://cer-ai.com/#toric-calculator",
         }
+        assert "first and primary module assesses corneal ectasia" in software["description"]
+        assert "Its second module" in software["description"]
         assert by_type["Person"]["name"] == "Hüseyin Cengiz, M.D."
         assert by_type["Person"]["url"] == "https://cer-ai.com/about/huseyin-cengiz"
         assert by_type["Person"]["sameAs"] == [
             "https://www.linkedin.com/in/huseyin-cengiz-md-881b9797/"
         ]
-        assert by_type["MedicalWebPage"]["dateModified"] == "2026-09-27"
+        assert by_type["MedicalWebPage"]["dateModified"] == "2026-09-28"
 
 
 def test_clinical_app_has_stable_app_entry():
