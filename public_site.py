@@ -63,7 +63,7 @@ _PUBLIC_PAGE_LASTMOD = {
 _PUBLIC_PAGE_METADATA = {
     "/corneal-ectasia-risk-assessment": {
         "schema_type": "MedicalWebPage",
-        "title": "Corneal Ectasia Risk Assessment Software for Refractive Surgeons | CER-AI",
+        "title": "Corneal Ectasia Risk Assessment Software | CER-AI",
         "description": (
             "Official CER-AI corneal ectasia risk assessment software page. ERSS, "
             "Final BAD-D, NICE and PS3 remain separate; their results are never "
