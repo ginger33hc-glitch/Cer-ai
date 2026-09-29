@@ -1,6 +1,10 @@
 # CER-AI
 
-FastAPI application for source-restricted preoperative ectasia risk assessment using the **CER-AI Preoperative Ectasia Risk Assessment for Corneal Refractive Surgery**.
+**CER-AI (Corneal Ectasia Risk Assessment Intelligence)** is web-based clinical decision-support software for structured corneal ectasia screening before LASIK and PRK. It presents independent ERSS, Final BAD-D, NICE, and PS3 pathways alongside procedure-specific tissue-safety checks. A separate IOL selection and calculation module supports cataract planning. Clinical use requires authorized sign-in.
+
+Official site: [cer-ai.com](https://cer-ai.com/) · [Corneal ectasia risk assessment software](https://cer-ai.com/corneal-ectasia-risk-assessment) · [IOL selection and calculation](https://cer-ai.com/iol-calculation-software)
+
+The public pages describe the workflow and evidence boundaries; they do not assess individual patients or establish external validation of the complete software.
 
 ## What v2.0 implements
 
