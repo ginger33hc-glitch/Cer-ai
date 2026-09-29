@@ -24,7 +24,7 @@ from fastapi import Body, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse
 
 import user_access
-from demo_notification import DemoEmailNotifier, NotificationResult
+from demo_notification import NotificationResult, configured_demo_notifier
 
 
 DEMO_QUOTA_LIMIT = 10
@@ -351,7 +351,7 @@ def install(core: Any) -> None:
         return
     runtime = getattr(core, "_cerai_case_archive_runtime", None)
     ledger = DemoAccessLedger(runtime.archive if runtime and runtime.enabled else None)
-    notifier = DemoEmailNotifier.from_environment()
+    notifier = configured_demo_notifier()
     user_access.set_dynamic_account_lookup(ledger.account_for_username)
     core._cerai_demo_access = ledger
     core._cerai_demo_notifier = notifier
@@ -376,6 +376,7 @@ def install(core: Any) -> None:
             notification.error_code,
         )
         submitted["notification_status"] = notification.status
+        submitted["notification_provider"] = notification.provider
         return JSONResponse(submitted, status_code=201, headers={"Cache-Control": "no-store"})
 
     @core.app.get("/demo-admin", include_in_schema=False)
@@ -387,6 +388,13 @@ def install(core: Any) -> None:
     def demo_requests():
         _require_owner()
         return {"requests": ledger.requests()}
+
+    @core.app.get("/demo-access/admin/notification-setup", include_in_schema=False)
+    def demo_notification_setup():
+        _require_owner()
+        if notifier.provider_name != "NTFY" or not notifier.configured:
+            return {"provider": "NONE", "subscription_url": None}
+        return {"provider": "NTFY", "subscription_url": notifier.subscription_url}
 
     @core.app.post("/demo-access/admin/requests/{request_id}/retry-notification", include_in_schema=False)
     def retry_demo_notification(request_id: str):

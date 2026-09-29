@@ -80,3 +80,32 @@ def test_notification_configuration_and_transport_failures_are_non_secret_status
     assert rejected.status == "FAILED"
     assert rejected.error_code == "PROVIDER_REJECTED"
     assert "private detail" not in json.dumps(rejected.public())
+
+
+def test_push_notification_contains_no_applicant_information():
+    captured = {}
+
+    def transport(request, timeout):
+        captured.update(url=request.full_url, timeout=timeout, body=request.data.decode(), headers=dict(request.header_items()))
+        return {"event": "message", "id": "push-123"}
+
+    result = demo_notification.DemoPushNotifier(topic="a" * 40, transport=transport).send(_request_record())
+    assert result.status == "SENT"
+    assert result.provider == "NTFY"
+    assert result.message_id == "push-123"
+    assert captured["url"] == "https://ntfy.sh/" + "a" * 40
+    assert captured["timeout"] == 6.0
+    assert captured["headers"]["Click"] == "https://cer-ai.com/demo-admin"
+    assert "a" * 32 in captured["body"]
+    for personal_value in ("Dr. Demo Surgeon", "Demo Eye Clinic", "doctor@example.org", "+90 555 000 00 00"):
+        assert personal_value not in str(captured)
+
+
+def test_push_failure_and_bad_topic_fail_closed(monkeypatch):
+    monkeypatch.setenv("CERAI_DEMO_NTFY_TOPIC", "short")
+    assert demo_notification.configured_demo_notifier().send(_request_record()).status == "NOT_CONFIGURED"
+    failed = demo_notification.DemoPushNotifier(topic="b" * 40, transport=lambda _request, _timeout: {"event": "error"}).send(_request_record())
+    assert failed.error_code == "PROVIDER_REJECTED"
+    monkeypatch.delenv("CERAI_DEMO_NTFY_TOPIC")
+    monkeypatch.setenv("CERAI_DEMO_NOTIFICATION_RECIPIENT", "owner@example.org")
+    assert isinstance(demo_notification.configured_demo_notifier(), demo_notification.DemoEmailNotifier)

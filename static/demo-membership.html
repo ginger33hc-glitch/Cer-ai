@@ -33,7 +33,7 @@
   <div class="note"><strong>Demo limit:</strong> An approved demo account can open 10 patient assessments. No patient information should be entered on this request form. Purchasing additional credit will be added in the next stage.</div>
   <a class="back" href="/">← Return to CER-AI</a>
 </main>
-<script src="/static/public-i18n.js?v=5" defer></script>
+<script src="/static/public-i18n.js?v=6" defer></script>
 <script>
 (() => {
   const form=document.getElementById("demoForm"),button=document.getElementById("submitButton"),status=document.getElementById("status");
@@ -43,7 +43,7 @@
       const payload={doctor_name:document.getElementById("doctorName").value,institution:document.getElementById("institution").value,email:document.getElementById("email").value,phone:document.getElementById("phone").value,country:document.getElementById("country").value,specialty:document.getElementById("specialty").value,website:document.getElementById("website").value};
       const response=await fetch("/demo-access/request",{method:"POST",credentials:"same-origin",cache:"no-store",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
       const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.detail||"The request could not be submitted.");
-      form.reset();status.className="status success";status.textContent=data.notification_status==="SENT"?"Your demo request was saved and the owner notification was accepted by the email provider. Access begins after approval and credential creation.":"Your demo request was saved, but the owner email notification failed. The owner can review it in the demo administration panel.";
+      form.reset();status.className=data.notification_status==="SENT"?"status success":"status error";status.textContent=data.notification_status==="SENT"?"Your demo request was saved and the owner notification was accepted by the notification provider. Access begins after approval and credential creation.":"Your demo request was saved, but the owner notification failed. The owner can review it in the demo administration panel.";
     }catch(error){status.className="status error";status.textContent=error.message||"The request could not be submitted.";}finally{button.disabled=false;}
   });
 })();
