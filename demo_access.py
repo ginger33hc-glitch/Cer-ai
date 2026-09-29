@@ -12,6 +12,7 @@ from collections import defaultdict, deque
 from datetime import datetime, timezone
 import hashlib
 import json
+import logging
 from pathlib import Path
 import re
 from threading import RLock
@@ -36,6 +37,7 @@ _REQUEST_ID_RE = re.compile(r"^[0-9a-f]{32}$")
 _USERNAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{2,63}$")
 _lock = RLock()
 _request_starts: dict[str, deque[float]] = defaultdict(deque)
+_logger = logging.getLogger(__name__)
 
 
 def _now() -> str:
@@ -368,6 +370,11 @@ def install(core: Any) -> None:
         submitted = ledger.submit_request(payload)
         notification = notifier.send(ledger._request(submitted["request_id"]))
         ledger.record_notification(submitted["request_id"], notification)
+        _logger.info(
+            "Demo owner notification: request_id=%s status=%s provider=%s error_code=%s",
+            submitted["request_id"], notification.status, notification.provider,
+            notification.error_code,
+        )
         submitted["notification_status"] = notification.status
         return JSONResponse(submitted, status_code=201, headers={"Cache-Control": "no-store"})
 
@@ -380,6 +387,20 @@ def install(core: Any) -> None:
     def demo_requests():
         _require_owner()
         return {"requests": ledger.requests()}
+
+    @core.app.post("/demo-access/admin/requests/{request_id}/retry-notification", include_in_schema=False)
+    def retry_demo_notification(request_id: str):
+        _require_owner()
+        item = ledger._request(request_id)
+        if item.get("notification_status") == "SENT":
+            raise HTTPException(409, "The email provider already accepted this notification.")
+        notification = notifier.send(item)
+        ledger.record_notification(request_id, notification)
+        _logger.warning(
+            "Demo owner notification retry: request_id=%s status=%s provider=%s error_code=%s",
+            request_id, notification.status, notification.provider, notification.error_code,
+        )
+        return {"notification_status": notification.status, "notification_error_code": notification.error_code}
 
     @core.app.post("/demo-access/admin/requests/{request_id}/approve", include_in_schema=False)
     def approve_demo(request_id: str, payload: dict[str, Any] = Body(...)):

@@ -38,7 +38,7 @@ def test_formsubmit_notification_contains_only_reference_and_owner_panel():
     assert result.provider == "FORMSUBMIT"
     assert result.message_id == "a" * 32
     assert captured["url"] == "https://formsubmit.co/ajax/owner@example.org"
-    assert captured["timeout"] == 8.0
+    assert captured["timeout"] == 20.0
     assert captured["headers"]["Content-type"].startswith("application/x-www-form-urlencoded")
     assert captured["payload"]["owner_panel"] == ["https://cer-ai.com/demo-admin"]
     assert captured["payload"]["request_reference"] == ["a" * 32]
@@ -72,3 +72,11 @@ def test_notification_configuration_and_transport_failures_are_non_secret_status
     assert failed.status == "FAILED"
     assert failed.error_code == "TRANSPORT_ERROR"
     assert "network detail" not in json.dumps(failed.public())
+
+    rejected = demo_notification.DemoEmailNotifier(
+        recipient="owner@example.org",
+        transport=lambda _request, _timeout: {"success": False, "message": "private detail"},
+    ).send(_request_record())
+    assert rejected.status == "FAILED"
+    assert rejected.error_code == "PROVIDER_REJECTED"
+    assert "private detail" not in json.dumps(rejected.public())

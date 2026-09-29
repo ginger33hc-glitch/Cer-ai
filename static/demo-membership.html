@@ -43,7 +43,7 @@
       const payload={doctor_name:document.getElementById("doctorName").value,institution:document.getElementById("institution").value,email:document.getElementById("email").value,phone:document.getElementById("phone").value,country:document.getElementById("country").value,specialty:document.getElementById("specialty").value,website:document.getElementById("website").value};
       const response=await fetch("/demo-access/request",{method:"POST",credentials:"same-origin",cache:"no-store",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
       const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.detail||"The request could not be submitted.");
-      form.reset();status.className="status success";status.textContent="Your demo request was sent to the CER-AI owner. Access will begin only after approval and credential creation.";
+      form.reset();status.className="status success";status.textContent=data.notification_status==="SENT"?"Your demo request was saved and the owner notification was accepted by the email provider. Access begins after approval and credential creation.":"Your demo request was saved, but the owner email notification failed. The owner can review it in the demo administration panel.";
     }catch(error){status.className="status error";status.textContent=error.message||"The request could not be submitted.";}finally{button.disabled=false;}
   });
 })();

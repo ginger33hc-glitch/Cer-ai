@@ -92,7 +92,9 @@ class DemoEmailNotifier:
             },
         )
         try:
-            self.transport(request, 8.0)
+            response = self.transport(request, 20.0)
+            if response.get("success") not in (True, "true", "True"):
+                return NotificationResult("FAILED", "FORMSUBMIT", error_code="PROVIDER_REJECTED")
             return NotificationResult("SENT", "FORMSUBMIT", message_id=request_id)
         except HTTPError as exc:
             return NotificationResult("FAILED", "FORMSUBMIT", error_code=f"HTTP_{exc.code}")
