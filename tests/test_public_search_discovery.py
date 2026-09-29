@@ -239,7 +239,7 @@ def test_production_canonical_and_real_software_identity_remain_intact(public_ap
         (
             "/corneal-ectasia-risk-assessment",
             "MedicalWebPage",
-            "Corneal Ectasia Risk Assessment Software for Refractive Surgeons | CER-AI",
+            "Corneal Ectasia Risk Assessment Software | CER-AI",
         ),
         (
             "/iol-calculation-software",
@@ -294,7 +294,7 @@ def test_static_public_pages_have_page_specific_discovery_identity(
     assert schema["url"] == f"https://cer-ai.com{path}"
     assert schema["name"] == title
     expected_date = (
-        "2026-09-27"
+        "2026-09-29"
         if path in {
             "/corneal-ectasia-risk-assessment",
             "/iol-calculation-software",
