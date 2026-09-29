@@ -811,6 +811,8 @@ def _robot_group(agents: tuple[str, ...], *, explicit_allow: bool) -> str:
     lines = [*(f"User-agent: {agent}" for agent in agents)]
     if explicit_allow:
         lines.extend(("Allow: /", "Allow: /public/", "Allow: /about/", "Allow: /documentation/"))
+    # The public IOL landing page shares the private /iol prefix.
+    lines.append("Allow: /iol-calculation-software")
     lines.extend(f"Disallow: {path}" for path in _PRIVATE_CRAWL_PATHS)
     return "\n".join(lines)
 
