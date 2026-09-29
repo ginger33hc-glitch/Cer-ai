@@ -51,8 +51,8 @@ _INDEXNOW_KEY = "731d2001b05e7e15840a00e98f53447d"
 _PUBLIC_PAGE_LASTMOD = {
     "/": "2026-09-28",
     "/corneal-ectasia-risk-assessment": "2026-09-29",
-    "/iol-calculation-software": "2026-09-27",
-    "/toric-iol-calculator": "2026-09-27",
+    "/iol-calculation-software": "2026-09-29",
+    "/toric-iol-calculator": "2026-09-29",
     "/clinical-evidence": "2026-09-12",
     "/references": "2026-09-12",
     "/what-is-recommended-for-corneal-ectasia-screening": "2026-09-26",
