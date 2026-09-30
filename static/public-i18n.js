@@ -6,6 +6,7 @@
   let locale = SUPPORTED.has(requested) ? requested : "en";
 
   const TR = {
+    "·":"·",
     "Independent ectasia assessment platform — currently free access":"Bağımsız ektazi değerlendirme platformu — şu anda ücretsiz erişim",
     "CER-AI is a standalone web platform for corneal ectasia risk assessment before LASIK and PRK (göz çizdirme), including review of risk factors associated with post-LASIK ectasia. It runs outside the imaging device's software.":"CER-AI, LASIK ve PRK (göz çizdirme) öncesi korneal ektazi risk değerlendirmesi ve post-LASIK ektaziyle ilişkili risk faktörlerinin incelenmesi için bağımsız bir web platformudur. Görüntüleme cihazının yazılımı dışında çalışır.",
     "Device-associated tools include the Belin/Ambrósio Display (BAD) in the Pentacam software ecosystem and the SCORE Analyzer on the ANTERION imaging platform. Access to these tools requires the relevant imaging system and applicable software configuration or licensing; equipment and license costs vary by supplier and configuration.":"Cihaza bağlı araçlara Pentacam yazılım ekosistemindeki Belin/Ambrósio Display (BAD) ve ANTERION görüntüleme platformundaki SCORE Analyzer örnek verilebilir. Bu araçlara erişim, ilgili görüntüleme sistemini ve uygun yazılım yapılandırmasını veya lisansını gerektirir; cihaz ve lisans maliyetleri tedarikçiye ve yapılandırmaya göre değişir.",
