@@ -6,6 +6,9 @@
   let locale = SUPPORTED.has(requested) ? requested : "en";
 
   const TR = {
+    "Active clinical use at Vizyon Eye Hospital, Mersin":"Mersin Vizyon Göz Hastanesi’nde aktif klinik kullanım",
+    "CER-AI is actively used at Vizyon Eye Hospital in Mersin, Türkiye, during patient examinations and surgical planning. It supports AI-assisted assessment for refractive surgery (laser vision correction, known in Turkish as “göz çizdirme”) and intraocular lens selection (“akıllı mercek”) for cataract surgery. Clinical decisions, final lens selection and surgery remain the responsibility of the ophthalmic surgeon.":"CER-AI, Mersin Vizyon Göz Hastanesi’nde hastaların muayenelerinde ve ameliyat planlamasında aktif olarak kullanılmaktadır. Refraktif cerrahi (göz çizdirme) için yapay zekâ destekli değerlendirmeye ve katarakt ameliyatlarında göz içi mercek (akıllı mercek) seçimine karar desteği sunar. Klinik kararlar, nihai mercek seçimi ve ameliyat göz cerrahının sorumluluğundadır.",
+    "Vizyon Eye Hospital, Mersin — official website":"Mersin Vizyon Göz Hastanesi — resmî web sitesi",
     "·":"·",
     "Independent ectasia assessment platform — currently free access":"Bağımsız ektazi değerlendirme platformu — şu anda ücretsiz erişim",
     "CER-AI is a standalone web platform for corneal ectasia risk assessment before LASIK and PRK (göz çizdirme), including review of risk factors associated with post-LASIK ectasia. It runs outside the imaging device's software.":"CER-AI, LASIK ve PRK (göz çizdirme) öncesi korneal ektazi risk değerlendirmesi ve post-LASIK ektaziyle ilişkili risk faktörlerinin incelenmesi için bağımsız bir web platformudur. Görüntüleme cihazının yazılımı dışında çalışır.",

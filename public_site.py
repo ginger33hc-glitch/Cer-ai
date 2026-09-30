@@ -49,9 +49,9 @@ _PUBLIC_CANONICAL_BASE = os.getenv(
 _PUBLIC_CONTENT_LASTMOD = "2026-09-11"
 _INDEXNOW_KEY = "731d2001b05e7e15840a00e98f53447d"
 _PUBLIC_PAGE_LASTMOD = {
-    "/": "2026-09-30",
-    "/corneal-ectasia-risk-assessment": "2026-09-30",
-    "/iol-calculation-software": "2026-09-30",
+    "/": "2026-10-01",
+    "/corneal-ectasia-risk-assessment": "2026-10-01",
+    "/iol-calculation-software": "2026-10-01",
     "/toric-iol-calculator": "2026-09-30",
     "/clinical-evidence": "2026-09-12",
     "/references": "2026-09-12",
@@ -868,6 +868,13 @@ The software keeps ERSS, Pentacam Final BAD-D, NICE, and PS3 independently inter
 The integrated cataract workflow begins with defined Pentacam and biometry sources. It evaluates eligibility for monofocal, enhanced monofocal, EDOF, and multifocal categories and whether regular corneal astigmatism requires toric planning. The surgeon then selects the preferred lens family. When required inputs are complete, the IOL module calculates spherical power with Cooke K6. The embedded Toric Calculator may then display toric model candidates, marker axis, and predicted residual astigmatism. Its optical model is a test-only, clinically unvalidated prototype and must be independently checked with the selected lens manufacturer's calculator.
 
 CER-AI is designed to unite eligibility assessment, surgeon lens-family selection, spherical IOL power, and toric planning in one traceable workflow. This describes CER-AI's architecture; it is not a claim that other systems lack IOL or toric calculation.
+
+## Active clinical use
+CER-AI is actively used at Vizyon Eye Hospital in Mersin, Türkiye, during patient examinations and surgical planning. It supports AI-assisted assessment for refractive surgery (laser vision correction, known in Turkish as “göz çizdirme”) and intraocular lens selection (“akıllı mercek”) for cataract surgery. Clinical decisions, final lens selection and surgery remain the responsibility of the ophthalmic surgeon.
+
+Türkçe: CER-AI, Mersin Vizyon Göz Hastanesi’nde hastaların muayenelerinde ve ameliyat planlamasında aktif olarak kullanılmaktadır. Refraktif cerrahi (göz çizdirme) için yapay zekâ destekli değerlendirmeye ve katarakt ameliyatlarında göz içi mercek (akıllı mercek) seçimine karar desteği sunar. Klinik kararlar, nihai mercek seçimi ve ameliyat göz cerrahının sorumluluğundadır.
+
+Hospital website: https://vizyongozhastanesi.com/
 
 ## Independent platform and access
 CER-AI runs independently of imaging-device software, using supported existing Pentacam reports. BAD is part of the Pentacam software ecosystem; SCORE Analyzer is associated with the ANTERION imaging platform. Imaging-system acquisition and applicable software licensing are separate costs that vary by supplier/configuration. CER-AI does not replace measurement hardware, calculate BAD-D without a device report, or claim compatibility with every device.

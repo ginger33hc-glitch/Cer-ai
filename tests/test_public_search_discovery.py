@@ -294,7 +294,9 @@ def test_static_public_pages_have_page_specific_discovery_identity(
     assert schema["url"] == f"https://cer-ai.com{path}"
     assert schema["name"] == title
     expected_date = (
-        "2026-09-30"
+        "2026-10-01"
+        if path in {"/corneal-ectasia-risk-assessment", "/iol-calculation-software"}
+        else "2026-09-30"
         if path in {
             "/corneal-ectasia-risk-assessment",
             "/iol-calculation-software",

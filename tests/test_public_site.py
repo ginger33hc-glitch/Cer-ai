@@ -97,7 +97,7 @@ def test_public_homepage_identifies_software_and_clinical_author():
         assert by_type["Person"]["sameAs"] == [
             "https://www.linkedin.com/in/huseyin-cengiz-md-881b9797/"
         ]
-        assert by_type["MedicalWebPage"]["dateModified"] == "2026-09-30"
+        assert by_type["MedicalWebPage"]["dateModified"] == "2026-10-01"
 
 
 def test_clinical_app_has_stable_app_entry():

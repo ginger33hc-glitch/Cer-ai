@@ -306,3 +306,12 @@ so a partial multi-file update cannot deploy. Pre-release rollback base:
 
 ## Independent platform and current access
 CER-AI runs outside imaging-device software using supported Pentacam reports. Device-associated tools include Pentacam BAD and ANTERION SCORE Analyzer. Equipment and applicable software licensing are separate costs; amounts vary by supplier and configuration. CER-AI does not replace tomography hardware or generate BAD-D without the device report. Current access is free for approved physicians; new approved demos have a 10-patient allowance. A low-cost physician subscription is planned; no final tariff or start date is announced.
+
+
+## Active clinical use
+
+CER-AI is actively used at Vizyon Eye Hospital in Mersin, Türkiye, during patient examinations and surgical planning. It supports AI-assisted assessment for refractive surgery (laser vision correction, known in Turkish as “göz çizdirme”) and intraocular lens selection (“akıllı mercek”) for cataract surgery. Clinical decisions, final lens selection and surgery remain the responsibility of the ophthalmic surgeon.
+
+CER-AI, Mersin Vizyon Göz Hastanesi’nde hastaların muayenelerinde ve ameliyat planlamasında aktif olarak kullanılmaktadır. Refraktif cerrahi (göz çizdirme) için yapay zekâ destekli değerlendirmeye ve katarakt ameliyatlarında göz içi mercek (akıllı mercek) seçimine karar desteği sunar. Klinik kararlar, nihai mercek seçimi ve ameliyat göz cerrahının sorumluluğundadır.
+
+[Vizyon Eye Hospital, Mersin — official website](https://vizyongozhastanesi.com/)
