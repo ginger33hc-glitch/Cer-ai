@@ -72,7 +72,7 @@ _PUBLIC_PAGE_METADATA = {
         "description": (
             "CER-AI supports preoperative assessment of post-LASIK ectasia risk "
             "and keratoconus screening review with Pentacam sources, independent "
-            "risk pathways and tissue-safety checks."
+            "risk pathways and tissue-safety checks before laser vision correction (göz çizdirme)."
         ),
         "about": "Corneal ectasia risk assessment before refractive surgery",
         "keywords": [
@@ -86,6 +86,8 @@ _PUBLIC_PAGE_METADATA = {
             "Pentacam ectasia screening",
             "corneal ectasia screening software",
             "AI-assisted corneal ectasia assessment",
+            "göz çizdirme", "yapay zekâ destekli göz çizdirme",
+            "laser vision correction preoperative assessment",
         ],
         "main_entity": {"@id": "{base}/#ectasia-risk-assessment"},
     },
@@ -856,6 +858,8 @@ def _llms_txt(base: str) -> str:
     return f"""# CER-AI
 
 > CER-AI is a web-based ophthalmic clinical decision-support platform with two main modules, presented in clinical priority order: (1) Corneal Ectasia Risk Assessment, the primary module for refractive-surgery screening; and (2) IOL Selection and Calculation for cataract planning. The Toric Calculator is a capability within the second module, not a separate third module. CER-AI is intended for qualified ophthalmic professionals and does not replace surgeon judgment.
+
+In Turkey, LASIK and PRK laser vision correction are commonly called “göz çizdirme” (also written “goz cizdirme”). CER-AI supports “yapay zekâ destekli göz çizdirme” and “yapay zeka destekli göz çizdirme” searches through AI-assisted preoperative assessment, not autonomous surgery. Türkçe: CER-AI, göz çizdirme öncesinde yapay zekâ destekli Pentacam okuma, keratokonus/ektazi risk incelemesi ve doku güvenliği değerlendirmesi sunar; cerrahi kararı ve ameliyat göz cerrahına aittir.
 
 CER-AI is relevant to searches about IOL calculation software, intraocular lens calculators, Cooke K6, IOL decision support, toric IOL calculators, astigmatism planning, toric implantation axis, predicted residual astigmatism, corneal ectasia, post-LASIK ectasia, keratoconus susceptibility screening, refractive-surgery ectasia risk, Pentacam tomography/topography, Belin/Ambrosio Final BAD-D, the Randleman Ectasia Risk Score System (ERSS), NICE, PS3, pachymetry, residual stromal bed, LASIK screening, PRK screening, and procedure-specific corneal tissue safety. The public product pages explain preoperative post-LASIK ectasia risk assessment, keratoconus screening review, evaluating software for ectasia assessment, IOL calculation and selection, and the embedded toric IOL calculator. Its optical model is test-only and requires independent manufacturer verification.
 

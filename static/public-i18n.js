@@ -6,6 +6,11 @@
   let locale = SUPPORTED.has(requested) ? requested : "en";
 
   const TR = {
+    "AI-assisted assessment before laser vision correction (göz çizdirme)":"Göz çizdirme öncesi yapay zekâ destekli değerlendirme",
+    "In Turkey, LASIK and PRK laser vision correction are commonly called “göz çizdirme”. CER-AI supports ophthalmologists reviewing corneal ectasia risk, keratoconus findings and tissue safety before these procedures.":"Türkiye’de LASIK ve PRK ile lazer göz ameliyatı, halk arasında “göz çizdirme” olarak bilinir. CER-AI, göz çizdirme öncesinde korneal ektazi riski, keratokonus bulguları ve kornea doku güvenliğini değerlendiren göz hekimlerini destekler.",
+    "Searching for “yapay zekâ destekli göz çizdirme”? CER-AI provides AI-assisted reading of Pentacam images and structured preoperative decision support. The ophthalmic surgeon determines eligibility and performs the surgery.":"“Yapay zekâ destekli göz çizdirme” hakkında bilgi mi arıyorsunuz? CER-AI, Pentacam görüntülerinin yapay zekâ destekli okunmasını ve ameliyat öncesi yapılandırılmış karar desteğini sağlar. Göz çizdirme ameliyatına uygunluğu göz cerrahı belirler ve ameliyatı cerrah gerçekleştirir.",
+    "Explore assessment before LASIK / PRK (göz çizdirme)":"LASIK / PRK (göz çizdirme) öncesi değerlendirmeyi inceleyin",
+
     "Learning Center":"Eğitim Merkezi",
     "Evaluation":"Değerlendirme",
     "Ectasia Assessment":"Ektazi Değerlendirmesi",
