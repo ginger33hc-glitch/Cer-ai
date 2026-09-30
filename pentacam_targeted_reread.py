@@ -21,6 +21,7 @@ from time import monotonic
 from typing import Any
 
 from PIL import Image, ImageOps
+from mandatory_source_set_policy import recognized_pentacam_families, source_laterality_conflict
 from exam_date_reconciliation_policy import (
     FOUR_MAPS_EXAM_DATE_SOURCE,
     possible_calendar_dates,
@@ -330,12 +331,7 @@ def _looks_like_pentacam(result: dict[str, Any]) -> bool:
     context = result.get("document_context") or {}
     if context.get("document_type") == "PENTACAM_TOPOGRAPHY":
         return True
-    for eye in result.get("eyes") or []:
-        for screen_type in eye.get("screen_types") or []:
-            text = str(screen_type).upper()
-            if any(token in text for token in ("PENTACAM", "BELIN", "AMBROSIO", "4 MAP", "TOPO/KC")):
-                return True
-    return False
+    return bool(recognized_pentacam_families(result))
 
 
 def missing_targets_by_eye(
@@ -343,24 +339,14 @@ def missing_targets_by_eye(
     excluded_fields_by_eye: dict[str, set[str]] | None = None,
 ) -> dict[str, list[str]]:
     """Return only still-empty table fields for explicitly identified OD/OS eyes."""
-    if not _looks_like_pentacam(result):
+    if source_laterality_conflict(result) or not _looks_like_pentacam(result):
         return {}
     targets: dict[str, list[str]] = {}
     for eye in result.get("eyes") or []:
         eye_id = eye.get("eye")
         if eye_id not in {"OD", "OS"}:
             continue
-        screen_text = " ".join(
-            str(item).casefold().replace("_", " ")
-            for item in eye.get("screen_types") or []
-        )
-        visible_families = set()
-        if "bad display" in screen_text or ("belin" in screen_text and "ambrosio" in screen_text):
-            visible_families.add(BAD)
-        if any(token in screen_text for token in ("4 map", "four map", "4map")):
-            visible_families.add(FOURMAPS)
-        if "show 2 exams" in screen_text and "topometric" in screen_text:
-            visible_families.add(SHOW2)
+        visible_families = recognized_pentacam_families(result)
         missing = [
             field for field in TARGET_FIELDS
             if field not in (excluded_fields_by_eye or {}).get(eye_id, set())
@@ -374,7 +360,7 @@ def missing_targets_by_eye(
 
 def patient_age_is_missing(result: dict[str, Any]) -> bool:
     """True only for a Pentacam source whose patient-level printed age remains empty."""
-    if not _looks_like_pentacam(result):
+    if source_laterality_conflict(result) or not _looks_like_pentacam(result):
         return False
     context = result.get("document_context") or {}
     return context.get("patient_age_years") is None
@@ -382,7 +368,7 @@ def patient_age_is_missing(result: dict[str, Any]) -> bool:
 
 def pentacam_qs_is_missing(result: dict[str, Any]) -> bool:
     """True only when literal Pentacam QS has not already been read as OK/NOT_OK."""
-    if not _looks_like_pentacam(result):
+    if source_laterality_conflict(result) or not _looks_like_pentacam(result):
         return False
     context = result.get("document_context") or {}
     return context.get("pentacam_qs") not in {"OK", "NOT_OK"}

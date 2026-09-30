@@ -802,3 +802,17 @@ def test_surrogate_age_reread_is_skipped_when_surgeon_age_was_supplied(monkeypat
 
 PENTACAM_SOURCE_LOCK_RETIRED_TARGETED_TESTS = tuple(sorted(_RETIRED))
 del _name, _value
+
+
+def test_topometric_recognition_cannot_skip_required_reread_with_other_document_type():
+    result = {"document_context":{"document_type":"OTHER"},
+              "eyes":[{"eye":"OD", "screen_types":["Show 2 Exams Topometric"]}]}
+    fields = targeted.missing_targets_by_eye(result)["OD"]
+    assert {"K2_D", "Kmean_D", "posterior_Kmean_D", "I_S"} <= set(fields)
+    assert "BAD_D" not in fields
+
+
+def test_conflicting_single_eye_page_cannot_trigger_wrong_eye_reread():
+    result = {"document_context":{"document_type":"PENTACAM_TOPOGRAPHY", "laterality":"OS"},
+              "eyes":[{"eye":"OD", "screen_types":["FOUR_MAPS_REFRACTIVE"]}]}
+    assert targeted.missing_targets_by_eye(result) == {}

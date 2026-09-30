@@ -281,6 +281,7 @@
     "Cornea Back K2 axis, degrees":"Arka kornea K2 aksı, derece",
     "Cornea Back Rh, mm":"Arka kornea Rh, mm",
     "Cornea Back Rv, mm":"Arka kornea Rv, mm",
+    "Conflicting OD/OS labels on a single-eye Pentacam page. Check the indicated image and upload the correctly labeled page again.":"Tek göze ait Pentacam sayfasında OD/OS etiketleri çelişiyor. Belirtilen görüntüyü kontrol edip doğru göz etiketli sayfayı yeniden yükleyin.",
     "Go to ESCRS Calculator":"ESCRS Hesaplayıcısına Git",
     "Cooke K6 calculation completed.":"Cooke K6 hesaplaması tamamlandı.",
     "Cooke K6 service timed out.":"Cooke K6 hizmeti zaman aşımına uğradı.",

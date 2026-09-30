@@ -876,6 +876,9 @@ f.addEventListener("submit", async (e) => {
       let message=errorDetail?.message||j.detail||"Request failed";
       if(errorDetail?.code==="MANDATORY_SOURCE_SET_INCOMPLETE"){
         message=i18n.translate("Upload each missing required image before assessment.");
+      }else if(errorDetail?.code==="SOURCE_LATERALITY_CONFLICT"){
+        message=i18n.translate("Conflicting OD/OS labels on a single-eye Pentacam page. Check the indicated image and upload the correctly labeled page again.")
+          + " (" + (errorDetail.source_set?.laterality_conflict_images||[]).join(", ") + ")";
       }else if(errorDetail?.code==="PREASSESSMENT_REFRACTION_REQUIRED"){
         message=i18n.translate(
           errorDetail.refraction_reason==="UNREADABLE"

@@ -348,3 +348,22 @@ def test_direct_prompt_owns_explicit_legacy_bad_display_recognition_rule():
     assert "BELIN_AMBROSIO_DISPLAY" in prompt
     assert policy.BAD_DISPLAY_RECOGNITION_PROMPT in prompt
     assert not callable(getattr(policy, "install", None))
+
+
+@pytest.mark.parametrize("screen", ["FOUR_MAPS_REFRACTIVE", "BELIN_AMBROSIO_DISPLAY"])
+def test_single_eye_page_conflicting_header_cannot_count_as_both_eyes(screen):
+    items = complete_set()
+    items[0] = result(screen, "OD")
+    items[0]["document_context"]["laterality"] = "OS"
+    summary = policy.classify_source_set(items)
+    assert summary["laterality_conflict_images"] == [1]
+    assert not summary["confirmed"]
+    with pytest.raises(HTTPException) as exc:
+        policy.validate_source_set(items)
+    assert exc.value.detail["code"] == "SOURCE_LATERALITY_CONFLICT"
+
+
+def test_show_two_topometric_retains_bilateral_extraction():
+    items = complete_set()
+    items[4]["eyes"].append({"eye":"OS", "screen_types":["SHOW_2_EXAMS_TOPOMETRIC"]})
+    assert policy.validate_source_set(items)["confirmed"]

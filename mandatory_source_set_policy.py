@@ -16,6 +16,7 @@ from typing import Any
 
 from fastapi import HTTPException
 from pentacam_field_registry import CORNEA_FRONT_KERATOMETRY_SOURCE
+from pentacam_canonical_source_lock import BAD, FOURMAPS, SHOW2
 
 
 MANDATORY_LABELS = (
@@ -99,6 +100,7 @@ def _is_bad_display(tokens: set[str]) -> bool:
             "BELIN_AMBROSIO_ENHANCED_ECTASIA_DISPLAY",
             "BELIN_AMBROSIO_ENHANCED_ECTASIA",
         }
+        or token.endswith("_BAD_DISPLAY")
         or ("BELIN" in token and "AMBROSIO" in token)
         or ("ENHANCED" in token and "ECTASIA" in token and "DISPLAY" in token)
         for token in tokens
@@ -135,6 +137,25 @@ def _has_bad_display_signature(result: dict[str, Any]) -> bool:
     return False
 
 
+def recognized_pentacam_families(result: dict[str, Any]) -> set[str]:
+    """Canonical page recognition shared by the source gate and reread adapter."""
+    tokens = _screen_tokens(result)
+    families: set[str] = set()
+    if _is_four_maps(tokens):
+        families.add(FOURMAPS)
+    if _is_bad_display(tokens) or _has_bad_display_signature(result):
+        families.add(BAD)
+    if _is_show_two_topometric(tokens) or _has_show_two_numeric_signature(result):
+        families.add(SHOW2)
+    return families
+
+
+def source_laterality_conflict(result: dict[str, Any]) -> bool:
+    """Single-eye map pages cannot combine contradictory explicit eye labels."""
+    families = recognized_pentacam_families(result)
+    return bool(families & {FOURMAPS, BAD} and SHOW2 not in families and len(_eyes(result)) > 1)
+
+
 def _is_treatment_card(result: dict[str, Any], tokens: set[str]) -> bool:
     context = result.get("document_context") or {}
     if context.get("document_type") == "TREATMENT_CARD":
@@ -146,6 +167,8 @@ def _is_treatment_card(result: dict[str, Any], tokens: set[str]) -> bool:
 
 def _mandatory_labels_for(result: dict[str, Any]) -> set[str]:
     """Return only the mandatory source roles established by this image."""
+    if source_laterality_conflict(result):
+        return set()
     tokens = _screen_tokens(result)
     eyes = _eyes(result)
     labels: set[str] = set()
@@ -199,6 +222,7 @@ def classify_source_set(results: list[dict[str, Any]]) -> dict[str, Any]:
         if mandatory_labels:
             recognized_mandatory_images += 1
 
+    conflicts = [ordinal for ordinal, result in enumerate(results, start=1) if source_laterality_conflict(result)]
     missing = [label for label, available in present.items() if not available]
     unreadable_cards = _unreadable_optional_card_results(
         results, mandatory_complete=not missing,
@@ -235,7 +259,8 @@ def classify_source_set(results: list[dict[str, Any]]) -> dict[str, Any]:
             "count": treatment_cards + len(unreadable_card_candidates),
             "unreadable_count": len(unreadable_cards),
         },
-        "confirmed": not missing,
+        "laterality_conflict_images": conflicts,
+        "confirmed": not missing and not conflicts,
         "uploaded_count": len(results),
     }
 
@@ -251,6 +276,13 @@ def validate_upload_count(count: int) -> None:
 def validate_source_set(results: list[dict[str, Any]]) -> dict[str, Any]:
     validate_upload_count(len(results))
     summary = classify_source_set(results)
+    if summary["laterality_conflict_images"]:
+        raise HTTPException(422, {
+            "code": "SOURCE_LATERALITY_CONFLICT",
+            "message": "Assessment not started. Conflicting OD/OS labels on a single-eye Pentacam page. Check image(s): "
+                       + ", ".join(map(str, summary["laterality_conflict_images"])) + ". Upload the correctly labeled page again.",
+            "source_set": summary,
+        })
     if summary["missing"]:
         missing_text = ", ".join(summary["missing"])
         optional = "present" if summary["optional_treatment_card"]["present"] else "not provided"
