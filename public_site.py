@@ -869,6 +869,10 @@ The integrated cataract workflow begins with defined Pentacam and biometry sourc
 
 CER-AI is designed to unite eligibility assessment, surgeon lens-family selection, spherical IOL power, and toric planning in one traceable workflow. This describes CER-AI's architecture; it is not a claim that other systems lack IOL or toric calculation.
 
+## Independent platform and access
+CER-AI runs independently of imaging-device software, using supported existing Pentacam reports. BAD is part of the Pentacam software ecosystem; SCORE Analyzer is associated with the ANTERION imaging platform. Imaging-system acquisition and applicable software licensing are separate costs that vary by supplier/configuration. CER-AI does not replace measurement hardware, calculate BAD-D without a device report, or claim compatibility with every device.
+Current CER-AI access is free for approved physicians; new approved demo accounts have a 10-patient allowance. A low-cost physician subscription is planned, with no final tariff or start date announced. Türkçe: CER-AI bağımsız bir platformdur; onaylı hekimlere mevcut erişim ücretsizdir. Yeni demo hesaplarında 10 hastalık hak vardır. Gelecekte düşük ücretli abonelik planlanır; kesin tarife henüz açıklanmamıştır.
+
 ## Primary public pages
 - [CER-AI home]({base}/): Overview of the clinical decision-support platform and its independent ectasia-risk pathways.
 - [CER-AI Learning Center]({base}/learning-center): Surgeon education on corneal ectasia, Pentacam interpretation, BAD-D, topometric indices, risk systems, map patterns, tissue safety, and clinical reasoning.
