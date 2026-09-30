@@ -207,14 +207,6 @@ class IOLPowerPlanInput(StrictModel):
                 raise ValueError("This surgeon's incision must coincide with the steep K2 axis.")
             if self.sia_axis_deg is not None and abs((self.sia_axis_deg - self.k2_axis_deg + 90) % 180 - 90) > 1:
                 raise ValueError("SIA axis must coincide with the steep K2 axis.")
-        if (
-            self.axial_length_mm < 22.0
-            and self.prior_corneal_surgery == PriorCornealSurgery.NONE
-            and (self.lens_thickness_mm is None or self.wtw_mm is None)
-        ):
-            raise ValueError(
-                "Cooke K6 requires lens thickness and WTW when axial length is below 22.00 mm."
-            )
         return self
 
 

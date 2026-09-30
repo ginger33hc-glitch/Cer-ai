@@ -253,7 +253,7 @@
       let html=`<div class="warning"><strong>${tr(data.calculator_name)}</strong><br>${tr(data.message)}</div>`;
       html+=`<p><span>ACD target</span>: ${Number(data.target_refraction_d).toFixed(2)} D (<span>locked</span>)</p>`;
       if(data.second_formula_required) html+=`<div class="warning"><span>Second modern formula verification required</span> (AL ${Number(data.inputs.axial_length_mm).toFixed(2)} mm). <span>Use ESCRS where available and verify all values manually.</span></div>`;
-      if(data.escrs_url) html+=`<button id="escrsTransfer" class="external" type="button">Transfer values to ESCRS</button>`;
+      if(data.escrs_url) html+=`<a class="external" target="_blank" rel="noopener noreferrer" href="${data.escrs_url}">Go to ESCRS Calculator</a><button id="escrsTransfer" class="external" type="button">Transfer values to ESCRS</button>`;
       const toricRoute = data.route === "MANUFACTURER_TORIC";
       if(toricRoute && data.toric_candidates?.length) {
         const fmt = (value, digits = 2) => Number.isFinite(Number(value)) ? Number(value).toFixed(digits) : "—";

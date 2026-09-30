@@ -271,6 +271,14 @@
     "Prior RK requires the external post-RK calculation pathway.":"Önceki RK, harici post-RK hesaplama yolunu gerektirir.",
     "Regular IOLMaster K difference is at least 1.00 D. Continue in the selected lens manufacturer's official toric calculator.":"Düzenli IOLMaster K farkı en az 1,00 D'dir. Seçilen lens üreticisinin resmi torik hesaplayıcısında devam edin.",
     "No verified official toric calculator is configured for this manufacturer; calculation is unavailable.":"Bu üretici için doğrulanmış resmi torik hesaplayıcı yapılandırılmamıştır; hesaplama kullanılamıyor.",
+    "Go to ESCRS Calculator":"ESCRS Hesaplayıcısına Git",
+    "Cooke K6 calculation completed.":"Cooke K6 hesaplaması tamamlandı.",
+    "Cooke K6 service timed out.":"Cooke K6 hizmeti zaman aşımına uğradı.",
+    "Cooke K6 service could not be reached.":"Cooke K6 hizmetine ulaşılamadı.",
+    "Cooke K6 service returned an invalid response.":"Cooke K6 hizmeti geçersiz yanıt döndürdü.",
+    "Cooke K6 returned no eye result.":"Cooke K6 göz sonucu döndürmedi.",
+    "Cooke K6 returned no power predictions.":"Cooke K6 güç tahmini döndürmedi.",
+    "Cooke K6 returned invalid power predictions.":"Cooke K6 geçersiz güç tahminleri döndürdü.",
     "Cooke K6 calculation completed. The ESCRS calculator is provided as the external comparison route.":"Cooke K6 hesaplaması tamamlandı. ESCRS hesaplayıcısı harici karşılaştırma yolu olarak sunulmuştur.",
     "ACD target":"Ön kamara derinliğine göre hedef","locked":"kilitli",
     "Second modern formula verification required":"İkinci modern formülle doğrulama gerekli",
@@ -401,6 +409,7 @@
       .replace(/^Ocular-surface status is ([^.]+)\.$/,"Oküler yüzey durumu $1.")
       .replace(/^Active IOLMaster 500 K difference is ([\d.]+) D \(([^)]+)\); the toric-evaluation threshold is 1\.00 D inclusive\.$/,"Aktif IOLMaster 500 K farkı $1 D'dir ($2); torik değerlendirme eşiği 1,00 D'dir (dahil).")
       .replace(/^Prior LASIK\/PRK overrides the standard route\. Use the Barrett True-K (history|no-history) pathway externally\.$/,"Önceki LASIK/PRK standart yolu geçersiz kılar. Barrett True-K $1 yolunu harici olarak kullanın.")
+      .replace(/^Cooke K6 service returned HTTP (\d+)\.$/,"Cooke K6 hizmeti HTTP $1 hatası döndürdü.")
       .replace(/^Cooke K6 could not complete the calculation\. No substitute was used \(([^)]+)\)\.$/,"Cooke K6 hesaplamayı tamamlayamadı. Yerine başka bir yöntem kullanılmadı ($1).")
       .replace(/^Cooke K6 spherical calculation was unavailable \(([^)]+)\)\. No toric power or axis was selected\.$/,"Cooke K6 sferik hesaplaması kullanılamadı ($1). Torik güç veya aks seçilmedi.")
       .replace(/^Embedded toric calculation rejected these measurements \(([^)]+)\)\.$/,"Uygulama içi torik hesaplama bu ölçümleri reddetti ($1).")

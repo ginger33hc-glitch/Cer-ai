@@ -243,7 +243,7 @@ def test_post_refractive_overrides_standard_and_toric_routes():
     assert plan.calculator_url == "https://iolcalc.ascrs.org/"
 
 
-def test_non_toric_standard_eye_uses_cooke_k6_and_exposes_external_verification():
+def test_non_toric_success_hides_escrs():
     response = [{"IOLs": [{"Predictions": [{"IOL": 21.0, "Rx": 0.01, "IsBestOption": True}]}]}]
     fake = BytesIO(__import__("json").dumps(response).encode()); fake.__enter__ = lambda value: value; fake.__exit__ = lambda *args: None
     with patch("iol_module.power.urlopen", return_value=fake):
@@ -251,13 +251,17 @@ def test_non_toric_standard_eye_uses_cooke_k6_and_exposes_external_verification(
     assert plan.route == "COOKE_K6"
     assert plan.calculation_status == "COMPLETED"
     assert plan.predictions[0]["IsBestOption"] is True
-    assert plan.escrs_url == "https://iolcalculator.escrs.org/"
+    assert plan.escrs_url is None
     assert plan.inputs["biological_sex"] == "Female"
 
 
 def test_short_eye_requires_real_lens_thickness_and_wtw():
-    with pytest.raises(ValidationError):
-        power_payload(axial_length_mm=21.9, lens_thickness_mm=None)
+    with patch("iol_module.power.urlopen") as mocked:
+        plan = plan_iol_power(power_payload(axial_length_mm=21.9, lens_thickness_mm=None))
+    mocked.assert_not_called()
+    assert plan.calculation_status == "CALCULATION_UNAVAILABLE"
+    assert "lens thickness and WTW" in plan.message
+    assert plan.escrs_url == "https://iolcalculator.escrs.org/"
 
 
 @pytest.mark.parametrize("acd,target", [(2.49, 0.25), (2.5, -0.25), (3.499, -0.25), (3.5, -0.5), (3.51, -0.5)])
@@ -405,3 +409,43 @@ def test_pentacam_is_the_only_operative_eye_source():
     assert "originals.OD ? \"OD\"" not in script
     assert "pentacamEyeConfirmed" in script
     assert "Conflicting Pentacam laterality was detected" in script
+
+
+@pytest.mark.parametrize("toric", [False, True])
+@pytest.mark.parametrize("failure,reason", [
+    (TimeoutError(), "timed out"),
+    (ValueError("Cooke K6 returned no power predictions."), "no power predictions"),
+])
+def test_k6_failure_exposes_reason_and_escrs_without_predictions(toric, failure, reason):
+    changes = dict(k2_d=44, astigmatism_type="REGULAR", incision_axis_deg=110, sia_d=0.25) if toric else {}
+    with patch("iol_module.power._call_k6", side_effect=failure):
+        plan = plan_iol_power(power_payload(**changes))
+    assert plan.calculation_status == "CALCULATION_UNAVAILABLE"
+    assert reason in plan.message
+    assert plan.escrs_url == "https://iolcalculator.escrs.org/"
+    assert plan.predictions == []
+    assert plan.toric_candidates == []
+
+
+@pytest.mark.parametrize("body,reason", [
+    (b"not json", "invalid response"),
+    (b'{"Eyes": []}', "no eye result"),
+    (b'[{"IOLs": {"bad": true}}]', "no power predictions"),
+    (b'[{"IOLs": [{"Predictions": [{"IOL": null, "Rx": 0}]}]}]', "invalid power predictions"),
+])
+def test_k6_malformed_service_results_offer_escrs(body, reason):
+    with patch("iol_module.power.urlopen", return_value=BytesIO(body)):
+        plan = plan_iol_power(power_payload())
+    assert plan.calculation_status == "CALCULATION_UNAVAILABLE"
+    assert reason in plan.message
+    assert plan.predictions == []
+    assert plan.escrs_url
+
+
+def test_k6_http_failure_reports_status_without_response_body():
+    from urllib.error import HTTPError
+    failure = HTTPError("https://example.invalid", 422, "Rejected", {}, BytesIO(b"private service detail"))
+    with patch("iol_module.power.urlopen", side_effect=failure):
+        plan = plan_iol_power(power_payload())
+    assert plan.message == "Cooke K6 service returned HTTP 422."
+    assert plan.escrs_url

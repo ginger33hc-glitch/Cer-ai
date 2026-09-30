@@ -111,7 +111,21 @@ def _k6_payload(case: IOLPowerPlanInput, a_constant: float) -> dict[str, object]
     }
 
 
+def _k6_failure_reason(exc: Exception) -> str:
+    if isinstance(exc, HTTPError):
+        return f"Cooke K6 service returned HTTP {exc.code}."
+    if isinstance(exc, TimeoutError) or isinstance(exc, URLError) and isinstance(exc.reason, TimeoutError):
+        return "Cooke K6 service timed out."
+    if isinstance(exc, URLError):
+        return "Cooke K6 service could not be reached."
+    if isinstance(exc, (json.JSONDecodeError, UnicodeDecodeError)):
+        return "Cooke K6 service returned an invalid response."
+    return str(exc)
+
+
 def _call_k6(case: IOLPowerPlanInput, a_constant: float) -> list[dict[str, object]]:
+    if case.axial_length_mm < 22.0 and (case.lens_thickness_mm is None or case.wtw_mm is None):
+        raise ValueError("Cooke K6 requires lens thickness and WTW when axial length is below 22.00 mm.")
     raw = json.dumps(_k6_payload(case, a_constant)).encode("utf-8")
     request = Request(
         COOKE_K6_URL,
@@ -129,9 +143,12 @@ def _call_k6(case: IOLPowerPlanInput, a_constant: float) -> list[dict[str, objec
     if not isinstance(eyes, list) or not eyes:
         raise ValueError("Cooke K6 returned no eye result.")
     iols = eyes[0].get("IOLs", []) if isinstance(eyes[0], dict) else []
-    predictions = iols[0].get("Predictions", []) if iols and isinstance(iols[0], dict) else []
+    predictions = iols[0].get("Predictions", []) if isinstance(iols, list) and iols and isinstance(iols[0], dict) else []
     if not isinstance(predictions, list) or not predictions:
         raise ValueError("Cooke K6 returned no power predictions.")
+    if any(not isinstance(p, dict) or any(type(p.get(key)) not in (int, float)
+           or not isfinite(p[key]) for key in ("IOL", "Rx")) for p in predictions):
+        raise ValueError("Cooke K6 returned invalid power predictions.")
     return predictions
 
 
@@ -161,7 +178,7 @@ def plan_iol_power(case: IOLPowerPlanInput) -> IOLPowerPlan:
         inputs = _base_inputs(case)
         try:
             spherical_predictions = _call_k6(case, lens.a_constant)
-        except (HTTPError, URLError, TimeoutError, ValueError, json.JSONDecodeError) as exc:
+        except (HTTPError, URLError, TimeoutError, ValueError, UnicodeDecodeError) as exc:
             return IOLPowerPlan(
                 route="MANUFACTURER_TORIC", calculation_status="CALCULATION_UNAVAILABLE",
                 selected_lens_id=lens.id, selected_lens_name=lens.name,
@@ -169,10 +186,11 @@ def plan_iol_power(case: IOLPowerPlanInput) -> IOLPowerPlan:
                 target_refraction_d=_target_from_acd(case.acd_mm), target_locked=True,
                 target_warning=None, second_formula_required=_second_formula_required(case.axial_length_mm),
                 calculator_name="Cooke K6 spherical power", calculator_url=lens.toric_calculator_url,
-                escrs_url=None, inputs=inputs, predictions=[],
+                escrs_url=ESCRS_URL, inputs=inputs, predictions=[],
                 toric_status="CALCULATION_UNAVAILABLE",
-                message=f"Cooke K6 spherical calculation was unavailable ({type(exc).__name__}). No toric power or axis was selected.",
+                message=_k6_failure_reason(exc),
             )
+        k6_unavailable = False
         candidates: list[dict[str, object]] = []
         toric_status = "INPUTS_INCOMPLETE"
         if lens.id not in VERIFIED_LENS_STEPS:
@@ -185,6 +203,7 @@ def plan_iol_power(case: IOLPowerPlanInput) -> IOLPowerPlan:
             if len(best) != 1 or any(type(best[0].get(key)) not in (int, float)
                                      or not isfinite(best[0][key]) for key in ("IOL", "Rx")):
                 toric_status = "CALCULATION_UNAVAILABLE"
+                k6_unavailable = True
                 explanation = "Cooke K6 did not identify one finite best spherical-equivalent power and predicted refraction."
             else:
                 posterior = case.posterior_cornea
@@ -219,7 +238,7 @@ def plan_iol_power(case: IOLPowerPlanInput) -> IOLPowerPlan:
             target_refraction_d=_target_from_acd(case.acd_mm), target_locked=True,
             target_warning=None, second_formula_required=_second_formula_required(case.axial_length_mm),
             calculator_name="Cooke K6 spherical power", calculator_url=lens.toric_calculator_url,
-            escrs_url=None, inputs=inputs, predictions=spherical_predictions,
+            escrs_url=ESCRS_URL if k6_unavailable else None, inputs=inputs, predictions=spherical_predictions,
             toric_candidates=candidates, toric_status=toric_status,
             message=explanation,
         )
@@ -227,7 +246,7 @@ def plan_iol_power(case: IOLPowerPlanInput) -> IOLPowerPlan:
     inputs = _base_inputs(case)
     try:
         predictions = _call_k6(case, lens.a_constant)
-    except (HTTPError, URLError, TimeoutError, ValueError, json.JSONDecodeError) as exc:
+    except (HTTPError, URLError, TimeoutError, ValueError, UnicodeDecodeError) as exc:
         return IOLPowerPlan(
             route="COOKE_K6", calculation_status="CALCULATION_UNAVAILABLE",
             selected_lens_id=lens.id, selected_lens_name=lens.name,
@@ -235,7 +254,7 @@ def plan_iol_power(case: IOLPowerPlanInput) -> IOLPowerPlan:
             target_refraction_d=_target_from_acd(case.acd_mm), target_locked=True,
             target_warning=None, second_formula_required=_second_formula_required(case.axial_length_mm), calculator_name="Cooke K6", calculator_url=None,
             escrs_url=ESCRS_URL, inputs=inputs, predictions=[],
-            message=f"Cooke K6 could not complete the calculation. No substitute was used ({type(exc).__name__}).",
+            message=_k6_failure_reason(exc),
         )
     return IOLPowerPlan(
         route="COOKE_K6", calculation_status="COMPLETED",
@@ -243,6 +262,6 @@ def plan_iol_power(case: IOLPowerPlanInput) -> IOLPowerPlan:
         lens_category=lens.category, a_constant=lens.a_constant,
         target_refraction_d=_target_from_acd(case.acd_mm), target_locked=True,
         target_warning=None, second_formula_required=_second_formula_required(case.axial_length_mm), calculator_name="Cooke K6", calculator_url=None,
-        escrs_url=ESCRS_URL, inputs=inputs, predictions=predictions,
-        message="Cooke K6 calculation completed. The ESCRS calculator is provided as the external comparison route.",
+        escrs_url=None, inputs=inputs, predictions=predictions,
+        message="Cooke K6 calculation completed.",
     )
