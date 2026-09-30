@@ -188,7 +188,7 @@
           else unreadablePentacamLaterality = true;
         }
         if (item.document_type === "PENTACAM_4_MAPS_REFRACTIVE" && ["OD","OS"].includes(item.eye)) {
-          corneaBackByEye[item.eye] = item.cornea_back;
+          corneaBackByEye[item.eye] = item.cornea_back || {};
         }
         if (item.document_type === "IOLMASTER_500_BIOMETRY") {
           const report = item.iolmaster500 || {}; ["OD","OS"].forEach(eye => { if (report[eye] && report[eye].axial_length_mm !== null) originals[eye] = report[eye]; });
