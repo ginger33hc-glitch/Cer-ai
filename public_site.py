@@ -55,10 +55,10 @@ _PUBLIC_PAGE_LASTMOD = {
     "/toric-iol-calculator": "2026-09-30",
     "/clinical-evidence": "2026-09-12",
     "/references": "2026-09-12",
-    "/what-is-recommended-for-corneal-ectasia-screening": "2026-09-26",
-    "/corneal-ectasia-screening-systems": "2026-09-26",
-    "/tr/korneal-ektazi-taramasi-onerileri": "2026-09-26",
-    "/tr/korneal-ektazi-tarama-sistemleri": "2026-09-26",
+    "/what-is-recommended-for-corneal-ectasia-screening": "2026-09-30",
+    "/corneal-ectasia-screening-systems": "2026-09-30",
+    "/tr/korneal-ektazi-taramasi-onerileri": "2026-09-30",
+    "/tr/korneal-ektazi-tarama-sistemleri": "2026-09-30",
 }
 _PUBLIC_PAGE_LAST_REVIEWED = {
     "/corneal-ectasia-risk-assessment": "2026-09-29",
