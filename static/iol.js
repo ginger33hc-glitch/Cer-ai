@@ -247,13 +247,22 @@
       prior_corneal_surgery:$("priorSurgery").value, historical_data_available:$("historicalData").value === "true", incision_axis_deg:difference>=1?numberOrNull("incisionAxis"):null, sia_d:difference>=1?numberOrNull("sia"):null, sia_axis_deg:difference>=1?numberOrNull("siaAxis"):null,
       cct_um:numberOrNull("cct"), lens_thickness_mm:numberOrNull("lensThickness"), wtw_mm:numberOrNull("wtw"), posterior_cornea:posteriorInput};
     if (!payload.selected_lens_id) { status.textContent="Select a clinic lens."; status.classList.add("error"); return; }
+    $("powerResult").replaceChildren();
     $("powerButton").disabled=true; status.textContent="Determining the canonical calculation route…";
     try {
       const response=await fetch("/iol/power/plan",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)}); const data=await response.json(); if(!response.ok) throw new Error(errorMessage(data));
       let html=`<div class="warning"><strong>${tr(data.calculator_name)}</strong><br>${tr(data.message)}</div>`;
       html+=`<p><span>ACD target</span>: ${Number(data.target_refraction_d).toFixed(2)} D (<span>locked</span>)</p>`;
       if(data.second_formula_required) html+=`<div class="warning"><span>Second modern formula verification required</span> (AL ${Number(data.inputs.axial_length_mm).toFixed(2)} mm). <span>Use ESCRS where available and verify all values manually.</span></div>`;
-      if(data.escrs_url) html+=`<button id="escrsTransfer" class="external" type="button">Transfer values to ESCRS</button>`;
+      if(data.calculation_failure_reason) {
+        const reason = document.createElement("span");
+        reason.textContent = tr(data.calculation_failure_reason);
+        html += `<div class="warning"><strong>${tr("Reason Cooke K6 could not calculate")}</strong><br>${reason.innerHTML}</div>`;
+      }
+      if(data.escrs_url) {
+        html+=`<a class="external" target="_blank" rel="noopener noreferrer" href="${data.escrs_url}">Open ESCRS calculator</a>`;
+        html+=`<button id="escrsTransfer" class="external" type="button">Transfer values to ESCRS</button>`;
+      }
       const toricRoute = data.route === "MANUFACTURER_TORIC";
       if(toricRoute && data.toric_candidates?.length) {
         const fmt = (value, digits = 2) => Number.isFinite(Number(value)) ? Number(value).toFixed(digits) : "—";

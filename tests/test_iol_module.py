@@ -2,6 +2,7 @@ from copy import deepcopy
 from io import BytesIO
 from pathlib import Path
 from unittest.mock import patch
+from urllib.error import HTTPError, URLError
 
 import pytest
 from fastapi.testclient import TestClient
@@ -256,8 +257,13 @@ def test_non_toric_standard_eye_uses_cooke_k6_and_exposes_external_verification(
 
 
 def test_short_eye_requires_real_lens_thickness_and_wtw():
-    with pytest.raises(ValidationError):
-        power_payload(axial_length_mm=21.9, lens_thickness_mm=None)
+    with patch("iol_module.power.urlopen") as request:
+        plan = plan_iol_power(power_payload(axial_length_mm=21.9, lens_thickness_mm=None))
+    request.assert_not_called()
+    assert plan.calculation_status == "CALCULATION_UNAVAILABLE"
+    assert "lens thickness and WTW" in plan.calculation_failure_reason
+    assert plan.escrs_url == "https://iolcalculator.escrs.org/"
+    assert not plan.predictions
 
 
 @pytest.mark.parametrize("acd,target", [(2.49, 0.25), (2.5, -0.25), (3.499, -0.25), (3.5, -0.5), (3.51, -0.5)])
@@ -405,3 +411,50 @@ def test_pentacam_is_the_only_operative_eye_source():
     assert "originals.OD ? \"OD\"" not in script
     assert "pentacamEyeConfirmed" in script
     assert "Conflicting Pentacam laterality was detected" in script
+
+
+@pytest.mark.parametrize("toric", [False, True])
+@pytest.mark.parametrize("error,reason", [
+    (TimeoutError(), "time limit"),
+    (URLError("offline"), "could not be reached"),
+    (HTTPError("https://cookeformula.com", 429, "limit", {}, None), "HTTP 429"),
+    (HTTPError("https://cookeformula.com", 503, "down", {}, None), "server error"),
+    (HTTPError("https://cookeformula.com", 422, "rejected", {}, None), "HTTP 422"),
+    (RuntimeError("private diagnostic"), "exact cause could not be verified"),
+])
+def test_k6_failure_exposes_reason_and_escrs_for_both_routes(toric, error, reason):
+    overrides = dict(k2_d=43.5, astigmatism_type="REGULAR", incision_axis_deg=110, sia_d=0.25) if toric else {}
+    with patch("iol_module.power.urlopen", side_effect=error):
+        plan = plan_iol_power(power_payload(**overrides))
+    assert plan.calculation_status == "CALCULATION_UNAVAILABLE"
+    assert reason in plan.calculation_failure_reason
+    assert plan.escrs_url == "https://iolcalculator.escrs.org/"
+    assert not plan.predictions and not plan.toric_candidates
+    assert "private diagnostic" not in plan.model_dump_json()
+
+
+@pytest.mark.parametrize("raw,reason", [
+    (b"not json", "unreadable response"),
+    (b"{}", "no eye result"),
+    (b'[{"IOLs":[]}]', "no power predictions"),
+    (b'[{"IOLs":[{"Predictions":[null]}]}]', "invalid power predictions"),
+    (b'[{"IOLs":[{"Predictions":[{"IOL":NaN,"Rx":0}]}]}]', "invalid power predictions"),
+])
+def test_invalid_k6_response_cannot_become_a_completed_calculation(raw, reason):
+    with patch("iol_module.power.urlopen", return_value=BytesIO(raw)):
+        plan = plan_iol_power(power_payload())
+    assert plan.calculation_status == "CALCULATION_UNAVAILABLE"
+    assert reason in plan.calculation_failure_reason
+    assert plan.escrs_url == "https://iolcalculator.escrs.org/"
+    assert not plan.predictions
+
+
+def test_short_eye_fallback_is_returned_by_the_http_endpoint():
+    client = TestClient(canonical_engine.app)
+    case = power_payload(axial_length_mm=21.9, lens_thickness_mm=None)
+    with patch("iol_module.power.urlopen") as request:
+        response = client.post("/iol/power/plan", json=case.model_dump(mode="json"))
+    request.assert_not_called()
+    assert response.status_code == 200
+    assert "lens thickness and WTW" in response.json()["calculation_failure_reason"]
+    assert response.json()["escrs_url"] == "https://iolcalculator.escrs.org/"
