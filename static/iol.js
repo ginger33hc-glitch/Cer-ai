@@ -43,7 +43,44 @@
     updateAstigmatism();
   }
 
-  const errorMessage = data => typeof data.detail === "string" ? data.detail : "Required information is incomplete or invalid.";
+  function errorMessage(data) {
+    if (typeof data.detail === "string") return tr(data.detail);
+    if (!Array.isArray(data.detail)) return tr("Required information is incomplete or invalid.");
+    const turkish = document.documentElement.lang === "tr";
+    const labels = {
+      patient_name:["Patient name","Hasta adı"], biological_sex:["Biological sex","Cinsiyet"],
+      eye:["Eye","Göz"], selected_lens_id:["Clinic lens family","Klinik lens ailesi"],
+      axial_length_mm:["Axial length (mm)","Aksiyel uzunluk (mm)"], acd_mm:["ACD (mm)","ACD (mm)"],
+      k1_d:["K1 (D)","K1 (D)"], k2_d:["K2 (D)","K2 (D)"],
+      k1_axis_deg:["K1 axis (°)","K1 aksı (°)"], k2_axis_deg:["K2 axis (°)","K2 aksı (°)"],
+      lens_thickness_mm:["Lens thickness (mm)","Lens kalınlığı (mm)"],
+      wtw_mm:["HWTW (mm)","HWTW (mm)"], cct_um:["Pachy Vertex (µm)","Pachy Vertex (µm)"],
+      astigmatism_type:["Astigmatism regularity","Astigmatizmanın düzenliliği"],
+      incision_axis_deg:["Incision axis (°)","Kesi aksı (°)"], sia_d:["SIA (D)","SIA (D)"],
+      sia_axis_deg:["SIA axis (°)","SIA aksı (°)"],
+      posterior_cornea:["Cornea Back","Arka kornea"],
+      rh_mm:["Cornea Back Rh (mm)","Arka kornea Rh (mm)"],
+      rv_mm:["Cornea Back Rv (mm)","Arka kornea Rv (mm)"],
+    };
+    return data.detail.map(error => {
+      const path = (error.loc || []).filter(part => part !== "body");
+      const field = path.map(part => labels[part]?.[turkish ? 1 : 0] || String(part)).join(" / ");
+      let message = String(error.msg || "Invalid value").replace(/^Value error, /, "");
+      if (turkish) {
+        const bounds = error.ctx || {};
+        if (error.type === "missing") message = "Bu alan zorunludur.";
+        else if (error.type === "greater_than_equal") message = `En az ${bounds.ge} olmalıdır.`;
+        else if (error.type === "greater_than") message = `${bounds.gt} değerinden büyük olmalıdır.`;
+        else if (error.type === "less_than_equal") message = `En fazla ${bounds.le} olmalıdır.`;
+        else if (error.type === "less_than") message = `${bounds.lt} değerinden küçük olmalıdır.`;
+        else if (["float_parsing", "float_type", "int_parsing", "int_type", "finite_number"].includes(error.type)) message = "Geçerli bir sayı girilmelidir.";
+        else if (["enum", "literal_error"].includes(error.type)) message = `Geçerli bir seçenek seçilmelidir: ${bounds.expected || ""}`;
+        else if (error.type === "string_too_short") message = `En az ${bounds.min_length} karakter girilmelidir.`;
+        else message = tr(message);
+      }
+      return field ? `${field}: ${message}` : message;
+    }).join("\n") || tr("Required information is incomplete or invalid.");
+  }
   const kDifference = () => $("k1").value === "" || $("k2").value === "" ? NaN : Math.abs(Number($("k2").value) - Number($("k1").value));
 
   function updateAstigmatism() {
