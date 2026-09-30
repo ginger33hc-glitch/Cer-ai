@@ -218,8 +218,7 @@ def test_toric_missing_same_eye_posterior_preserves_sphere_but_has_no_axis():
 def test_toric_fixed_incision_and_sia_reject_inconsistent_user_inputs():
     inputs = dict(selected_lens_id="clareon-panoptix-toric-cnwtt3", k2_d=43.0,
                   astigmatism_type="REGULAR", incision_axis_deg=110, sia_d=0.25)
-    with pytest.raises(ValidationError):
-        power_payload(**{**inputs, "incision_axis_deg":120})
+    assert power_payload(**{**inputs, "incision_axis_deg":120}).incision_axis_deg == 120
     with pytest.raises(ValidationError):
         power_payload(**{**inputs, "sia_d":0.2})
 

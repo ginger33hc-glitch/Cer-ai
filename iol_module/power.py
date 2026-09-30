@@ -219,6 +219,7 @@ def plan_iol_power(case: IOLPowerPlanInput) -> IOLPowerPlan:
                             corneal_thickness_um=case.cct_um,
                             optical_a_constant=lens.a_constant,
                             sia_d=case.sia_d,
+                            incision_axis_deg=case.incision_axis_deg,
                         ), lens.id,
                         k6_spherical_equivalent_iol_d=best[0]["IOL"],
                         k6_predicted_refraction_d=best[0]["Rx"],

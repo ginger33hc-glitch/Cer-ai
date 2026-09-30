@@ -203,10 +203,8 @@ class IOLPowerPlanInput(StrictModel):
                 raise ValueError("IOLMaster K1/K2 must identify approximately orthogonal flat/steep axes.")
             if abs(self.sia_d - 0.25) > 1e-6:
                 raise ValueError("This surgeon's toric planning SIA is fixed at 0.25 D.")
-            if abs((self.incision_axis_deg - self.k2_axis_deg + 90) % 180 - 90) > 1:
-                raise ValueError("This surgeon's incision must coincide with the steep K2 axis.")
-            if self.sia_axis_deg is not None and abs((self.sia_axis_deg - self.k2_axis_deg + 90) % 180 - 90) > 1:
-                raise ValueError("SIA axis must coincide with the steep K2 axis.")
+            if self.sia_axis_deg is not None and abs((self.sia_axis_deg - self.incision_axis_deg + 90) % 180 - 90) > 1:
+                raise ValueError("SIA axis must coincide with the incision axis.")
         return self
 
 

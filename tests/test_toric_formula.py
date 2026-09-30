@@ -88,3 +88,14 @@ def test_research_planner_rejects_missing_catalog_or_nonfinite_sources():
         research_toric_candidates(eye, "clareon-panoptix-toric-cnwtt3",
                                   k6_spherical_equivalent_iol_d=float("nan"),
                                   k6_predicted_refraction_d=-0.25)
+
+
+def test_surgeon_incision_axis_changes_toric_optical_result():
+    from dataclasses import replace
+    eye = ToricBiometry(24, 42, 43.5, 90, -5.8, -6.1, 0, 550, 119.1)
+    args = dict(k6_spherical_equivalent_iol_d=20, k6_predicted_refraction_d=0)
+    default = research_toric_candidates(eye, "clareon-panoptix-toric-cnwtt3", **args)
+    explicit = research_toric_candidates(replace(eye, incision_axis_deg=0), "clareon-panoptix-toric-cnwtt3", **args)
+    changed = research_toric_candidates(replace(eye, incision_axis_deg=90), "clareon-panoptix-toric-cnwtt3", **args)
+    assert default == explicit
+    assert changed != default

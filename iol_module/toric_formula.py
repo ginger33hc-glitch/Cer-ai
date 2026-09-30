@@ -204,6 +204,7 @@ class ToricBiometry:
     corneal_thickness_um: float
     optical_a_constant: float
     sia_d: float = SURGEON_SIA_D
+    incision_axis_deg: float | None = None
 
 
 @dataclass(frozen=True)
@@ -233,7 +234,8 @@ def research_toric_candidates(
     steps = VERIFIED_LENS_STEPS.get(selected_lens_id)
     if not steps:
         raise ValueError("No verified model series for this lens family.")
-    numbers = (eye.axial_length_mm, eye.anterior_k1_d, eye.anterior_k2_d,
+    incision_axis = eye.incision_axis_deg if eye.incision_axis_deg is not None else (eye.anterior_k1_axis_deg + 90) % 180
+    numbers = (incision_axis, eye.axial_length_mm, eye.anterior_k1_d, eye.anterior_k2_d,
                eye.anterior_k1_axis_deg, eye.posterior_k1_d, eye.posterior_k2_d,
                eye.posterior_k1_axis_deg, eye.corneal_thickness_um,
                eye.optical_a_constant, eye.sia_d,
@@ -245,6 +247,7 @@ def research_toric_candidates(
             and 0 <= eye.anterior_k1_axis_deg <= 180
             and 0 <= eye.posterior_k1_axis_deg <= 180
             and 300 <= eye.corneal_thickness_um <= 900
+            and 0 <= incision_axis <= 180
             and 0 <= eye.sia_d <= 2):
         raise ValueError("Corneal readings or SIA are outside supported ranges.")
     elp_mm = holladay1_elp_mm(
@@ -264,7 +267,6 @@ def research_toric_candidates(
     posterior = Vergence.from_meridians(
         eye.posterior_k1_d, eye.posterior_k2_d,
         eye.posterior_k1_axis_deg)
-    incision_axis = (eye.anterior_k1_axis_deg + 90) % 180
     sia = Vergence.from_meridians(-eye.sia_d / 2, eye.sia_d / 2,
                                  incision_axis)
 

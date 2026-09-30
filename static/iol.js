@@ -6,6 +6,8 @@
   const originals = {OD:null, OS:null};
   const pentacamByEye = {OD:null, OS:null};
   const corneaBackByEye = {OD:null, OS:null};
+  const incisionOverrides = {OD:null, OS:null};
+  const posteriorFields = ["k1_d","k2_d","k1_axis_deg","k2_axis_deg","rh_mm","rv_mm"];
   let pentacamEyeConfirmed = false;
   let recommendation = null;
   let lensCatalog = [];
@@ -30,6 +32,9 @@
   })[code] || code;
 
   function clearSourceCase() {
+    incisionOverrides.OD = null; incisionOverrides.OS = null;
+    $("backCompletion").hidden = true;
+    posteriorFields.forEach(key => { $("back_"+key).value = ""; });
     originals.OD = null; originals.OS = null;
     pentacamByEye.OD = null; pentacamByEye.OS = null;
     corneaBackByEye.OD = null; corneaBackByEye.OS = null;
@@ -95,8 +100,8 @@
     $("sia").required = required;
     if (required) {
       const steep = numberOrNull("k2Axis");
-      $("incisionAxis").value = steep === null ? "" : steep;
-      $("siaAxis").value = steep === null ? "" : steep;
+      $("incisionAxis").value = incisionOverrides[$("eye").value] ?? (steep === null ? "" : steep);
+      $("siaAxis").value = $("incisionAxis").value;
       $("sia").value = "0.25";
     }
   }
@@ -121,8 +126,30 @@
       $("cct").readOnly = pentacam.cct_pachy_vertex_um !== null; $("wtw").readOnly = pentacam.hwtw_mm !== null;
       $("acd").readOnly = pentacam.acd_internal_mm !== null;
     }
+    const back = corneaBackByEye[eye];
+    let missing = false;
+    posteriorFields.forEach(key => {
+      const unread = !Number.isFinite(back?.[key]);
+      $("back_field_"+key).hidden = !unread;
+      $("back_"+key).value = unread ? "" : back[key];
+      missing ||= unread;
+    });
+    $("backCompletion").hidden = !back || !missing;
     updateAstigmatism();
   }
+
+  $("incisionAxis").addEventListener("input", () => {
+    incisionOverrides[$("eye").value] = numberOrNull("incisionAxis");
+    $("siaAxis").value = $("incisionAxis").value;
+    $("powerResult").replaceChildren();
+  });
+  document.querySelectorAll("[data-back-sign]").forEach(button => button.addEventListener("click", () => {
+    const input = $(button.dataset.target);
+    const magnitude = input.value.trim().replace(/^[+−–-]/, "");
+    input.value = button.dataset.backSign + magnitude;
+    input.dispatchEvent(new Event("input", {bubbles:true}));
+  }));
+  posteriorFields.forEach(key => $("back_"+key).addEventListener("input", () => $("powerResult").replaceChildren()));
 
   $("surface").addEventListener("change", () => { $("stableField").hidden = $("surface").value !== "RESOLVED_AFTER_TREATMENT"; });
   $("priorSurgery").addEventListener("change", () => { $("historyField").hidden = !["MYOPIC_LASIK_PRK","HYPEROPIC_LASIK_PRK"].includes($("priorSurgery").value); });
@@ -237,7 +264,12 @@
   $("powerButton").addEventListener("click", async () => {
     const status = $("powerStatus"); status.className="status"; const difference = kDifference();
     const corneaBack = corneaBackByEye[$("eye").value];
-    const posteriorFields = ["k1_d","k2_d","k1_axis_deg","k2_axis_deg","rh_mm","rv_mm"];
+    if (corneaBack) posteriorFields.forEach(key => {
+      if (!$("back_field_"+key).hidden) {
+        const value = $("back_"+key).value.trim().replace(/−|–/g, "-").replace(",", ".");
+        corneaBack[key] = value && Number.isFinite(Number(value)) ? Number(value) : null;
+      }
+    });
     const posteriorInput = corneaBack && posteriorFields.every(key => Number.isFinite(corneaBack[key])) ? {
       eye:$("eye").value, source:"PENTACAM_4_MAPS_REFRACTIVE_CORNEA_BACK",
       ...Object.fromEntries(posteriorFields.map(key => [key, corneaBack[key]]))
