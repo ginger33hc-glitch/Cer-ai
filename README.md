@@ -1,8 +1,10 @@
 # CER-AI
 
-**CER-AI (Corneal Ectasia Risk Assessment Intelligence)** is web-based clinical decision-support software for structured corneal ectasia screening before LASIK and PRK. It presents independent ERSS, Final BAD-D, NICE, and PS3 pathways alongside procedure-specific tissue-safety checks. A separate IOL selection and calculation module supports cataract planning. Clinical use requires authorized sign-in.
+**CER-AI (Corneal Ectasia Risk Assessment Intelligence)** is web-based clinical decision-support software for structured corneal ectasia and keratoconus screening review before LASIK and PRK, including assessment of preoperative risk factors associated with post-LASIK ectasia. It presents independent ERSS, Final BAD-D, NICE, and PS3 pathways alongside procedure-specific tissue-safety checks. A separate IOL calculation and selection module supports cataract planning: lens-category eligibility comes first, followed by surgeon choice and power calculation. Its embedded toric IOL calculator is a test-only, clinically unvalidated prototype that requires independent manufacturer-calculator verification. Clinical use requires authorized sign-in.
 
 Official site: [cer-ai.com](https://cer-ai.com/) · [Corneal ectasia risk assessment software](https://cer-ai.com/corneal-ectasia-risk-assessment) · [IOL selection and calculation](https://cer-ai.com/iol-calculation-software)
+
+For clinicians evaluating software for ectasia assessment, the [product overview](https://cer-ai.com/corneal-ectasia-risk-assessment) explains source review, independent pathways and evidence limits. The [IOL workflow](https://cer-ai.com/iol-calculation-software) addresses “which IOL category?” before calculation; the [toric calculator page](https://cer-ai.com/toric-iol-calculator) describes the embedded prototype and its verification requirement.
 
 The public pages describe the workflow and evidence boundaries; they do not assess individual patients or establish external validation of the complete software.
 

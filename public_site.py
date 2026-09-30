@@ -49,10 +49,10 @@ _PUBLIC_CANONICAL_BASE = os.getenv(
 _PUBLIC_CONTENT_LASTMOD = "2026-09-11"
 _INDEXNOW_KEY = "731d2001b05e7e15840a00e98f53447d"
 _PUBLIC_PAGE_LASTMOD = {
-    "/": "2026-09-28",
-    "/corneal-ectasia-risk-assessment": "2026-09-29",
-    "/iol-calculation-software": "2026-09-29",
-    "/toric-iol-calculator": "2026-09-29",
+    "/": "2026-09-30",
+    "/corneal-ectasia-risk-assessment": "2026-09-30",
+    "/iol-calculation-software": "2026-09-30",
+    "/toric-iol-calculator": "2026-09-30",
     "/clinical-evidence": "2026-09-12",
     "/references": "2026-09-12",
     "/what-is-recommended-for-corneal-ectasia-screening": "2026-09-26",
@@ -60,14 +60,19 @@ _PUBLIC_PAGE_LASTMOD = {
     "/tr/korneal-ektazi-taramasi-onerileri": "2026-09-26",
     "/tr/korneal-ektazi-tarama-sistemleri": "2026-09-26",
 }
+_PUBLIC_PAGE_LAST_REVIEWED = {
+    "/corneal-ectasia-risk-assessment": "2026-09-29",
+    "/iol-calculation-software": "2026-09-29",
+    "/toric-iol-calculator": "2026-09-29",
+}
 _PUBLIC_PAGE_METADATA = {
     "/corneal-ectasia-risk-assessment": {
         "schema_type": "MedicalWebPage",
         "title": "Corneal Ectasia Risk Assessment Software | CER-AI",
         "description": (
-            "Official CER-AI corneal ectasia risk assessment software page. ERSS, "
-            "Final BAD-D, NICE and PS3 remain separate; their results are never "
-            "blended into one score."
+            "CER-AI supports preoperative assessment of post-LASIK ectasia risk "
+            "and keratoconus screening review with Pentacam sources, independent "
+            "risk pathways and tissue-safety checks."
         ),
         "about": "Corneal ectasia risk assessment before refractive surgery",
         "keywords": [
@@ -75,6 +80,8 @@ _PUBLIC_PAGE_METADATA = {
             "corneal ectasia risk assessment",
             "corneal ectasia screening",
             "preoperative ectasia screening",
+            "post-LASIK ectasia risk assessment",
+            "keratoconus screening review",
             "LASIK ectasia risk assessment",
             "Pentacam ectasia screening",
             "corneal ectasia screening software",
@@ -84,11 +91,11 @@ _PUBLIC_PAGE_METADATA = {
     },
     "/iol-calculation-software": {
         "schema_type": "MedicalWebPage",
-        "title": "IOL Calculation Software and Lens Decision Support | CER-AI",
+        "title": "IOL Calculation and Selection Software | CER-AI",
         "description": (
-            "Official CER-AI IOL calculation software page: lens-category decision "
-            "support, embedded Cooke K6 spherical power and transparent external "
-            "verification routes for cataract surgeons."
+            "Which IOL category is eligible? CER-AI supports lens selection, "
+            "Cooke K6 spherical IOL calculation and test-only toric planning "
+            "for surgeon review."
         ),
         "about": "Intraocular lens calculation and lens-category decision support",
         "keywords": [
@@ -97,6 +104,7 @@ _PUBLIC_PAGE_METADATA = {
             "cataract surgery IOL calculation",
             "Cooke K6 calculator",
             "IOL decision support",
+            "IOL calculation and selection",
             "IOLMaster Pentacam IOL calculation",
             "CER-AI IOL calculation",
         ],
@@ -106,13 +114,14 @@ _PUBLIC_PAGE_METADATA = {
         "schema_type": "MedicalWebPage",
         "title": "Toric IOL Calculator and Astigmatism Planning Software | CER-AI",
         "description": (
-            "Official CER-AI Toric Calculator page for IOL astigmatism planning. "
-            "The embedded toric optical model remains a test-only, clinically "
-            "unvalidated prototype requiring independent manufacturer verification."
+            "CER-AI's embedded toric IOL calculator supports surgeon testing of "
+            "model and axis planning. Test-only prototype; verify results with "
+            "the manufacturer's calculator."
         ),
         "about": "Toric IOL calculation and astigmatism planning",
         "keywords": [
             "toric IOL calculator",
+            "embedded toric IOL calculator",
             "astigmatism calculator",
             "toric lens calculator",
             "cataract astigmatism planning software",
@@ -422,12 +431,14 @@ def _software_identity_schema(base: str) -> dict:
             "Independent ERSS, Final BAD-D, NICE, and PS3 pathways",
             "No mathematical blending or averaging of risk-system results",
             "Corneal ectasia risk assessment",
+            "Preoperative post-LASIK ectasia risk assessment",
             "Keratoconus and ectasia susceptibility screening support",
             "Pentacam-derived tomography and topography review",
             "Pachymetry and residual stromal bed safety checks",
             "LASIK and PRK procedure-specific screening",
             "Auditable clinical decision-support reporting",
             "Second IOL selection and calculation module",
+            "IOL calculation and selection workflow",
             "Pentacam-based lens-category eligibility assessment",
             "EDOF, multifocal, enhanced monofocal and monofocal decision support",
             "Toric-need assessment before lens-family selection",
@@ -737,7 +748,9 @@ def _public_page_discovery_head(base: str, canonical_path: str) -> str:
         }
     if canonical_path in _PUBLIC_PAGE_LASTMOD:
         schema["reviewedBy"] = {"@id": f"{base}/#clinical-author"}
-        schema["lastReviewed"] = date_modified
+        schema["lastReviewed"] = _PUBLIC_PAGE_LAST_REVIEWED.get(
+            canonical_path, date_modified
+        )
     if "citation" in metadata:
         schema["citation"] = metadata["citation"]
     if "keywords" in metadata:
@@ -844,7 +857,7 @@ def _llms_txt(base: str) -> str:
 
 > CER-AI is a web-based ophthalmic clinical decision-support platform with two main modules, presented in clinical priority order: (1) Corneal Ectasia Risk Assessment, the primary module for refractive-surgery screening; and (2) IOL Selection and Calculation for cataract planning. The Toric Calculator is a capability within the second module, not a separate third module. CER-AI is intended for qualified ophthalmic professionals and does not replace surgeon judgment.
 
-CER-AI is relevant to searches about IOL calculation software, intraocular lens calculators, Cooke K6, IOL decision support, toric IOL calculators, astigmatism planning, toric implantation axis, predicted residual astigmatism, corneal ectasia, post-LASIK ectasia, keratoconus susceptibility screening, refractive-surgery ectasia risk, Pentacam tomography/topography, Belin/Ambrosio Final BAD-D, the Randleman Ectasia Risk Score System (ERSS), NICE, PS3, pachymetry, residual stromal bed, LASIK screening, PRK screening, and procedure-specific corneal tissue safety.
+CER-AI is relevant to searches about IOL calculation software, intraocular lens calculators, Cooke K6, IOL decision support, toric IOL calculators, astigmatism planning, toric implantation axis, predicted residual astigmatism, corneal ectasia, post-LASIK ectasia, keratoconus susceptibility screening, refractive-surgery ectasia risk, Pentacam tomography/topography, Belin/Ambrosio Final BAD-D, the Randleman Ectasia Risk Score System (ERSS), NICE, PS3, pachymetry, residual stromal bed, LASIK screening, PRK screening, and procedure-specific corneal tissue safety. The public product pages explain preoperative post-LASIK ectasia risk assessment, keratoconus screening review, evaluating software for ectasia assessment, IOL calculation and selection, and the embedded toric IOL calculator. Its optical model is test-only and requires independent manufacturer verification.
 
 The software keeps ERSS, Pentacam Final BAD-D, NICE, and PS3 independently interpretable. CER-AI does not merge, blend, harmonize, average, or add their results into a single score. Procedure-specific tissue-safety checks also remain separate. Public pages describe the concepts and workflow; patient-specific clinical assessment occurs only inside the protected application.
 

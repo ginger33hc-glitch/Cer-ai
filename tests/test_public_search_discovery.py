@@ -244,7 +244,7 @@ def test_production_canonical_and_real_software_identity_remain_intact(public_ap
         (
             "/iol-calculation-software",
             "MedicalWebPage",
-            "IOL Calculation Software and Lens Decision Support | CER-AI",
+            "IOL Calculation and Selection Software | CER-AI",
         ),
         (
             "/toric-iol-calculator",
@@ -294,7 +294,7 @@ def test_static_public_pages_have_page_specific_discovery_identity(
     assert schema["url"] == f"https://cer-ai.com{path}"
     assert schema["name"] == title
     expected_date = (
-        "2026-09-29"
+        "2026-09-30"
         if path in {
             "/corneal-ectasia-risk-assessment",
             "/iol-calculation-software",
