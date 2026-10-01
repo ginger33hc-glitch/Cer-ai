@@ -24,10 +24,23 @@ class Lens:
 
 LENSES = (
     Lens("clareon-panoptix-cnwtt0", "CLAREON PanOptix CNWTT0", "MULTIFOCAL", None, 119.1, "Alcon", ALCON_TORIC_URL),
-    Lens("clareon-panoptix-toric-cnwtt3", "CLAREON PanOptix Toric CNWTT2–6", "MULTIFOCAL", "Toric", 119.1, "Alcon", ALCON_TORIC_URL),
-    Lens("clareon-toric-cnw0t8", "CLAREON Toric CNW0T3–9", "MONOFOCAL", "Toric", 119.1, "Alcon", ALCON_TORIC_URL),
-    Lens("tecnis-eyhance-toric-diu525", "TECNIS Eyhance Toric DIU100–525", "MONOFOCAL", "Enhanced monofocal toric", 119.3, "Johnson & Johnson", TECNIS_TORIC_URL),
-    Lens("enova-advance-toric", "ENOVA Advance Toric", "EDOF", "Toric; exact model code to verify", 118.0, "ENOVA", None),
+    # Hospital-supplied optical A-constant list, 2026-10-01.
+    # Printed codes identify the dropdown entries; they do not establish cylinder
+    # powers or authorize additions to VERIFIED_LENS_STEPS. Existing IDs remain stable.
+    Lens("clareon-toric-cnw0t8", "CLAREON Mono Toric (CNW0T2)", "MONOFOCAL", "Toric", 119.1, "Alcon", ALCON_TORIC_URL),
+    Lens("clareon-panoptix-toric-cnwtt3", "CLAREON PanOptix Toric (CNWTT2)", "MULTIFOCAL", "Toric", 119.1, "Alcon", ALCON_TORIC_URL),
+    Lens("clareon-vivity-toric-cnwet2", "CLAREON Vivity Toric (CNWET2)", "EDOF", "Toric", 119.2, "Alcon", ALCON_TORIC_URL),
+    Lens("tecnis-mono-toric-zct375", "TECNIS Mono Toric (ZCT375)", "MONOFOCAL", "Toric", 119.3, "Johnson & Johnson", TECNIS_TORIC_URL),
+    Lens("tecnis-eyhance-toric-diu525", "TECNIS Eyhance Toric (DIU525)", "MONOFOCAL", "Enhanced monofocal toric", 119.3, "Johnson & Johnson", TECNIS_TORIC_URL),
+    Lens("tecnis-odyssey-toric-drt150", "TECNIS Odyssey Toric (DRT150)", "MULTIFOCAL", "Toric", 119.3, "Johnson & Johnson", TECNIS_TORIC_URL),
+    Lens("tecnis-puresee-toric-det150", "TECNIS PureSee Toric (DET150)", "EDOF", "Toric", 119.3, "Johnson & Johnson", TECNIS_TORIC_URL),
+    Lens("eyecryl-toric-hfy20", "EYECRYL Toric (HFY20)", "MONOFOCAL", "Toric", 118.9, "Biotech Healthcare", None),
+    Lens("eyecryl-actv-toric-hfyd20", "EYECRYL ACTV Toric (HFYD20)", "MULTIFOCAL", "Toric", 118.6, "Biotech Healthcare", None),
+    Lens("enova-advance-toric", "ENOVA Advance Toric (TPADC 375)", "EDOF", "Toric", 118.0, "ENOVA", None),
+    Lens("liberty-trifocal-toric", "LIBERTY Trifocal Toric", "MULTIFOCAL", "Toric", 118.9, "Medicontur", None),
+    Lens("elon-toric-bi-flex", "ELON Toric (Bi-Flex)", "EDOF", "Toric", 118.9, "Medicontur", None),
+    Lens("rayone-emv-toric", "RayOne EMV Toric", "MONOFOCAL", "Enhanced monofocal toric", 118.0, "Rayner", None),
+    Lens("rayone-trifocal-toric", "RayOne Trifocal Toric", "MULTIFOCAL", "Toric", 118.6, "Rayner", None),
     Lens("tecnis-eyhance-gib00", "TECNIS Eyhance GIB00", "MONOFOCAL", "Enhanced monofocal", 119.3, "Johnson & Johnson", TECNIS_TORIC_URL),
     Lens("acrysof-single-sa60at", "AcrySof Single SA60AT", "MONOFOCAL", None, 118.7, "Alcon", ALCON_TORIC_URL),
     Lens("acrysof-ultrasert-au00t0", "AcrySof UltraSert AU00T0", "MONOFOCAL", None, 119.0, "Alcon", ALCON_TORIC_URL),

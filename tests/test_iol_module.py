@@ -170,7 +170,7 @@ def test_missing_regularity_at_inclusive_threshold_fails_closed():
 
 
 def test_catalog_includes_surgeon_supplied_toric_models():
-    assert len(LENSES) == 20
+    assert len(LENSES) == 30
     assert get_lens("tecnis-eyhance-gib00").name == "TECNIS Eyhance GIB00"
     assert get_lens("clareon-panoptix-cnwtt0").name.startswith("CLAREON")
     assert {get_lens(lens_id).a_constant for lens_id in
