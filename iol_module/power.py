@@ -80,7 +80,7 @@ def _external_plan(case: IOLPowerPlanInput, lens, *, route: str, name: str, url:
         second_formula_required=_second_formula_required(case.axial_length_mm),
         calculator_name=name,
         calculator_url=url,
-        escrs_url=None,
+        escrs_url=ESCRS_URL,
         inputs=_base_inputs(case),
         predictions=[],
         message=message,
@@ -190,7 +190,6 @@ def plan_iol_power(case: IOLPowerPlanInput) -> IOLPowerPlan:
                 toric_status="CALCULATION_UNAVAILABLE",
                 message=_k6_failure_reason(exc),
             )
-        k6_unavailable = False
         candidates: list[dict[str, object]] = []
         toric_status = "INPUTS_INCOMPLETE"
         if lens.id not in VERIFIED_LENS_STEPS:
@@ -203,7 +202,6 @@ def plan_iol_power(case: IOLPowerPlanInput) -> IOLPowerPlan:
             if len(best) != 1 or any(type(best[0].get(key)) not in (int, float)
                                      or not isfinite(best[0][key]) for key in ("IOL", "Rx")):
                 toric_status = "CALCULATION_UNAVAILABLE"
-                k6_unavailable = True
                 explanation = "Cooke K6 did not identify one finite best spherical-equivalent power and predicted refraction."
             else:
                 posterior = case.posterior_cornea
@@ -239,7 +237,7 @@ def plan_iol_power(case: IOLPowerPlanInput) -> IOLPowerPlan:
             target_refraction_d=_target_from_acd(case.acd_mm), target_locked=True,
             target_warning=None, second_formula_required=_second_formula_required(case.axial_length_mm),
             calculator_name="Cooke K6 spherical power", calculator_url=lens.toric_calculator_url,
-            escrs_url=ESCRS_URL if k6_unavailable else None, inputs=inputs, predictions=spherical_predictions,
+            escrs_url=ESCRS_URL, inputs=inputs, predictions=spherical_predictions,
             toric_candidates=candidates, toric_status=toric_status,
             message=explanation,
         )
@@ -263,6 +261,6 @@ def plan_iol_power(case: IOLPowerPlanInput) -> IOLPowerPlan:
         lens_category=lens.category, a_constant=lens.a_constant,
         target_refraction_d=_target_from_acd(case.acd_mm), target_locked=True,
         target_warning=None, second_formula_required=_second_formula_required(case.axial_length_mm), calculator_name="Cooke K6", calculator_url=None,
-        escrs_url=None, inputs=inputs, predictions=predictions,
+        escrs_url=ESCRS_URL, inputs=inputs, predictions=predictions,
         message="Cooke K6 calculation completed.",
     )

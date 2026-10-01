@@ -192,6 +192,7 @@ def test_embedded_toric_calculation_precedes_optional_manufacturer_comparison():
     assert plan.route == "MANUFACTURER_TORIC"
     assert plan.calculation_status == "TEST_ONLY"
     assert plan.toric_status == "TEST_ONLY"
+    assert plan.escrs_url == "https://iolcalculator.escrs.org/"
     assert len(plan.toric_candidates) == 5
     assert {candidate["model"] for candidate in plan.toric_candidates} == {
         "CNWTT2", "CNWTT3", "CNWTT4", "CNWTT5", "CNWTT6"}
@@ -238,11 +239,12 @@ def test_unverified_manufacturer_toric_route_fails_closed():
 def test_post_refractive_overrides_standard_and_toric_routes():
     plan = plan_iol_power(power_payload(prior_corneal_surgery="MYOPIC_LASIK_PRK", historical_data_available=False))
     assert plan.route == "BARRETT_TRUE_K_EXTERNAL"
+    assert plan.escrs_url == "https://iolcalculator.escrs.org/"
     assert "no-history" in plan.message
     assert plan.calculator_url == "https://iolcalc.ascrs.org/"
 
 
-def test_non_toric_success_hides_escrs():
+def test_non_toric_success_keeps_escrs_for_independent_review():
     response = [{"IOLs": [{"Predictions": [{"IOL": 21.0, "Rx": 0.01, "IsBestOption": True}]}]}]
     fake = BytesIO(__import__("json").dumps(response).encode()); fake.__enter__ = lambda value: value; fake.__exit__ = lambda *args: None
     with patch("iol_module.power.urlopen", return_value=fake):
@@ -250,7 +252,7 @@ def test_non_toric_success_hides_escrs():
     assert plan.route == "COOKE_K6"
     assert plan.calculation_status == "COMPLETED"
     assert plan.predictions[0]["IsBestOption"] is True
-    assert plan.escrs_url is None
+    assert plan.escrs_url == "https://iolcalculator.escrs.org/"
     assert plan.inputs["biological_sex"] == "Female"
 
 
@@ -500,3 +502,14 @@ def test_bilateral_upload_uses_one_shared_iolmaster(monkeypatch):
     assert response.status_code == 200
     assert response.json()["identity"]["eyes"] == ["OD", "OS"]
     assert response.json()["sources"][2]["extraction"]["iolmaster500"]["OS"]["axial_length_mm"] == 25.2
+
+
+def test_unsupported_toric_lens_still_offers_escrs():
+    case = power_payload(selected_lens_id="tecnis-puresee-toric-det150", k2_d=43.0,
+                         astigmatism_type="REGULAR", incision_axis_deg=110, sia_d=0.25)
+    predictions = [{"IOL": 21.0, "Rx": 0.01, "IsBestOption": True}]
+    with patch("iol_module.power._call_k6", return_value=predictions):
+        plan = plan_iol_power(case)
+    assert plan.toric_status == "UNSUPPORTED"
+    assert plan.escrs_url == "https://iolcalculator.escrs.org/"
+    assert plan.predictions == predictions
