@@ -6,6 +6,13 @@
   let locale = SUPPORTED.has(requested) ? requested : "en";
 
   const TR = {
+    "CER-AI | AI-Assisted Corneal Screening and Ectasia Risk":"CER-AI | Yapay Zekâ Destekli Kornea Taraması ve Ektazi Riski",
+    "AI-Assisted Corneal Ectasia Screening Software | CER-AI":"Yapay Zekâ Destekli Korneal Ektazi Tarama Yazılımı | CER-AI",
+    "Artificial intelligence-assisted corneal screening, Pentacam topography and tomography review, and ectasia risk assessment before LASIK/PRK. IOL planning support.":"LASIK/PRK öncesi yapay zekâ destekli kornea taraması, Pentacam topografi ve tomografi incelemesi ve ektazi risk değerlendirmesi. Göz içi mercek planlama desteği.",
+    "AI-assisted corneal ectasia and keratoconus screening review with Pentacam topography and tomography for preoperative assessment of post-LASIK ectasia risk.":"LASIK sonrası ektazi riskinin ameliyat öncesi değerlendirilmesi için Pentacam topografi ve tomografisiyle yapay zekâ destekli korneal ektazi ve keratokonus tarama incelemesi.",
+    "Artificial Intelligence–Assisted Corneal Screening and Ectasia Risk Assessment":"Yapay Zekâ Destekli Kornea Taraması ve Ektazi Risk Değerlendirmesi",
+    "AI-assisted corneal ectasia screening for refractive surgeons":"Refraktif cerrahlar için yapay zekâ destekli korneal ektazi taraması",
+    "CER-AI supports artificial intelligence-assisted corneal screening through AI-assisted reading of Pentacam topography and tomography reports. The canonical rule-based engine separately assesses ectasia risk and tissue safety before LASIK or PRK; final decisions remain with the surgeon.":"CER-AI, Pentacam topografi ve tomografi raporlarının yapay zekâ destekli okunmasıyla kornea taramasına yardımcı olur. Kanonik kural tabanlı motor, LASIK veya PRK öncesinde ektazi riskini ve doku güvenliğini ayrı olarak değerlendirir; nihai karar cerraha aittir.",
     "Active clinical use at Vizyon Eye Hospital, Mersin":"Mersin Vizyon Göz Hastanesi’nde aktif klinik kullanım",
     "CER-AI is actively used at Vizyon Eye Hospital in Mersin, Türkiye, during patient examinations and surgical planning. It supports AI-assisted assessment for refractive surgery (laser vision correction, known in Turkish as “göz çizdirme”) and intraocular lens selection (“akıllı mercek”) for cataract surgery. Clinical decisions, final lens selection and surgery remain the responsibility of the ophthalmic surgeon.":"CER-AI, Mersin Vizyon Göz Hastanesi’nde hastaların muayenelerinde ve ameliyat planlamasında aktif olarak kullanılmaktadır. Refraktif cerrahi (göz çizdirme) için yapay zekâ destekli değerlendirmeye ve katarakt ameliyatlarında göz içi mercek (akıllı mercek) seçimine karar desteği sunar. Klinik kararlar, nihai mercek seçimi ve ameliyat göz cerrahının sorumluluğundadır.",
     "Vizyon Eye Hospital, Mersin — official website":"Mersin Vizyon Göz Hastanesi — resmî web sitesi",
@@ -335,6 +342,10 @@
         .replace("Clinical Evidence", "Klinik Kanıtlar")
         .replace("References", "Kaynaklar");
     } else document.title = titleEn;
+    document.querySelectorAll('meta[name="description"],meta[property="og:title"],meta[property="og:description"],meta[name="twitter:title"],meta[name="twitter:description"]').forEach(meta => {
+      if (!meta.dataset.contentEn) meta.dataset.contentEn = meta.content;
+      meta.content = locale === "tr" ? (TR[meta.dataset.contentEn] || meta.dataset.contentEn) : meta.dataset.contentEn;
+    });
   }
 
   function renderSwitcher() {

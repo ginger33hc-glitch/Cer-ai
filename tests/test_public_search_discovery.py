@@ -138,7 +138,7 @@ def test_new_editorial_sections_have_both_languages_with_one_existing_controller
     assert 'html[lang="tr"] [data-language-variant="en"]' in html
     scripts = structure.attributes("script")
     assert len(scripts) == 1
-    assert scripts[0]["src"] == "/static/public-i18n.js?v=5"
+    assert scripts[0]["src"] == "/static/public-i18n.js?v=7"
     assert "CER-AI yapay zekâyı nasıl kullanır?" in html
     assert "Bunlar sentetik eğitim olgularıdır" in html
 
@@ -239,7 +239,7 @@ def test_production_canonical_and_real_software_identity_remain_intact(public_ap
         (
             "/corneal-ectasia-risk-assessment",
             "MedicalWebPage",
-            "Corneal Ectasia Risk Assessment Software | CER-AI",
+            "AI-Assisted Corneal Ectasia Screening Software | CER-AI",
         ),
         (
             "/iol-calculation-software",

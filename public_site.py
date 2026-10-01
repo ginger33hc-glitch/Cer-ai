@@ -68,11 +68,9 @@ _PUBLIC_PAGE_LAST_REVIEWED = {
 _PUBLIC_PAGE_METADATA = {
     "/corneal-ectasia-risk-assessment": {
         "schema_type": "MedicalWebPage",
-        "title": "Corneal Ectasia Risk Assessment Software | CER-AI",
+        "title": "AI-Assisted Corneal Ectasia Screening Software | CER-AI",
         "description": (
-            "CER-AI supports preoperative assessment of post-LASIK ectasia risk "
-            "and keratoconus screening review with Pentacam sources, independent "
-            "risk pathways and tissue-safety checks before laser vision correction (göz çizdirme)."
+            'AI-assisted corneal ectasia and keratoconus screening review with Pentacam topography and tomography for preoperative assessment of post-LASIK ectasia risk.'
         ),
         "about": "Corneal ectasia risk assessment before refractive surgery",
         "keywords": [
@@ -554,11 +552,9 @@ def _toric_software_schema(base: str) -> dict:
 
 def _discovery_head(base: str, *, robots_directive: str) -> str:
     """Machine-readable discovery metadata for public CER-AI pages."""
-    home_title = "CER-AI — Corneal Ectasia Risk Assessment Intelligence"
+    home_title = "CER-AI | AI-Assisted Corneal Screening and Ectasia Risk"
     home_description = (
-        "Structured preoperative corneal ectasia risk assessment for refractive "
-        "surgeons, keeping ERSS, Final BAD-D, NICE and PS3 independently "
-        "interpretable alongside separate tissue-safety checks."
+        'Artificial intelligence-assisted corneal screening, Pentacam topography and tomography review, and ectasia risk assessment before LASIK/PRK. IOL planning support.'
     )
     citations = [
         {

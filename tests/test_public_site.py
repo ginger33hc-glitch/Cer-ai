@@ -50,7 +50,7 @@ def test_public_homepage_mobile_navigation_exposes_learning_resources():
     with TestClient(canonical_engine.app, base_url="https://cer-ai.com") as client:
         response = client.get("/")
         assert response.status_code == 200
-        assert '/static/public-i18n.js?v=6' in response.text
+        assert '/static/public-i18n.js?v=7' in response.text
         assert '/static/public-tr-home-overrides.js?v=4' in response.text
     helper = open("static/public-tr-home-overrides.js", encoding="utf-8").read()
     assert "testing-notice" not in helper
@@ -264,7 +264,7 @@ def test_public_landing_page_answers_surgeon_discovery_questions():
         response = client.get("/corneal-ectasia-risk-assessment")
         assert response.status_code == 200
         for phrase in (
-            "Corneal ectasia risk assessment software for refractive surgeons",
+            "AI-assisted corneal ectasia screening for refractive surgeons",
             "Frequently asked questions about CER-AI",
             "Which Pentacam images does a CER-AI assessment require?",
             "Who is CER-AI designed for?",
