@@ -28,6 +28,7 @@ from public_education import (
 
 _PUBLIC_HOME = Path("static/public-home.html")
 _AI_LANDING = Path("static/corneal-ectasia-risk-assessment.html")
+_AI_LANDING_TR = Path("static/tr-korneal-ektazi-risk-degerlendirmesi.html")
 _IOL_LANDING = Path("static/iol-calculation-software.html")
 _TORIC_LANDING = Path("static/toric-iol-calculator.html")
 _EVIDENCE_PAGE = Path("static/clinical-evidence.html")
@@ -49,6 +50,7 @@ _PUBLIC_CANONICAL_BASE = os.getenv(
 _PUBLIC_CONTENT_LASTMOD = "2026-09-11"
 _INDEXNOW_KEY = "731d2001b05e7e15840a00e98f53447d"
 _PUBLIC_PAGE_LASTMOD = {
+    "/tr/korneal-ektazi-risk-degerlendirmesi": "2026-10-01",
     "/": "2026-10-01",
     "/corneal-ectasia-risk-assessment": "2026-10-01",
     "/iol-calculation-software": "2026-10-01",
@@ -61,12 +63,23 @@ _PUBLIC_PAGE_LASTMOD = {
     "/tr/korneal-ektazi-tarama-sistemleri": "2026-09-30",
 }
 _PUBLIC_PAGE_LAST_REVIEWED = {
+    "/tr/korneal-ektazi-risk-degerlendirmesi": "2026-09-29",
     "/corneal-ectasia-risk-assessment": "2026-09-29",
     "/iol-calculation-software": "2026-09-29",
     "/toric-iol-calculator": "2026-09-29",
 }
 _PUBLIC_PAGE_METADATA = {
+    "/tr/korneal-ektazi-risk-degerlendirmesi": {
+        "schema_type": "MedicalWebPage",
+        "title": "Yapay Zekâ Destekli Korneal Ektazi Taraması | CER-AI",
+        "description": "Pentacam topografi ve tomografisiyle yapay zekâ destekli korneal ektazi ve keratokonus taraması; LASIK sonrası ektazi riskinin ameliyat öncesi değerlendirilmesi.",
+        "about": "Refraktif cerrahi öncesi korneal ektazi risk değerlendirmesi",
+        "in_language": "tr",
+        "alternate_path": "/corneal-ectasia-risk-assessment",
+        "main_entity": {"@id": "{base}/#ectasia-risk-assessment"},
+    },
     "/corneal-ectasia-risk-assessment": {
+        "alternate_path": "/tr/korneal-ektazi-risk-degerlendirmesi",
         "schema_type": "MedicalWebPage",
         "title": "AI-Assisted Corneal Ectasia Screening Software | CER-AI",
         "description": (
@@ -757,6 +770,7 @@ def _public_page_discovery_head(base: str, canonical_path: str) -> str:
     software_identity = ""
     software_factory = {
         "/corneal-ectasia-risk-assessment": _ectasia_software_schema,
+        "/tr/korneal-ektazi-risk-degerlendirmesi": _ectasia_software_schema,
         "/iol-calculation-software": _iol_software_schema,
         "/toric-iol-calculator": _toric_software_schema,
     }.get(canonical_path)
@@ -792,6 +806,9 @@ def _public_page_discovery_head(base: str, canonical_path: str) -> str:
 def _render_public_page(path: Path, request: Request, canonical_path: str) -> HTMLResponse:
     """Serve a static public page with one environment-safe canonical contract."""
     html = path.read_text(encoding="utf-8")
+    if canonical_path in ("/corneal-ectasia-risk-assessment", "/tr/korneal-ektazi-risk-degerlendirmesi"):
+        from public_education import render_sample_preview
+        html = html.replace("<!-- CERAI_SYNTHETIC_REPORT_PREVIEW -->", render_sample_preview("tr" if canonical_path.startswith("/tr/") else "en"))
     directive = _robots_directive(request)
     canonical = f'{_site_base(request)}{canonical_path}'
     canonical_tag = '<link rel="canonical" href="{}">'.format(canonical)
@@ -931,6 +948,7 @@ def _sitemap_xml(base: str) -> str:
         (f"{base}/", "1.0"),
         (f"{base}/learning-center", "0.9"),
         (f"{base}/corneal-ectasia-risk-assessment", "0.9"),
+        (f"{base}/tr/korneal-ektazi-risk-degerlendirmesi", "0.9"),
         (f"{base}/iol-calculation-software", "0.9"),
         (f"{base}/toric-iol-calculator", "0.9"),
         (f"{base}/clinical-evidence", "0.9"),
@@ -991,6 +1009,10 @@ def install(core) -> None:
         return _render_public_page(
             _AI_LANDING, request, "/corneal-ectasia-risk-assessment"
         )
+
+    @core.app.get("/tr/korneal-ektazi-risk-degerlendirmesi", include_in_schema=False)
+    def corneal_ectasia_risk_assessment_tr(request: Request) -> HTMLResponse:
+        return _render_public_page(_AI_LANDING_TR, request, "/tr/korneal-ektazi-risk-degerlendirmesi")
 
     @core.app.get("/learning-center", include_in_schema=False)
     def learning_center(request: Request) -> HTMLResponse:

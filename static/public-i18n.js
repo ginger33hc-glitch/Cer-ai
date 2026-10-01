@@ -376,6 +376,9 @@
   }
 
   function routeLearningCenterLinks() {
+    document.querySelectorAll('a[href="/corneal-ectasia-risk-assessment"],a[href="/tr/korneal-ektazi-risk-degerlendirmesi"]').forEach(link => {
+      link.setAttribute("href", locale === "tr" ? "/tr/korneal-ektazi-risk-degerlendirmesi" : "/corneal-ectasia-risk-assessment");
+    });
     document.querySelectorAll('a[href="/learning-center"],a[href="/tr/learning-center"]').forEach(link => {
       const label = (link.textContent || "").trim();
       if (label === "Learning Center" || label === "Eğitim Merkezi") {

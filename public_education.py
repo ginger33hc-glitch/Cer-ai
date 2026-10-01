@@ -1066,3 +1066,16 @@ def render_case(base: str, robots: str, case: SampleCase, locale: str = "en") ->
 
 SAMPLE_CASE_BY_SLUG = {case.slug: case for case in SAMPLE_CASES}
 TR_SAMPLE_CASE_BY_SLUG = {case.slug: case for case in TR_SAMPLE_CASES}
+
+
+def render_sample_preview(locale: str = "en") -> str:
+    """Public teaching preview from the same source as the Learning Center."""
+    tr = locale == "tr"
+    case = (TR_SAMPLE_CASE_BY_SLUG if tr else SAMPLE_CASE_BY_SLUG)["concordant-low-risk-lasik"]
+    title = "Sentetik eğitim örneği" if tr else "Synthetic teaching example"
+    notice = "Gerçek hasta verisi veya oluşturulmuş klinik rapor değildir. PASS, sıfır risk veya ameliyat onayı anlamına gelmez." if tr else "Not real patient data or a generated clinical report. PASS does not mean zero risk or surgical clearance."
+    inputs = "Örnek girdiler" if tr else "Example inputs"
+    results = "Bağımsız değerlendirme sonuçları" if tr else "Independent pathway results"
+    rows = "".join(f"<tr><th scope='row'>{escape(k)}</th><td>{escape(v)}</td></tr>" for k, v in case.inputs)
+    pathways = "".join(f"<tr><th scope='row'>{escape(k)}</th><td>{escape(v)}</td><td>{escape(status)}</td></tr>" for k, v, status in case.pathways)
+    return f"<section class='report-preview' id='synthetic-report'><h2>{title}</h2><p><strong>{notice}</strong></p><h3>{escape(case.title)}</h3><div class='report-scroll'><table><caption>{inputs}</caption><tbody>{rows}</tbody></table><table><caption>{results}</caption><tbody>{pathways}</tbody></table></div><p>{escape(case.report_text)}</p></section>"

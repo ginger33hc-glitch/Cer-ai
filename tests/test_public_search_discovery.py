@@ -126,21 +126,20 @@ def test_indexnow_key_is_public_only_on_canonical_host(public_app):
     assert response.status_code == 404
 
 
-def test_new_editorial_sections_have_both_languages_with_one_existing_controller():
-    html = Path("static/corneal-ectasia-risk-assessment.html").read_text(encoding="utf-8")
-    structure = PageStructure(html)
-    variants = [a for _, a in structure.tags if "data-language-variant" in a]
-    assert len(variants) == 12
-    assert sum(a["data-language-variant"] == "en" for a in variants) == 6
-    assert sum(a["data-language-variant"] == "tr" for a in variants) == 6
-    assert all(a["lang"] == a["data-language-variant"] for a in variants)
-    assert 'html:not([lang="tr"]) [data-language-variant="tr"]' in html
-    assert 'html[lang="tr"] [data-language-variant="en"]' in html
-    scripts = structure.attributes("script")
-    assert len(scripts) == 1
-    assert scripts[0]["src"] == "/static/public-i18n.js?v=7"
-    assert "CER-AI yapay zekâyı nasıl kullanır?" in html
-    assert "Bunlar sentetik eğitim olgularıdır" in html
+@pytest.mark.parametrize("path,language,other", [
+    ("/corneal-ectasia-risk-assessment", "en", "/tr/korneal-ektazi-risk-degerlendirmesi"),
+    ("/tr/korneal-ektazi-risk-degerlendirmesi", "tr", "/corneal-ectasia-risk-assessment"),
+])
+def test_product_languages_are_separately_crawlable(public_app, path, language, other):
+    with TestClient(public_app, base_url="https://cer-ai.com") as client:
+        response = client.get(path)
+        assert response.status_code == 200
+        assert f'<html lang="{language}">' in response.text
+        assert f'rel="canonical" href="https://cer-ai.com{path}"' in response.text
+        assert f'href="https://cer-ai.com{other}"' in response.text
+        assert 'public-i18n.js' not in response.text
+        assert "id='synthetic-report'" in response.text
+        assert path in client.get('/sitemap.xml').text
 
 
 def test_product_public_links_resolve_without_patient_submission(public_app):
@@ -149,7 +148,7 @@ def test_product_public_links_resolve_without_patient_submission(public_app):
         structure = PageStructure(response.text)
         links = {a.get("href", "") for a in structure.attributes("a")}
         assert "/learning/clinical-cases" in links
-        assert "/tr/learning/clinical-cases" in links
+        assert "/tr/korneal-ektazi-risk-degerlendirmesi" in links
         for path in sorted(links):
             if path.startswith("/") and not path.startswith("//"):
                 result = client.get(path)
