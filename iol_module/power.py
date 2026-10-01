@@ -197,7 +197,7 @@ def plan_iol_power(case: IOLPowerPlanInput) -> IOLPowerPlan:
             toric_status = "UNSUPPORTED"
             explanation = "No verified cylinder model series exists for the selected lens family."
         elif case.posterior_cornea is None or case.cct_um is None:
-            explanation = "Same-eye Pentacam 4 Maps Cornea Back K1/K2, axes, Rh/Rv and Pachy Vertex are required for the embedded toric calculation."
+            explanation = "Same-eye Pentacam 4 Maps Cornea Back K1/K2, a principal axis and Pachy Vertex are required for the embedded toric calculation."
         else:
             best = [p for p in spherical_predictions if p.get("IsBestOption") is True]
             if len(best) != 1 or any(type(best[0].get(key)) not in (int, float)

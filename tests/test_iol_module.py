@@ -301,7 +301,7 @@ def test_toric_posterior_source_has_separate_same_eye_fields():
     fields = EXTRACTION_SCHEMA["properties"]
     assert "PENTACAM_4_MAPS_REFRACTIVE" in fields["document_type"]["enum"]
     assert set(fields["cornea_back"]["required"]) == {
-        "k1_d", "k2_d", "k1_axis_deg", "k2_axis_deg", "rh_mm", "rv_mm"
+        "k1_d", "k2_d", "k1_axis_deg", "k2_axis_deg"
     }
     assert "cornea_back" not in fields["pentacam"]["properties"]
 
@@ -448,3 +448,15 @@ def test_k6_http_failure_reports_status_without_response_body():
         plan = plan_iol_power(power_payload())
     assert plan.message == "Cooke K6 service returned HTTP 422."
     assert plan.escrs_url
+
+
+def test_toric_without_unused_radii_matches_legacy_posterior_input():
+    posterior = {"eye": "OD", "source": "PENTACAM_4_MAPS_REFRACTIVE_CORNEA_BACK",
+                 "k1_d": -5.8, "k2_d": -6.1, "k2_axis_deg": 110}
+    options = dict(selected_lens_id="clareon-panoptix-toric-cnwtt3", k2_d=43,
+                   astigmatism_type="REGULAR", incision_axis_deg=110, sia_d=0.25, sia_axis_deg=110)
+    with patch("iol_module.power._call_k6", return_value=[{"IOL":21.0, "Rx":0.01, "IsBestOption":True}]):
+        corrected = plan_iol_power(power_payload(**options, posterior_cornea=posterior))
+        legacy = plan_iol_power(power_payload(**options, posterior_cornea={**posterior, "k1_axis_deg":20, "rh_mm":6.7, "rv_mm":6.5}))
+    assert corrected.toric_status == "TEST_ONLY"
+    assert corrected.toric_candidates == legacy.toric_candidates

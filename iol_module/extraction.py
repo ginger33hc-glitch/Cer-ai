@@ -3,6 +3,13 @@
 from __future__ import annotations
 
 import json
+import logging
+from io import BytesIO
+
+from PIL import Image, ImageOps
+from pydantic import TypeAdapter, ValidationError
+
+from .models import PosteriorCorneaInput, complete_posterior_axes
 import unicodedata
 from typing import Any
 
@@ -42,14 +49,12 @@ EXTRACTION_SCHEMA: dict[str, Any] = {
         },
         "cornea_back": {
             "type": "object", "additionalProperties": False,
-            "required": ["k1_d", "k2_d", "k1_axis_deg", "k2_axis_deg", "rh_mm", "rv_mm"],
+            "required": ["k1_d", "k2_d", "k1_axis_deg", "k2_axis_deg"],
             "properties": {
                 "k1_d": {"type": ["number", "null"]},
                 "k2_d": {"type": ["number", "null"]},
                 "k1_axis_deg": {"type": ["number", "null"]},
                 "k2_axis_deg": {"type": ["number", "null"]},
-                "rh_mm": {"type": ["number", "null"]},
-                "rv_mm": {"type": ["number", "null"]},
             },
         },
         "iolmaster500": {
@@ -83,11 +88,14 @@ Pentacam Cataract Pre-Op source locks:
   Never substitute ACD (Ext.).
 TCRP, SimK and Diff. are not authoritative and must not be extracted.
 
-Pentacam 4 Maps Refractive: transcribe the left numeric panel's "Cornea Back"
-K1, K2 (preserve printed negative signs), their explicitly printed axes, and
-Rh/Rv radii in mm. Do not use Cornea Front, color maps, or infer missing axes.
-Rh/Rv are horizontal and vertical radii, not principal radii. Set missing
-printed values to null. These measurements belong only to the indicated eye.
+Pentacam 4 Maps Refractive: transcribe the left-middle numeric panel's "Cornea Back"
+K1, K2 (preserve printed negative signs), and their explicitly printed axes.
+Map an explicitly labeled posterior "Axis (steep)" to k2_axis_deg and
+"Axis (flat)" to k1_axis_deg. If the panel prints only the steep axis,
+return that axis and null for the unprinted flat axis; code handles orthogonality.
+An unlabeled/ambiguous Axis stays null. Do not use Cornea Front, color maps,
+Rh/Rv or Rf/Rs radii, or infer missing axes. These measurements belong only
+to the indicated eye.
 
 IOLMaster 500 source locks: use only the upper biometry block, never lower IOL tables.
 Transcribe AL, K1 and axis, K2 and axis, and ACD separately for OD and OS. Set the AL
@@ -162,4 +170,94 @@ def extract_image(core: Any, raw: bytes, filename: str) -> dict[str, Any]:
     )
     if not response.output_text or not response.output_text.strip():
         raise RuntimeError("IOL source extraction returned empty output")
-    return json.loads(response.output_text)
+    result = json.loads(response.output_text)
+    result = reread_cornea_back(core, raw, filename, result)
+    if result.get("document_type") == "PENTACAM_4_MAPS_REFRACTIVE" and result.get("eye") in {"OD", "OS"}:
+        back = result.get("cornea_back") or {}
+        completed = complete_posterior_axes(back)
+        derived = [key for key in completed if back.get(key) is None and completed[key] is not None]
+        result["cornea_back"] = completed
+        result["cornea_back_derived_fields"] = derived
+        result["unreadable_fields"] = [key for key in result.get("unreadable_fields", [])
+                                       if key not in {"cornea_back." + field for field in derived}]
+    return result
+
+
+logger = logging.getLogger(__name__)
+
+
+def reread_cornea_back(core: Any, raw: bytes, filename: str, result: dict[str, Any]) -> dict[str, Any]:
+    """Retry missing posterior measurements once, on the same source only."""
+    if result.get("document_type") != "PENTACAM_4_MAPS_REFRACTIVE" or result.get("eye") not in {"OD", "OS"}:
+        return result
+    fields = EXTRACTION_SCHEMA["properties"]["cornea_back"]["required"]
+    back = result.get("cornea_back") or {}
+    completed = complete_posterior_axes(back)
+    missing = [key for key in fields if completed.get(key) is None]
+    if not missing:
+        return result
+    logger.info("IOL_CORNEA_BACK_REREAD start eye=%s missing=%s", result["eye"], ",".join(missing))
+    try:
+        # Keep the entire vertical panel: different report layouts move its rows.
+        # Full source is also supplied for header laterality and panel context.
+        with Image.open(BytesIO(raw)) as opened:
+            if opened.width * opened.height > 40_000_000:
+                raise ValueError("source exceeds reread pixel limit")
+            image = ImageOps.exif_transpose(opened).convert("RGB")
+            crop = image.crop((0, 0, max(1, round(image.width * 0.60)), image.height))
+            output = BytesIO()
+            crop.save(output, format="PNG")
+        schema = {
+            "type": "object", "additionalProperties": False,
+            "required": ["document_type", "eye", "cornea_back"],
+            "properties": {key: EXTRACTION_SCHEMA["properties"][key]
+                           for key in ("document_type", "eye", "cornea_back")},
+        }
+        retry = core.openai_client().with_options(timeout=60, max_retries=0).responses.create(
+            model=core.MODEL, store=False, reasoning={"effort": "medium"},
+            input=[{"role": "user", "content": [
+                {"type": "input_text", "text": PROMPT + "\nFocused second reading of the SAME source. "
+                 "The second image is its left-panel crop. Locate the Cornea Back heading in the "
+                 "left-middle numeric panel below Cornea Front. Read each labeled row, including "
+                 "any explicitly printed K1/K2 axes. Do not substitute Rh/Rv, Rf/Rs, "
+                 "Rm, Rmin, anterior values or the map legend. If only one axis is printed, leave "
+                 "the other null; do not invent or calculate it. Recheck all posterior K fields "
+                 "for consistency, focusing on: " + ", ".join(missing)},
+                {"type": "input_image", "image_url": core.data_url(raw, filename), "detail": "original"},
+                {"type": "input_image", "image_url": core.data_url(output.getvalue(), "cornea-back-panel.png"), "detail": "original"},
+            ]}],
+            text={"verbosity": "low", "format": {"type": "json_schema", "name": "cerai_iol_cornea_back_reread", "strict": True, "schema": schema}},
+        )
+        reread = json.loads(retry.output_text)
+        if reread.get("document_type") != result["document_type"] or reread.get("eye") != result["eye"]:
+            logger.warning("IOL_CORNEA_BACK_REREAD rejected source_identity")
+            return result
+        candidate = reread.get("cornea_back") or {}
+        # A disagreement on already-read measurements makes the reread ambiguous.
+        if any(back.get(key) is not None and candidate.get(key) is not None
+               and back[key] != candidate[key] for key in fields):
+            logger.warning("IOL_CORNEA_BACK_REREAD rejected measurement_conflict")
+            return result
+        recovered = {}
+        for key in missing:
+            value = candidate.get(key)
+            if value is None or isinstance(value, bool):
+                continue
+            try:
+                recovered[key] = TypeAdapter(PosteriorCorneaInput.model_fields[key].rebuild_annotation()).validate_python(value, strict=True)
+            except ValidationError:
+                continue
+        merged = {**back, **recovered}
+        validated = complete_posterior_axes(merged)
+        if all(validated.get(key) is not None for key in fields):
+            PosteriorCorneaInput(eye=result["eye"], source="PENTACAM_4_MAPS_REFRACTIVE_CORNEA_BACK", **validated)
+        result["cornea_back"] = merged
+        result["unreadable_fields"] = [key for key in result.get("unreadable_fields", [])
+                                       if key not in {"cornea_back." + field for field in recovered}]
+        logger.info("IOL_CORNEA_BACK_REREAD complete recovered=%s remaining=%s", ",".join(recovered),
+                    ",".join(key for key in fields if merged.get(key) is None))
+    except Exception as exc:
+        # Keep successful primary transcription and the manual completion path.
+        # No source image, patient name, measurements or API error payload in logs.
+        logger.warning("IOL_CORNEA_BACK_REREAD failed error_type=%s", type(exc).__name__)
+    return result

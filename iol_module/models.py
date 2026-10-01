@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from enum import Enum
+from math import isfinite
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -142,6 +143,23 @@ class IOLRecommendation(StrictModel):
     legal_notice: str
 
 
+def complete_posterior_axes(values):
+    """Complete the orthogonal principal axis from one measured posterior K axis.
+
+    This is geometry, not an additional image measurement. Never infer from
+    the anterior surface, an unlabeled axis or horizontal/vertical radii.
+    """
+    if not isinstance(values, dict):
+        return values
+    completed = dict(values)
+    for target, source in (("k1_axis_deg", "k2_axis_deg"), ("k2_axis_deg", "k1_axis_deg")):
+        value = completed.get(source)
+        if (completed.get(target) is None and type(value) in (int, float)
+                and isfinite(value) and 0 <= value <= 180):
+            completed[target] = (value + 90) % 180
+    return completed
+
+
 class PosteriorCorneaInput(StrictModel):
     """One operative eye's Pentacam 4 Maps Refractive / Cornea Back panel."""
 
@@ -151,8 +169,14 @@ class PosteriorCorneaInput(StrictModel):
     k2_d: float = Field(ge=-12, lt=0)
     k1_axis_deg: float = Field(ge=0, le=180)
     k2_axis_deg: float = Field(ge=0, le=180)
-    rh_mm: float = Field(ge=3, le=12)
-    rv_mm: float = Field(ge=3, le=12)
+    # Optional legacy source metadata; not inputs to the toric optical engine.
+    rh_mm: float | None = Field(default=None, ge=3, le=12)
+    rv_mm: float | None = Field(default=None, ge=3, le=12)
+
+    @model_validator(mode="before")
+    @classmethod
+    def complete_principal_axes(cls, values):
+        return complete_posterior_axes(values)
 
     @model_validator(mode="after")
     def validate_posterior_axes(self):

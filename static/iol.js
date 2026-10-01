@@ -7,7 +7,7 @@
   const pentacamByEye = {OD:null, OS:null};
   const corneaBackByEye = {OD:null, OS:null};
   const incisionOverrides = {OD:null, OS:null};
-  const posteriorFields = ["k1_d","k2_d","k1_axis_deg","k2_axis_deg","rh_mm","rv_mm"];
+  const posteriorFields = ["k1_d","k2_d","k1_axis_deg","k2_axis_deg"];
   let pentacamEyeConfirmed = false;
   let recommendation = null;
   let lensCatalog = [];
@@ -64,8 +64,6 @@
       incision_axis_deg:["Incision axis (°)","Kesi aksı (°)"], sia_d:["SIA (D)","SIA (D)"],
       sia_axis_deg:["SIA axis (°)","SIA aksı (°)"],
       posterior_cornea:["Cornea Back","Arka kornea"],
-      rh_mm:["Cornea Back Rh (mm)","Arka kornea Rh (mm)"],
-      rv_mm:["Cornea Back Rv (mm)","Arka kornea Rv (mm)"],
     };
     return data.detail.map(error => {
       const path = (error.loc || []).filter(part => part !== "body");
@@ -129,9 +127,11 @@
     const back = corneaBackByEye[eye];
     let missing = false;
     posteriorFields.forEach(key => {
-      const unread = !Number.isFinite(back?.[key]);
+      const otherAxis = key === "k1_axis_deg" ? "k2_axis_deg" : "k1_axis_deg";
+      const unread = !Number.isFinite(back?.[key]) &&
+        (!key.endsWith("axis_deg") || (!Number.isFinite(back?.[otherAxis]) && key === "k2_axis_deg"));
       $("back_field_"+key).hidden = !unread;
-      $("back_"+key).value = unread ? "" : back[key];
+      $("back_"+key).value = Number.isFinite(back?.[key]) ? back[key] : "";
       missing ||= unread;
     });
     $("backCompletion").hidden = !back || !missing;
@@ -270,9 +270,10 @@
         corneaBack[key] = value && Number.isFinite(Number(value)) ? Number(value) : null;
       }
     });
-    const posteriorInput = corneaBack && posteriorFields.every(key => Number.isFinite(corneaBack[key])) ? {
+    const posteriorInput = corneaBack && ["k1_d","k2_d"].every(key => Number.isFinite(corneaBack[key])) &&
+      ["k1_axis_deg","k2_axis_deg"].some(key => Number.isFinite(corneaBack[key])) ? {
       eye:$("eye").value, source:"PENTACAM_4_MAPS_REFRACTIVE_CORNEA_BACK",
-      ...Object.fromEntries(posteriorFields.map(key => [key, corneaBack[key]]))
+      ...Object.fromEntries(posteriorFields.filter(key => Number.isFinite(corneaBack[key])).map(key => [key, corneaBack[key]]))
     } : null;
     const payload = {patient_name:$("patientName").value, biological_sex:$("biologicalSex").value, eye:$("eye").value, selected_lens_id:$("selectedLens").value,
       axial_length_mm:Number($("al").value), acd_mm:Number($("acd").value), k1_d:Number($("k1").value), k1_axis_deg:Number($("k1Axis").value), k2_d:Number($("k2").value), k2_axis_deg:Number($("k2Axis").value), astigmatism_type:$("astigType").value || null,

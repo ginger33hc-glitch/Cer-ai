@@ -1,13 +1,15 @@
 # Universal toric IOL calculation: research status
 
-## Current embedded test workflow (2026-09-25)
+## Current embedded test workflow (2026-10-01)
 
 When IOLMaster K2−K1 is at least 1.00 D and astigmatism is regular, the
 surgeon chooses a toric lens family. Cooke K6 calculates the spherical
 equivalent first. With the same-eye Pentacam 4 Maps Refractive Cornea Back
-K1/K2, axes and Rh/Rv and the Cataract Pre-Op Pachy Vertex, the embedded
+K1/K2 and one explicitly identified principal axis, plus Cataract Pre-Op Pachy Vertex, the embedded
 prototype computes ranked cylinder models, plus-cylinder marker axes, and
 predicted residuals. The incision and SIA axis follow steep K2 at 0.25 D.
+Rh/Rv are not calculation inputs and are no longer required. A missing companion
+principal axis is computed orthogonally in the canonical input model.
 The manufacturer's official calculator is a separate optional comparison.
 Missing, incompatible or unverified data prevent a model and axis result.
 
