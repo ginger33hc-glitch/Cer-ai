@@ -47,8 +47,8 @@ def install(core: Any) -> None:
         assert_demo_credit = getattr(core, "_cerai_assert_demo_credit", None)
         if principal is not None and callable(assert_demo_credit):
             assert_demo_credit(principal.user_id)
-        if len(images) != 3:
-            raise HTTPException(422, "Exactly three IOL source images are required.")
+        if len(images) not in {3, 5}:
+            raise HTTPException(422, "Upload 3 images for one eye or 5 for both eyes: Cataract Pre-Op and 4 Maps Refractive for each eye, plus one shared IOLMaster 500 report.")
         payloads = await operational_security.read_uploads(images)
         results = []
         for raw, filename in payloads:

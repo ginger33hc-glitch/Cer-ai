@@ -1,15 +1,14 @@
 (() => {
   "use strict";
   const $ = id => document.getElementById(id);
-  const numberOrNull = id => $(id).value === "" ? null : Number($(id).value);
-  const setIfPresent = (id, value) => { if (value !== null && value !== undefined) $(id).value = value; };
   const originals = {OD:null, OS:null};
   const pentacamByEye = {OD:null, OS:null};
   const corneaBackByEye = {OD:null, OS:null};
   const incisionOverrides = {OD:null, OS:null};
   const posteriorFields = ["k1_d","k2_d","k1_axis_deg","k2_axis_deg"];
-  let pentacamEyeConfirmed = false;
-  let recommendation = null;
+  const controllers = new Map();
+  let loadedEyes = [];
+  let caseVersion = 0;
   let lensCatalog = [];
   let iolAssessmentRequestId = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
   const tr = value => window.CERAI_I18N?.translate(value) ?? String(value ?? "");
@@ -30,23 +29,6 @@
     WARN_PUPIL_TOO_LARGE:"Pupil diameter above 4.00 mm: multifocal IOL excluded.",
     WARN_IRREGULAR_ASTIGMATISM:"Irregular astigmatism: multifocal IOL excluded.",
   })[code] || code;
-
-  function clearSourceCase() {
-    incisionOverrides.OD = null; incisionOverrides.OS = null;
-    $("backCompletion").hidden = true;
-    posteriorFields.forEach(key => { $("back_"+key).value = ""; });
-    originals.OD = null; originals.OS = null;
-    pentacamByEye.OD = null; pentacamByEye.OS = null;
-    corneaBackByEye.OD = null; corneaBackByEye.OS = null;
-    pentacamEyeConfirmed = false; recommendation = null;
-    $("eye").value = "";
-    for (const id of ["al", "k1", "k1Axis", "k2", "k2Axis", "lensThickness", "hoa", "kappa", "alpha", "pupil3d", "cct", "wtw", "acd"]) {
-      $(id).value = ""; $(id).readOnly = false;
-    }
-    $("result").hidden = true; $("powerSection").hidden = true;
-    $("powerResult").replaceChildren(); $("alMarker").textContent = "";
-    updateAstigmatism();
-  }
 
   function errorMessage(data) {
     if (typeof data.detail === "string") return tr(data.detail);
@@ -84,6 +66,22 @@
       return field ? `${field}: ${message}` : message;
     }).join("\n") || tr("Required information is incomplete or invalid.");
   }
+
+  function createEyeController(eye) {
+    const fragment = document.getElementById("eyeTemplate").content.cloneNode(true);
+    const root = fragment.querySelector(".eye-workspace");
+    const controls = new Map();
+    root.querySelectorAll("[id]").forEach(node => { controls.set(node.id, node); node.id = `${eye}-${node.id}`; });
+    root.querySelectorAll("label[for]").forEach(node => { node.htmlFor = `${eye}-${node.htmlFor}`; });
+    const $ = id => controls.get(id) || document.getElementById(id);
+    const numberOrNull = id => $(id).value === "" ? null : Number($(id).value);
+    const setIfPresent = (id, value) => { if (value !== null && value !== undefined) $(id).value = value; };
+    let recommendation = null;
+    let version = 0;
+    $("eye").value = eye;
+    $("eyeHeading").textContent = tr(eye === "OD" ? "OD — Right eye" : "OS — Left eye");
+    root.hidden = true;
+    document.getElementById("eyePanels").appendChild(fragment);
   const kDifference = () => $("k1").value === "" || $("k2").value === "" ? NaN : Math.abs(Number($("k2").value) - Number($("k1").value));
 
   function updateAstigmatism() {
@@ -114,15 +112,15 @@
       setIfPresent("k2Axis", bio.k2_axis_deg); setIfPresent("lensThickness", bio.lens_thickness_mm);
       if (!pentacam) setIfPresent("acd", bio.acd_mm);
       $("alMarker").textContent = bio.axial_length_edited_marker ? "IOLMaster printed an edited-value (*) marker; retained for visibility." : "";
-      $("al").readOnly = bio.axial_length_mm !== null; $("k1Axis").readOnly = bio.k1_axis_deg !== null; $("k2Axis").readOnly = bio.k2_axis_deg !== null;
+      $("al").readOnly = Number.isFinite(bio.axial_length_mm); $("k1Axis").readOnly = Number.isFinite(bio.k1_axis_deg); $("k2Axis").readOnly = Number.isFinite(bio.k2_axis_deg);
     }
     if (pentacam) {
       setIfPresent("hoa", pentacam.total_corneal_hoa_4mm_um); setIfPresent("kappa", pentacam.angle_kappa_mm);
       setIfPresent("alpha", pentacam.angle_alpha_mm); setIfPresent("pupil3d", pentacam.pupil_dia_3d_mm);
       setIfPresent("cct", pentacam.cct_pachy_vertex_um); setIfPresent("wtw", pentacam.hwtw_mm);
       setIfPresent("acd", pentacam.acd_internal_mm);
-      $("cct").readOnly = pentacam.cct_pachy_vertex_um !== null; $("wtw").readOnly = pentacam.hwtw_mm !== null;
-      $("acd").readOnly = pentacam.acd_internal_mm !== null;
+      $("cct").readOnly = Number.isFinite(pentacam.cct_pachy_vertex_um); $("wtw").readOnly = Number.isFinite(pentacam.hwtw_mm);
+      $("acd").readOnly = Number.isFinite(pentacam.acd_internal_mm);
     }
     const back = corneaBackByEye[eye];
     let missing = false;
@@ -143,7 +141,7 @@
     $("siaAxis").value = $("incisionAxis").value;
     $("powerResult").replaceChildren();
   });
-  document.querySelectorAll("[data-back-sign]").forEach(button => button.addEventListener("click", () => {
+  root.querySelectorAll("[data-back-sign]").forEach(button => button.addEventListener("click", () => {
     const input = $(button.dataset.target);
     const magnitude = input.value.trim().replace(/^[+−–-]/, "");
     input.value = button.dataset.backSign + magnitude;
@@ -153,65 +151,7 @@
 
   $("surface").addEventListener("change", () => { $("stableField").hidden = $("surface").value !== "RESOLVED_AFTER_TREATMENT"; });
   $("priorSurgery").addEventListener("change", () => { $("historyField").hidden = !["MYOPIC_LASIK_PRK","HYPEROPIC_LASIK_PRK"].includes($("priorSurgery").value); });
-  $("eye").addEventListener("change", populateEye); $("k1").addEventListener("input", updateAstigmatism); $("k2").addEventListener("input", updateAstigmatism); $("k2Axis").addEventListener("input", updateAstigmatism);
-  $("sourceImages").addEventListener("change", () => {
-    iolAssessmentRequestId = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
-    clearSourceCase();
-    const files = [...$("sourceImages").files];
-    $("selectedFiles").textContent = files.length ? `Selected images (${files.length}): ${files.map(file => file.name).join(", ")}` : "";
-    $("extractStatus").textContent = ""; $("powerStatus").textContent = "";
-  });
-
-  $("extractButton").addEventListener("click", async () => {
-    const files = [...$("sourceImages").files];
-    const status = $("extractStatus"); status.className = "status";
-    const surgeonPatientName = $("patientName").value.trim();
-    if (!surgeonPatientName) { status.textContent = "Enter the patient name before extracting source images."; status.classList.add("error"); return; }
-    if (files.length !== 3) { status.textContent = "Select exactly three images: Pentacam Cataract Pre-Op, same-eye 4 Maps Refractive, and IOLMaster 500."; status.classList.add("error"); return; }
-    const form = new FormData(); files.forEach(file => form.append("images", file)); form.append("patient_name", surgeonPatientName); form.append("assessment_request_id", iolAssessmentRequestId);
-    clearSourceCase();
-    $("extractButton").disabled = true; status.textContent = "Transcribing source-locked fields…";
-    try {
-      const response = await fetch("/iol/extract", {method:"POST", body:form, credentials:"same-origin"});
-      const data = await response.json(); if (!response.ok) throw new Error(errorMessage(data));
-      if(!data.identity?.patient_name || !["OD","OS"].includes(data.identity.eye)) throw new Error("Source identity verification failed. Check all three reports.");
-      const unreadable = [];
-      const pentacamEyes = new Set();
-      const expectedTypes = ["PENTACAM_CATARACT_PREOP", "PENTACAM_4_MAPS_REFRACTIVE", "IOLMASTER_500_BIOMETRY"];
-      const typeCounts = Object.fromEntries(expectedTypes.map(type => [type, 0]));
-      let unreadablePentacamLaterality = false;
-      for (const source of data.sources || []) {
-        const item = source.extraction || {}; setIfPresent("patientAge", item.patient_age_years);
-        if (Object.hasOwn(typeCounts, item.document_type)) typeCounts[item.document_type]++;
-        if (item.document_type === "PENTACAM_CATARACT_PREOP") {
-          if (["OD","OS"].includes(item.eye)) { pentacamByEye[item.eye] = item.pentacam; pentacamEyes.add(item.eye); }
-          else unreadablePentacamLaterality = true;
-        }
-        if (item.document_type === "PENTACAM_4_MAPS_REFRACTIVE" && ["OD","OS"].includes(item.eye)) {
-          corneaBackByEye[item.eye] = item.cornea_back || {};
-        }
-        if (item.document_type === "IOLMASTER_500_BIOMETRY") {
-          const report = item.iolmaster500 || {}; ["OD","OS"].forEach(eye => { if (report[eye] && report[eye].axial_length_mm !== null) originals[eye] = report[eye]; });
-        }
-        (item.unreadable_fields || []).forEach(field => unreadable.push(`${source.filename}: ${field}`));
-      }
-      if (expectedTypes.some(type => typeCounts[type] !== 1)) throw new Error("The three images must contain one Pentacam Cataract Pre-Op, one 4 Maps Refractive, and one IOLMaster 500 report. Check the selected files.");
-      if (unreadablePentacamLaterality || pentacamEyes.size === 0) throw new Error("Pentacam laterality was not read. Upload a readable Pentacam Cataract Pre-Op report showing OD or OS.");
-      if (pentacamEyes.size > 1) throw new Error("Conflicting Pentacam laterality was detected. Upload the Cataract Pre-Op report for one operative eye only.");
-      if (![...pentacamEyes].includes(data.identity.eye)) throw new Error("Operative eye verification failed. Check all three reports.");
-      $("patientName").value = surgeonPatientName;
-      $("eye").value = [...pentacamEyes][0];
-      if (!corneaBackByEye[$("eye").value]) throw new Error("4 Maps Refractive Cornea Back could not be assigned to the operative eye.");
-      pentacamEyeConfirmed = true;
-      populateEye();
-      const nameReview = data.identity.source_name_review_required
-        ? " The surgeon-entered patient name was retained. Check the patient names printed on the source reports."
-        : "";
-      status.textContent = (unreadable.length ? `Extraction completed. Surgeon entry is required only for unreadable fields: ${unreadable.join(", ")}.` : "Three reports extracted. Review values before evaluation.") + nameReview;
-    } catch (error) { status.textContent = error.message || "Image transcription failed."; status.classList.add("error"); }
-    finally { $("extractButton").disabled = false; }
-  });
-
+  $("k1").addEventListener("input", updateAstigmatism); $("k2").addEventListener("input", updateAstigmatism); $("k2Axis").addEventListener("input", updateAstigmatism);
   function populateLenses() {
     const eligible = new Set(recommendation.eligible_categories || []);
     const toric = recommendation.toric_evaluation_required;
@@ -230,11 +170,11 @@
     };
   }
 
-  $("iolForm").addEventListener("submit", async event => {
-    event.preventDefault(); const status = $("evaluationStatus"); status.className = "status";
-    if (!pentacamEyeConfirmed) { status.textContent = "The operative eye must come from a readable Pentacam Cataract Pre-Op report."; status.classList.add("error"); return; }
-    if (!event.currentTarget.reportValidity()) return;
-    const eye = $("eye").value; const source = originals[eye];
+  async function evaluate() {
+    const requestVersion = version; const status = $("evaluationStatus"); status.className = "status";
+    if (!loadedEyes.includes(eye)) { status.textContent = "The operative eye must come from a readable Pentacam Cataract Pre-Op report."; status.classList.add("error"); return; }
+    if (!document.getElementById("patientForm").reportValidity() || !$("iolForm").reportValidity()) return false;
+    const source = originals[eye];
     const originalK1 = source?.k1_d ?? Number($("k1").value); const originalK2 = source?.k2_d ?? Number($("k2").value);
     const payload = {
       patient_name: $("patientName").value, patient_age_years: Number($("patientAge").value), eye,
@@ -249,19 +189,21 @@
     $("evaluateButton").disabled = true; status.textContent = "Applying canonical IOL rules…";
     try {
       const response = await fetch("/iol/evaluate", {method:"POST", credentials:"same-origin", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload)});
-      const data = await response.json(); if (!response.ok) throw new Error(errorMessage(data)); recommendation = data;
+      const data = await response.json(); if (!response.ok) throw new Error(errorMessage(data)); if (requestVersion !== version) return false; recommendation = data;
       $("recommendation").textContent = tr(`Recommended IOL: ${data.formatted_recommendation}`);
       $("eligible").innerHTML = (data.eligible_categories || []).map(v => `<span class="pill">${tr(`Eligible: ${v}`)}</span>`).join("");
       $("warnings").innerHTML = (data.warning_codes || []).map(v => `<div class="warning">${tr(warningLabel(v))}</div>`).join("");
       $("reasons").replaceChildren(...(data.clinical_explanation || []).map(value => { const p=document.createElement("p"); p.className="reason"; p.textContent=tr(value); return p; }));
       $("legal").textContent = tr(data.legal_notice); $("result").hidden = false;
       if (!lensCatalog.length) { const lenses = await fetch("/iol/lenses", {credentials:"same-origin"}); const body = await lenses.json(); if (!lenses.ok) throw new Error(errorMessage(body)); lensCatalog = body.lenses || []; }
-      populateLenses(); $("powerSection").hidden = false; updateAstigmatism(); status.textContent = "Recommendation generated. Select the lens for Stage 2."; $("result").scrollIntoView({behavior:"smooth"});
-    } catch (error) { status.textContent = error.message || "Recommendation could not be generated."; status.classList.add("error"); }
+      if (requestVersion !== version) return false; populateLenses(); $("powerSection").hidden = false; updateAstigmatism(); status.textContent = "Recommendation generated. Select the lens for Stage 2."; return true;
+    } catch (error) { if (requestVersion !== version) return false; status.textContent = error.message || "Recommendation could not be generated."; status.classList.add("error"); return false; }
     finally { $("evaluateButton").disabled = false; }
-  });
-
-  $("powerButton").addEventListener("click", async () => {
+  }
+  async function calculate() {
+    const requestVersion = version;
+    if (!recommendation) { $("powerStatus").textContent = tr("Evaluate this eye before calculating its lens power."); return false; }
+    if (!document.getElementById("patientForm").reportValidity() || !$("iolForm").reportValidity()) return false;
     const status = $("powerStatus"); status.className="status"; const difference = kDifference();
     const corneaBack = corneaBackByEye[$("eye").value];
     if (corneaBack) posteriorFields.forEach(key => {
@@ -282,11 +224,11 @@
     if (!payload.selected_lens_id) { status.textContent="Select a clinic lens."; status.classList.add("error"); return; }
     $("powerButton").disabled=true; status.textContent="Determining the canonical calculation route…";
     try {
-      const response=await fetch("/iol/power/plan",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)}); const data=await response.json(); if(!response.ok) throw new Error(errorMessage(data));
+      const response=await fetch("/iol/power/plan",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)}); const data=await response.json(); if(!response.ok) throw new Error(errorMessage(data)); if (requestVersion !== version) return false;
       let html=`<div class="warning"><strong>${tr(data.calculator_name)}</strong><br>${tr(data.message)}</div>`;
       html+=`<p><span>ACD target</span>: ${Number(data.target_refraction_d).toFixed(2)} D (<span>locked</span>)</p>`;
       if(data.second_formula_required) html+=`<div class="warning"><span>Second modern formula verification required</span> (AL ${Number(data.inputs.axial_length_mm).toFixed(2)} mm). <span>Use ESCRS where available and verify all values manually.</span></div>`;
-      if(data.escrs_url) html+=`<a class="external" target="_blank" rel="noopener noreferrer" href="${data.escrs_url}">Go to ESCRS Calculator</a><button id="escrsTransfer" class="external" type="button">Transfer values to ESCRS</button>`;
+      if(data.escrs_url) html+=`<a class="external" target="_blank" rel="noopener noreferrer" href="${data.escrs_url}">Go to ESCRS Calculator</a><button id="${eye}-escrsTransfer" class="external" type="button">Transfer values to ESCRS</button>`;
       const toricRoute = data.route === "MANUFACTURER_TORIC";
       if(toricRoute && data.toric_candidates?.length) {
         const fmt = (value, digits = 2) => Number.isFinite(Number(value)) ? Number(value).toFixed(digits) : "—";
@@ -300,8 +242,8 @@
       if(data.predictions?.length){html+=`<h3>${toricRoute?"Stage 1 — Cooke K6 spherical power":"Cooke K6 power"}</h3><table class="table"><thead><tr><th>IOL power</th><th>Predicted refraction</th><th>Selection</th></tr></thead><tbody>${data.predictions.map(p=>`<tr><td>${Number(p.IOL ?? p.iol_power).toFixed(2)}</td><td>${Number(p.Rx ?? p.predicted_refraction).toFixed(2)}</td><td>${p.IsBestOption ? "K6 best option" : ""}</td></tr>`).join("")}</tbody></table>`;}
       if(data.calculator_url) html+=`<a class="external" target="_blank" rel="noopener noreferrer" href="${data.calculator_url}">Optional manufacturer toric calculator comparison</a>`;
       $("powerResult").innerHTML=html; status.textContent=tr(data.calculation_status.replaceAll("_"," "));
-      if(data.escrs_url) $("escrsTransfer").addEventListener("click", async () => {
-        const button = $("escrsTransfer");
+      if(data.escrs_url) root.querySelector(`#${eye}-escrsTransfer`).addEventListener("click", async () => {
+        const button = root.querySelector(`#${eye}-escrsTransfer`);
         const escrsWindow = window.open("about:blank", "_blank");
         if (escrsWindow) escrsWindow.opener = null;
         button.disabled = true; status.className = "status";
@@ -317,8 +259,117 @@
           status.textContent = error.message || "ESCRS transfer could not be completed."; status.classList.add("error");
         } finally { button.disabled = false; }
       });
-    } catch(error){status.textContent=error.message||"Power route could not be completed.";status.classList.add("error");}
+      return true;
+    } catch(error){if(requestVersion !== version) return false; status.textContent=error.message||"Power route could not be completed.";status.classList.add("error");return false;}
     finally{$("powerButton").disabled=false;}
+  }
+
+    function invalidate(category = true) {
+      version++;
+      $("powerResult").replaceChildren();
+      $("powerStatus").textContent = "";
+      if (category) {
+        recommendation = null;
+        $("result").hidden = true;
+        $("powerSection").hidden = true;
+        $("evaluationStatus").textContent = "";
+      }
+    }
+    root.addEventListener("input", event => invalidate(!$("powerSection").contains(event.target) && !$("backCompletion").contains(event.target)));
+    root.addEventListener("change", event => invalidate(!$("powerSection").contains(event.target) && !$("backCompletion").contains(event.target)));
+    $("iolForm").addEventListener("submit", event => { event.preventDefault(); evaluate(); });
+    $("powerButton").addEventListener("click", calculate);
+    return {
+      evaluate, calculate, invalidate,
+      reset() {
+        invalidate();
+        root.hidden = true;
+        $("iolForm").reset();
+        root.querySelectorAll("input").forEach(node => { node.readOnly = false; });
+        $("eye").value = eye;
+        ["kDifference", "sia", "siaAxis"].forEach(id => { $(id).readOnly = true; });
+        $("selectedLens").replaceChildren();
+        $("priorSurgery").value = "NONE"; $("historicalData").value = "false";
+        $("stableField").hidden = true; $("historyField").hidden = true;
+        $("backCompletion").hidden = true;
+        $("alMarker").textContent = "";
+      },
+      populate() { root.hidden = false; populateEye(); }
+    };
+  }
+
+  function clearSourceCase() {
+    caseVersion++;
+    loadedEyes = [];
+    for (const eye of ["OD", "OS"]) {
+      originals[eye] = null; pentacamByEye[eye] = null; corneaBackByEye[eye] = null; incisionOverrides[eye] = null;
+      controllers.get(eye)?.reset();
+    }
+    $("evaluateAll").disabled = true; $("calculateAll").disabled = true;
+    $("bothStatus").textContent = "";
+  }
+  ["OD", "OS"].forEach(eye => controllers.set(eye, createEyeController(eye)));
+  $("patientForm").addEventListener("submit", event => event.preventDefault());
+  $("patientForm").addEventListener("input", event => {
+    if (event.target.id !== "sourceImages") controllers.forEach(controller => controller.invalidate());
   });
-  updateAstigmatism();
+  $("patientForm").addEventListener("change", event => {
+    if (event.target.id !== "sourceImages") controllers.forEach(controller => controller.invalidate());
+  });
+  $("sourceImages").addEventListener("change", () => {
+    iolAssessmentRequestId = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
+    clearSourceCase();
+    const files = [...$("sourceImages").files];
+    $("selectedFiles").textContent = files.length ? `Selected images (${files.length}): ${files.map(file => file.name).join(", ")}` : "";
+    $("extractStatus").textContent = "";
+  });
+  $("extractButton").addEventListener("click", async () => {
+    const files = [...$("sourceImages").files];
+    const status = $("extractStatus"); status.className = "status";
+    const surgeonPatientName = $("patientName").value.trim();
+    if (!surgeonPatientName) { status.textContent = tr("Enter the patient name before extracting source images."); return; }
+    if (files.length !== 3 && files.length !== 5) { status.textContent = tr("Upload 3 images for one eye or 5 for both eyes: Cataract Pre-Op and 4 Maps Refractive for each eye, plus one shared IOLMaster 500 report."); return; }
+    const form = new FormData(); files.forEach(file => form.append("images", file)); form.append("patient_name", surgeonPatientName); form.append("assessment_request_id", iolAssessmentRequestId);
+    clearSourceCase();
+    $("extractButton").disabled = true; $("sourceImages").disabled = true; $("patientName").readOnly = true;
+    status.textContent = tr("Transcribing source-locked fields…");
+    try {
+      const response = await fetch("/iol/extract", {method:"POST", body:form, credentials:"same-origin"});
+      const data = await response.json(); if (!response.ok) throw new Error(errorMessage(data));
+      const eyes = data.identity?.eye === "BOTH" ? data.identity.eyes : [data.identity?.eye];
+      if (!data.identity?.patient_name || !eyes?.length || eyes.some(eye => !["OD","OS"].includes(eye))) throw new Error("Source identity verification failed. Check the source reports.");
+      const unreadable = [];
+      for (const source of data.sources || []) {
+        const item = source.extraction || {};
+        if ($("patientAge").value === "" && Number.isFinite(item.patient_age_years)) $("patientAge").value = item.patient_age_years;
+        if (item.document_type === "PENTACAM_CATARACT_PREOP" && eyes.includes(item.eye)) pentacamByEye[item.eye] = item.pentacam || {};
+        if (item.document_type === "PENTACAM_4_MAPS_REFRACTIVE" && eyes.includes(item.eye)) corneaBackByEye[item.eye] = item.cornea_back || {};
+        if (item.document_type === "IOLMASTER_500_BIOMETRY") eyes.forEach(eye => { originals[eye] = item.iolmaster500?.[eye] || null; });
+        (item.unreadable_fields || []).forEach(field => unreadable.push(`${source.filename}: ${field}`));
+      }
+      if (eyes.some(eye => !pentacamByEye[eye] || !corneaBackByEye[eye] || !originals[eye])) throw new Error("Source identity verification failed. Check the source reports.");
+      $("patientName").value = surgeonPatientName;
+      loadedEyes = ["OD","OS"].filter(eye => eyes.includes(eye));
+      loadedEyes.forEach(eye => controllers.get(eye).populate());
+      $("evaluateAll").disabled = false; $("calculateAll").disabled = false;
+      const nameReview = data.identity.source_name_review_required ? tr(" The surgeon-entered patient name was retained. Check the patient names printed on the source reports.") : "";
+      status.textContent = tr("Reports extracted. Review each eye separately before evaluation.") + nameReview + (unreadable.length ? " " + unreadable.join(", ") : "");
+    } catch (error) { clearSourceCase(); status.textContent = error.message || tr("Image transcription failed."); status.classList.add("error"); }
+    finally { $("extractButton").disabled = false; $("sourceImages").disabled = false; $("patientName").readOnly = false; }
+  });
+  async function runLoadedEyes(method) {
+    const requestCaseVersion = caseVersion;
+    if (!loadedEyes.length || !$("patientForm").reportValidity()) return;
+    $("evaluateAll").disabled = true; $("calculateAll").disabled = true;
+    $("bothStatus").textContent = tr("Processing loaded eyes…");
+    try {
+      const results = await Promise.allSettled(loadedEyes.map(eye => controllers.get(eye)[method]()));
+      if (requestCaseVersion !== caseVersion) return;
+      $("bothStatus").textContent = tr(results.every(result => result.status === "fulfilled" && result.value === true)
+        ? "Completed. Review the separate OD and OS results below."
+        : "Review each eye's status and complete any missing fields.");
+    } finally { if (requestCaseVersion === caseVersion) { $("evaluateAll").disabled = !loadedEyes.length; $("calculateAll").disabled = !loadedEyes.length; } }
+  }
+  $("evaluateAll").addEventListener("click", () => runLoadedEyes("evaluate"));
+  $("calculateAll").addEventListener("click", () => runLoadedEyes("calculate"));
 })();

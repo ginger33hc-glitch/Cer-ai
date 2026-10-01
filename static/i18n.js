@@ -3,6 +3,22 @@
   const stored = (localStorage.getItem("cerai-language") || "en").toLowerCase();
   const locale = stored === "tr" ? "tr" : "en";
   const TR = {
+    "Upload images — both eyes: 5 / one eye: 3":"Görüntü yükleyin — iki göz: 5 / tek göz: 3",
+    "For both eyes, upload 5 images together: OD Pentacam Cataract Pre-Op, OD Pentacam 4 Maps Refractive, OS Pentacam Cataract Pre-Op, OS Pentacam 4 Maps Refractive, and ONE IOLMaster 500 report containing both eyes. Each Pentacam image must clearly show OD or OS. For one eye only, upload its two Pentacam reports and one IOLMaster report (3 images). TCRP is not used.":"İki göz için toplam 5 görüntüyü birlikte yükleyin: sağ göz (OD) Pentacam Cataract Pre-Op ve 4 Maps Refractive, sol göz (OS) Pentacam Cataract Pre-Op ve 4 Maps Refractive, ayrıca her iki gözün ölçümlerini içeren TEK IOLMaster 500 raporu. Her Pentacam görüntüsünde OD veya OS açıkça görünmelidir. Yalnızca tek göz için o göze ait iki Pentacam raporu ve bir IOLMaster raporu yükleyin (3 görüntü). TCRP kullanılmaz.",
+    "Upload 3 images for one eye or 5 for both eyes: Cataract Pre-Op and 4 Maps Refractive for each eye, plus one shared IOLMaster 500 report.":"Tek göz için 3, iki göz için 5 görüntü yükleyin: her gözün Cataract Pre-Op ve 4 Maps Refractive raporları ile ortak bir IOLMaster 500 raporu.",
+    "Both-eye assessment requires separate OD and OS Pentacam reports; duplicate eyes are not accepted.":"İki göz değerlendirmesi ayrı OD ve OS Pentacam raporları gerektirir; aynı gözün tekrarlanan raporları kabul edilmez.",
+    "Patient name must be readable on all source reports before combining their measurements.":"Ölçümler birleştirilmeden önce hasta adı tüm kaynak raporlarda okunabilir olmalıdır.",
+    "Patient names differ across the source reports. Check the source images.":"Kaynak raporlardaki hasta adları farklı. Görüntüleri kontrol edin.",
+    "Evaluate loaded eyes":"Yüklenen gözleri değerlendir",
+    "Calculate both eyes":"İki gözü birlikte hesapla",
+    "OD — Right eye":"OD — Sağ göz",
+    "OS — Left eye":"OS — Sol göz",
+    "Evaluate this eye before calculating its lens power.":"Mercek gücünü hesaplamadan önce bu gözün değerlendirmesini tamamlayın.",
+    "Source identity verification failed. Check the source reports.":"Kaynak kimliği doğrulanamadı. Kaynak raporları kontrol edin.",
+    "Reports extracted. Review each eye separately before evaluation.":"Raporlar okundu. Değerlendirmeden önce her gözün verilerini ayrı ayrı kontrol edin.",
+    "Processing loaded eyes…":"Yüklenen gözler işleniyor…",
+    "Completed. Review the separate OD and OS results below.":"Tamamlandı. Aşağıdaki ayrı OD ve OS sonuçlarını inceleyin.",
+    "Review each eye's status and complete any missing fields.":"Her gözün işlem durumunu inceleyin ve eksik alanları tamamlayın.",
     "CER-AI Demo Membership Requests":"CER-AI Demo Üyelik Talepleri",
     "Not a member yet? Click here to request a free 10-patient demo membership.":"Henüz üyeliğiniz yoksa 10 hastalık ücretsiz demo üyeliği için tıklayınız.",
     "Demo membership requests":"Demo üyelik talepleri",

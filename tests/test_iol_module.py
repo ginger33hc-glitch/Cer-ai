@@ -103,7 +103,7 @@ def test_three_iol_sources_require_one_readable_patient_and_operative_eye():
     }
     with pytest.raises(ValueError, match="Patient names differ"):
         validate_source_bundle(_source_bundle(names=("Patient Example", "Other Patient", "Patient Example")))
-    with pytest.raises(ValueError, match="readable on all three"):
+    with pytest.raises(ValueError, match="readable on all source"):
         validate_source_bundle(_source_bundle(names=("Patient Example", None, "Patient Example")))
     with pytest.raises(ValueError, match="same operative eye"):
         validate_source_bundle(_source_bundle(four_maps_eye="OS"))
@@ -345,7 +345,7 @@ def test_single_upload_accepts_three_distinct_reports_and_enforces_same_eye():
     assert 'files.length !== 3' in script
     for document_type in ("PENTACAM_CATARACT_PREOP", "PENTACAM_4_MAPS_REFRACTIVE", "IOLMASTER_500_BIOMETRY"):
         assert document_type in script
-    assert 'typeCounts[type] !== 1' in script
+    assert 'files.length !== 5' in script
     assert 'corneaBackByEye[$("eye").value]' in script
 
 
@@ -366,7 +366,7 @@ def test_escrs_transfer_is_deidentified_and_kane_is_removed():
     html = Path("static/iol.html").read_text(encoding="utf-8")
     script = Path("static/iol.js").read_text(encoding="utf-8")
     power = Path("iol_module/power.py").read_text(encoding="utf-8")
-    transfer = script[script.index("function escrsTransferPayload"):script.index('$("iolForm").addEventListener')]
+    transfer = script[script.index("function escrsTransferPayload"):script.index("async function evaluate")]
     assert '<select id="biologicalSex" required>' in html
     assert "patient_name" not in transfer and "patient_id" not in transfer
     assert 'fetch("/iol/escrs-transfer"' in script
@@ -401,13 +401,13 @@ def test_escrs_biompin_handoff_uses_deidentified_biomdirect_and_query_parameter(
 def test_pentacam_is_the_only_operative_eye_source():
     html = Path("static/iol.html").read_text(encoding="utf-8")
     script = Path("static/iol.js").read_text(encoding="utf-8")
-    assert '<select id="eye" required disabled>' in html
-    assert "IOLMaster is bilateral" in html
-    assert "const pentacamEyes = new Set()" in script
-    assert '$("eye").value = [...pentacamEyes][0]' in script
-    assert "originals.OD ? \"OD\"" not in script
-    assert "pentacamEyeConfirmed" in script
-    assert "Conflicting Pentacam laterality was detected" in script
+    assert '<input id="eye" type="hidden">' in html
+    assert "ONE IOLMaster 500 report containing both eyes" in html
+    assert 'data.identity?.eye === "BOTH"' in script
+    assert 'pentacamByEye[item.eye]' in script
+    assert 'loadedEyes.includes(eye)' in script
+    assert 'controllers.set(eye, createEyeController(eye))' in script
+
 
 
 @pytest.mark.parametrize("toric", [False, True])
@@ -460,3 +460,43 @@ def test_toric_without_unused_radii_matches_legacy_posterior_input():
         legacy = plan_iol_power(power_payload(**options, posterior_cornea={**posterior, "k1_axis_deg":20, "rh_mm":6.7, "rv_mm":6.5}))
     assert corrected.toric_status == "TEST_ONLY"
     assert corrected.toric_candidates == legacy.toric_candidates
+
+
+def _bilateral_source_bundle():
+    reports = _source_bundle()
+    reports.extend([
+        {"extraction": {"document_type": kind, "eye": "OS", "patient_name": "Patient Example"}}
+        for kind in ("PENTACAM_CATARACT_PREOP", "PENTACAM_4_MAPS_REFRACTIVE")
+    ])
+    return reports
+
+
+def test_bilateral_sources_match_each_eye_independent_of_upload_order():
+    assert validate_source_bundle(list(reversed(_bilateral_source_bundle()))) == {
+        "patient_name": "Patient Example", "eye": "BOTH", "eyes": ["OD", "OS"],
+    }
+
+
+@pytest.mark.parametrize("index,field,value", [
+    (3, "eye", "OD"), (4, "eye", "OD"), (4, "eye", None),
+    (2, "eye", "OD"), (2, "iolmaster500", {"OD": {}}),
+    (4, "document_type", "IOLMASTER_500_BIOMETRY"),
+])
+def test_bilateral_sources_reject_missing_or_duplicate_eye(index, field, value):
+    reports = _bilateral_source_bundle()
+    reports[index]["extraction"][field] = value
+    with pytest.raises(ValueError):
+        validate_source_bundle(reports)
+
+
+def test_bilateral_upload_uses_one_shared_iolmaster(monkeypatch):
+    reports = _bilateral_source_bundle()
+    reports[2]["extraction"]["iolmaster500"] = {"OD": {"axial_length_mm": 23.1}, "OS": {"axial_length_mm": 25.2}}
+    outcomes = iter(item["extraction"] for item in reports)
+    monkeypatch.setattr("iol_module.web.extract_image", lambda *_args: next(outcomes))
+    response = TestClient(canonical_engine.app).post("/iol/extract", files=[
+        ("images", (f"report-{i}.png", b"image", "image/png")) for i in range(5)
+    ])
+    assert response.status_code == 200
+    assert response.json()["identity"]["eyes"] == ["OD", "OS"]
+    assert response.json()["sources"][2]["extraction"]["iolmaster500"]["OS"]["axial_length_mm"] == 25.2

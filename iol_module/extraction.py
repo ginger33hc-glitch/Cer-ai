@@ -120,18 +120,23 @@ def validate_source_bundle(
     }
     documents = [item.get("extraction") or {} for item in sources]
     types = [item.get("document_type") for item in documents]
-    if len(types) != 3 or set(types) != expected or len(set(types)) != 3:
-        raise ValueError("Upload exactly one Cataract Pre-Op, one same-eye 4 Maps Refractive, and one IOLMaster 500 report.")
+    bilateral = len(documents) == 5
+    count = 2 if bilateral else 1
+    if (len(documents) not in {3, 5} or set(types) != expected
+            or types.count("IOLMASTER_500_BIOMETRY") != 1
+            or types.count("PENTACAM_CATARACT_PREOP") != count
+            or types.count("PENTACAM_4_MAPS_REFRACTIVE") != count):
+        raise ValueError("Upload 3 images for one eye or 5 for both eyes: Cataract Pre-Op and 4 Maps Refractive for each eye, plus one shared IOLMaster 500 report.")
 
     authoritative_name = " ".join(str(surgeon_patient_name or "").split())
     names = [" ".join(str(item.get("patient_name") or "").split()) for item in documents]
     source_name_review_required = False
     if not authoritative_name:
         if any(not name for name in names):
-            raise ValueError("Patient name must be readable on all three reports before combining their measurements.")
+            raise ValueError("Patient name must be readable on all source reports before combining their measurements.")
         normalized = {unicodedata.normalize("NFKC", name).casefold() for name in names}
         if len(normalized) != 1:
-            raise ValueError("Patient names differ across the three reports. Check the source images.")
+            raise ValueError("Patient names differ across the source reports. Check the source images.")
         authoritative_name = names[types.index("PENTACAM_CATARACT_PREOP")]
     else:
         authoritative_normalized = unicodedata.normalize(
@@ -144,16 +149,22 @@ def validate_source_bundle(
             for name in names
         )
 
-    by_type = dict(zip(types, documents))
-    eye = by_type["PENTACAM_CATARACT_PREOP"].get("eye")
-    if eye not in {"OD", "OS"}:
+    preops = [item for item in documents if item.get("document_type") == "PENTACAM_CATARACT_PREOP"]
+    maps = [item for item in documents if item.get("document_type") == "PENTACAM_4_MAPS_REFRACTIVE"]
+    eyes = [item.get("eye") for item in preops]
+    if any(eye not in {"OD", "OS"} for eye in eyes):
         raise ValueError("The operative eye must be readable on the Pentacam Cataract Pre-Op report.")
-    if by_type["PENTACAM_4_MAPS_REFRACTIVE"].get("eye") != eye:
+    if len(set(eyes)) != count:
+        raise ValueError("Both-eye assessment requires separate OD and OS Pentacam reports; duplicate eyes are not accepted.")
+    if sorted((item.get("eye") or "UNKNOWN") for item in maps) != sorted(eyes):
         raise ValueError("The 4 Maps Refractive report must show the same operative eye.")
-    iolmaster = by_type["IOLMASTER_500_BIOMETRY"]
-    if iolmaster.get("eye") not in {"BOTH", eye} or not isinstance((iolmaster.get("iolmaster500") or {}).get(eye), dict):
+    iolmaster = documents[types.index("IOLMASTER_500_BIOMETRY")]
+    if (iolmaster.get("eye") not in ({"BOTH"} if bilateral else {"BOTH", eyes[0]})
+            or any(not isinstance((iolmaster.get("iolmaster500") or {}).get(eye), dict) for eye in eyes)):
         raise ValueError("The IOLMaster report must include biometry for the operative eye.")
-    identity: dict[str, Any] = {"patient_name": authoritative_name, "eye": eye}
+    identity: dict[str, Any] = {"patient_name": authoritative_name, "eye": "BOTH" if bilateral else eyes[0]}
+    if bilateral:
+        identity["eyes"] = ["OD", "OS"]
     if source_name_review_required:
         identity["source_name_review_required"] = True
     return identity
