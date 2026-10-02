@@ -50,9 +50,10 @@ _PUBLIC_CANONICAL_BASE = os.getenv(
 _PUBLIC_CONTENT_LASTMOD = "2026-09-11"
 _INDEXNOW_KEY = "731d2001b05e7e15840a00e98f53447d"
 _PUBLIC_PAGE_LASTMOD = {
-    "/tr/korneal-ektazi-risk-degerlendirmesi": "2026-10-01",
+    "/about/huseyin-cengiz": "2026-10-02",
+    "/tr/korneal-ektazi-risk-degerlendirmesi": "2026-10-02",
     "/": "2026-10-01",
-    "/corneal-ectasia-risk-assessment": "2026-10-01",
+    "/corneal-ectasia-risk-assessment": "2026-10-02",
     "/iol-calculation-software": "2026-10-01",
     "/toric-iol-calculator": "2026-09-30",
     "/clinical-evidence": "2026-09-12",
@@ -186,7 +187,12 @@ _PUBLIC_PAGE_METADATA = {
             "and developer of CER-AI corneal ectasia risk assessment software."
         ),
         "about": "Hüseyin Cengiz, M.D.",
-        "main_entity": {"@id": "{base}/#clinical-author"},
+        "main_entity": {
+            "@type": "Person",
+            "@id": "{base}/#clinical-author",
+            "name": "Hüseyin Cengiz, M.D.",
+            "url": "{base}/about/huseyin-cengiz",
+        },
     },
     "/editorial-policy": {
         "schema_type": "WebPage",
@@ -766,6 +772,8 @@ def _public_page_discovery_head(base: str, canonical_path: str) -> str:
         schema["citation"] = metadata["citation"]
     if "keywords" in metadata:
         schema["keywords"] = metadata["keywords"]
+    if metadata["schema_type"] == "ProfilePage":
+        schema["dateModified"] = f"{date_modified}T00:00:00Z"
     encoded_schema = json.dumps(schema, ensure_ascii=False, separators=(",", ":"))
     software_identity = ""
     software_factory = {
