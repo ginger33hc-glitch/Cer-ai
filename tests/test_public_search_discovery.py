@@ -292,20 +292,21 @@ def test_static_public_pages_have_page_specific_discovery_identity(
     assert schema["@type"] == schema_type
     assert schema["url"] == f"https://cer-ai.com{path}"
     assert schema["name"] == title
-    expected_date = (
-        "2026-10-01"
-        if path in {"/corneal-ectasia-risk-assessment", "/iol-calculation-software"}
-        else "2026-09-30"
-        if path in {
-            "/corneal-ectasia-risk-assessment",
-            "/iol-calculation-software",
-            "/toric-iol-calculator",
-        }
-        else "2026-09-12"
-        if path in {"/clinical-evidence", "/references"}
-        else "2026-09-11"
-    )
+    expected_date = {
+        "/corneal-ectasia-risk-assessment": "2026-10-02",
+        "/iol-calculation-software": "2026-10-01",
+        "/toric-iol-calculator": "2026-09-30",
+        "/clinical-evidence": "2026-09-12",
+        "/references": "2026-09-12",
+        "/about/huseyin-cengiz": "2026-10-02T00:00:00Z",
+        "/editorial-policy": "2026-09-11",
+    }[path]
     assert schema["dateModified"] == expected_date
+    if schema_type == "ProfilePage":
+        assert schema["mainEntity"]["@type"] == "Person"
+        assert schema["mainEntity"]["name"] == "Hüseyin Cengiz, M.D."
+        assert schema["mainEntity"]["@id"] == "https://cer-ai.com/#clinical-author"
+        assert schema["mainEntity"]["url"] == "https://cer-ai.com/about/huseyin-cengiz"
     assert schema["author"] == {"@id": "https://cer-ai.com/#clinical-author"}
 
 
