@@ -1,7 +1,7 @@
 import inspect
 
 from clinical_core.bad import BADContext, BADResult
-from clinical_core.disposition import CAUTION, PASS, DecisionFinding, finalize_disposition
+from clinical_core.disposition import CAUTION, PASS, PASS_WITH_CAUTION, DecisionFinding, finalize_disposition
 from clinical_core.report_payload import build_report_payload
 from ps3_policy import PS3Finding, PS3ProcedureDisposition, PS3Result
 
@@ -61,7 +61,7 @@ def test_report_payload_copies_calculated_rows_and_drivers_without_recalculation
         source_registry_version="2026-09-07",
         srax_algorithm_version="srax-geom-v2",
     )
-    assert payload["status"] == CAUTION
+    assert payload["status"] == PASS_WITH_CAUTION
     assert payload["randleman"]["rows"]["topography"] == 1
     assert payload["nice"]["total"] == 4
     assert payload["bad"]["final_d"] == 2.0

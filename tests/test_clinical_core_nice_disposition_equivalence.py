@@ -12,6 +12,7 @@ from clinical_core.disposition import (
     ASSESSMENT_INCOMPLETE,
     CAUTION,
     PASS,
+    PASS_WITH_CAUTION,
     STOP_DEFER,
     DecisionFinding,
     finalize_disposition,
@@ -91,6 +92,25 @@ def test_single_finalizer_multiple_cautions_remain_caution():
         DecisionFinding("nice", CAUTION),
     ))
     assert final.status == CAUTION
+
+
+@pytest.mark.parametrize(
+    "caution_count,expected",
+    [
+        (0, PASS),
+        (1, PASS_WITH_CAUTION),
+        (2, CAUTION),
+        (3, CAUTION),
+        (4, CAUTION),
+    ],
+)
+def test_single_finalizer_four_system_caution_contract(caution_count, expected):
+    keys = ("randleman_erss", "nice", "ps3", "bad_d")
+    final = finalize_disposition(
+        DecisionFinding(key, CAUTION if index < caution_count else PASS)
+        for index, key in enumerate(keys)
+    )
+    assert final.status == expected
 
 
 def test_single_finalizer_incomplete_is_never_pass():

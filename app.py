@@ -824,6 +824,11 @@ def index() -> FileResponse:
     return FileResponse("static/index.html")
 
 
+@app.get("/health", include_in_schema=False)
+def health() -> dict[str, str]:
+    return {"status": "ok"}
+
+
 @app.get("/sw.js", include_in_schema=False)
 def service_worker() -> FileResponse:
     return FileResponse(

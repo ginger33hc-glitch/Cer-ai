@@ -18,7 +18,7 @@ KEYS = ("randleman_erss", "nice", "ps3", "bad_d")
 def test_every_completed_scoring_combination(statuses):
     findings = tuple(DecisionFinding(k, s) for k, s in zip(KEYS, statuses))
     count = statuses.count(CAUTION)
-    expected = PASS if count <= 1 else PASS_WITH_CAUTION if count == 2 else CAUTION
+    expected = PASS if count == 0 else PASS_WITH_CAUTION if count == 1 else CAUTION
     result = finalize_disposition(findings)
     assert result.status == expected
     assert len(result.caution_drivers) == count
@@ -48,7 +48,7 @@ def test_stop_dominates_missing_and_cautions():
 def test_duplicate_findings_are_not_counted_as_extra_scoring_systems():
     findings = [DecisionFinding(k, CAUTION if k == "nice" else PASS) for k in KEYS]
     findings.append(DecisionFinding("nice", CAUTION, "second detail"))
-    assert finalize_disposition(findings).status == PASS
+    assert finalize_disposition(findings).status == PASS_WITH_CAUTION
 
 
 def test_independent_caution_is_not_downgraded():
@@ -71,22 +71,22 @@ def test_bilateral_result_preserves_worse_eye_without_counting_eyes(statuses, ex
 def test_actual_runtime_one_vs_two_scoring_cautions_and_report():
     one = _payload(K2_D=45.0)
     eye = one["decision"]["eyes"][0]
-    assert eye["status"] == PASS
-    assert one["decision"]["status"] == PASS
+    assert eye["status"] == PASS_WITH_CAUTION
+    assert one["decision"]["status"] == PASS_WITH_CAUTION
     assert eye["planning"]["selected_plan"] == "Plan A"
-    assert eye["report_payload"]["status"] == PASS
-    assert presentation_class(eye["status"]) == "pass"
-    assert reports._status_palette(eye["status"])[0] == reports.GREEN
+    assert eye["report_payload"]["status"] == PASS_WITH_CAUTION
+    assert presentation_class(eye["status"]) == "caution"
+    assert reports._status_palette(eye["status"])[0] == reports.AMBER
     model = reports.canonical_report_model(one)
     assert ["Disposition", "PASS", ""] in _section(model, "OD", "Randleman / ERSS")
     assert ["Classification", "CAUTION", "CAUTION"] in _section(model, "OD", "NICE")
     two = _payload(I_S=1.03)
-    assert two["decision"]["eyes"][0]["status"] == PASS_WITH_CAUTION
-    assert two["decision"]["status"] == PASS_WITH_CAUTION
+    assert two["decision"]["eyes"][0]["status"] == CAUTION
+    assert two["decision"]["status"] == CAUTION
 
 
 def test_bad_is_a_fourth_system_and_component_flags_are_not_counted():
     bad_only = _payload(BAD_D=2.0, Df=3.0, Db=3.0, ARTmax_um=300)
-    assert bad_only["decision"]["eyes"][0]["status"] == PASS
+    assert bad_only["decision"]["eyes"][0]["status"] == PASS_WITH_CAUTION
     three = _payload(I_S=1.03, BAD_D=2.0)
     assert three["decision"]["eyes"][0]["status"] == CAUTION

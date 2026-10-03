@@ -8,6 +8,7 @@ from clinical_core import (
     CAUTION,
     ClinicalCoreInput,
     PASS,
+    PASS_WITH_CAUTION,
     PIPELINE_ORDER,
     PS3EyeInput,
     PS3InterEyeInput,
@@ -178,7 +179,14 @@ def test_nonzero_cylinder_still_requires_axis():
     assert result["status"] == ASSESSMENT_INCOMPLETE
 
 
-def test_multiple_cautions_do_not_auto_escalate_to_stop():
+def test_single_scoring_caution_produces_pass_with_caution():
+    result = evaluate_normalized_case(normal_lasik(final_bad_d=2.0))
+    assert result["bad_d"]["status"] == CAUTION
+    assert result["nice_status"] == PASS
+    assert result["status"] == PASS_WITH_CAUTION
+
+
+def test_multiple_cautions_produce_caution_without_escalating_to_stop():
     result = evaluate_normalized_case(normal_lasik(
         final_bad_d=2.0,
         nice_k2_d=46.0,
@@ -187,7 +195,7 @@ def test_multiple_cautions_do_not_auto_escalate_to_stop():
     ))
     assert result["bad_d"]["status"] == CAUTION
     assert result["nice_status"] == CAUTION
-    assert result["status"] == "PASS WITH CAUTION"
+    assert result["status"] == CAUTION
     assert {driver.key for driver in result["final_disposition"].caution_drivers} == {"bad_d", "nice"}
 
 
