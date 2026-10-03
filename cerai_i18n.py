@@ -48,6 +48,7 @@ TR = {
     "Displayed steep/astigmatic axis": "Ekrandaki dik / astigmatik aks",
     "PS3 BAD Axis (flat meridian, beside K1)": "PS3 BAD aksı (düz meridyen, K1 yanında)",
     "srax_algorithm": "SRAX algoritması",
+    "deployment_sha": "Dağıtım commit kimliği",
     "source_registry": "Kaynak kaydı",
     "clinical_policy": "Klinik politika",
     "software": "Yazılım",

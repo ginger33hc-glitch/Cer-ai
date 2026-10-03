@@ -14,6 +14,7 @@ import geometric_srax_policy
 import mandatory_source_set_policy
 import pentacam_targeted_reread
 import runtime_composition as composition
+from release_identity import SOFTWARE_VERSION
 from clinical_core.bad import final_bad_d_classification
 from clinical_core.erss import erss_disposition, erss_rsb_points
 from clinical_core.rules import erss_age_points, erss_pachymetry_points
@@ -36,7 +37,7 @@ from pentacam_canonical_source_lock import (
 
 core = composition.core
 app = composition.app
-CANONICAL_VERSION = "2.0"
+CANONICAL_VERSION = SOFTWARE_VERSION
 _archive_runtime = composition.compose(CANONICAL_VERSION)
 
 

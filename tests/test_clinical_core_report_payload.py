@@ -106,7 +106,8 @@ def test_versions_are_printable_from_one_payload():
         source_registry_version="3", srax_algorithm_version="4",
     )
     assert payload["versions"] == {
-        "software": "1", "clinical_policy": "2", "source_registry": "3", "srax_algorithm": "4"
+        "software": "1", "clinical_policy": "2", "source_registry": "3", "srax_algorithm": "4",
+        "deployment_sha": None,
     }
 
 
