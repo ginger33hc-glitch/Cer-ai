@@ -39,7 +39,7 @@ def test_turkish_exports_translate_current_report_sections_and_preserve_snapshot
             'Göreli kalınlık haritası: değerlendirilmedi; cerrah değerlendirmesi gerekir;',
             'PTI/CTSP kalınlık profili morfolojisi: değerlendirilmedi; cerrah değerlendirmesi gerekir;',
             'Mitomisin-C önerisi', 'NORMAL / UYGUN', 'yalnızca bilgilendirme',
-            'DİKKATLE UYGUN — CER-AI nihai birleştirme ölçütleri karşılandı',
+            'DİKKATLE UYGUN — cerrah değerlendirmesi gereklidir',
             'Kaynak: Axial/Sagittal Curvature (Front).',
                 'No Source Şule Işık', 'Dr. Çağrı Şen',
             'SHOW_2_CORNEA_BACK / show2.png', 'BAD_D_STRIP / OD-bad.png',
@@ -66,7 +66,7 @@ def test_turkish_single_page_conclusion_is_translated_and_one_page():
     for required in (
         'CER-AI TEK SAYFALIK SONUÇ RAPORU',
         'OD — DİKKATLE UYGUN',
-        'OS — DİKKATLE UYGUN',
+        'OS — UYGUN',
         'Değerlendirme',
         'Sonuç ayrıntısı',
         'Seçilen işlem planı',
