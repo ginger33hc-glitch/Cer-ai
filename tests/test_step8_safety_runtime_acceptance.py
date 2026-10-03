@@ -78,7 +78,7 @@ def _evaluate(*, procedure="PRK", od_eye=None, od_plan=None):
 def test_preop_thinnest_480_allowed_but_479_hard_stops():
     _, at_480 = _evaluate(od_eye=_eye("OD", pachy_thinnest_um=480.0))
     assert "preop_thickness" not in at_480["OD"]["hard_stops"]
-    assert at_480["OD"]["status"] == "PASS"
+    assert at_480["OD"]["status"] == "PASS WITH CAUTION"
 
     result, at_479 = _evaluate(od_eye=_eye("OD", pachy_thinnest_um=479.0))
     assert "preop_thickness" in at_479["OD"]["hard_stops"]

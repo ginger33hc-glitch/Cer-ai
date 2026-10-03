@@ -97,7 +97,7 @@ def test_migration_nice_caution_remains_caution_not_auto_stop():
     ))
     assert result["nice_status"] == CAUTION
     assert result["erss_status"] == CAUTION
-    assert result["status"] == "PASS WITH CAUTION"
+    assert result["status"] == CAUTION
 
 
 def test_migration_erss_high_risk_still_stops():

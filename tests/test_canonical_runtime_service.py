@@ -246,7 +246,7 @@ def test_prk_uses_shared_myopic_estimate_and_complete_erss_in_final_combination(
              for name in ('OD', 'OS')}
     result = _evaluate(
         extracted=_case(_eye('OD', I_S=0.61), _eye('OS', I_S=1.03)), plans=plans)
-    assert [eye['status'] for eye in result['eyes']] == ['PASS', 'PASS WITH CAUTION']
+    assert [eye['status'] for eye in result['eyes']] == ['PASS', 'CAUTION']
     assert [eye['score']['total'] for eye in result['eyes']] == [1, 3]
     for eye in result['eyes']:
         assert eye['values']['PRK_RST_um'] == 545 - 50 - 22.5
