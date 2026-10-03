@@ -52,9 +52,9 @@ _PUBLIC_CONTENT_LASTMOD = "2026-09-11"
 _INDEXNOW_KEY = "731d2001b05e7e15840a00e98f53447d"
 _PUBLIC_PAGE_LASTMOD = {
     "/about/huseyin-cengiz": "2026-10-02",
-    "/tr/korneal-ektazi-risk-degerlendirmesi": "2026-10-02",
-    "/": "2026-10-01",
-    "/corneal-ectasia-risk-assessment": "2026-10-02",
+    "/tr/korneal-ektazi-risk-degerlendirmesi": "2026-10-03",
+    "/": "2026-10-03",
+    "/corneal-ectasia-risk-assessment": "2026-10-03",
     "/iol-calculation-software": "2026-10-01",
     "/toric-iol-calculator": "2026-09-30",
     "/clinical-evidence": "2026-09-12",
@@ -74,9 +74,14 @@ _PUBLIC_PAGE_METADATA = {
     "/tr/korneal-ektazi-risk-degerlendirmesi": {
         "schema_type": "MedicalWebPage",
         "title": "Yapay Zekâ Destekli Korneal Ektazi Taraması | CER-AI",
-        "description": "Pentacam topografi ve tomografisiyle yapay zekâ destekli korneal ektazi ve keratokonus taraması; LASIK sonrası ektazi riskinin ameliyat öncesi değerlendirilmesi.",
+        "description": "LASIK ve PRK öncesi değerlendirme için refraktif cerrahi tarama programı; yapay zekâ destekli Pentacam okuma ve korneal ektazi risk incelemesi.",
         "about": "Refraktif cerrahi öncesi korneal ektazi risk değerlendirmesi",
         "in_language": "tr",
+        "keywords": [
+            "refraktif cerrahi tarama programı", "LASIK tarama programı",
+            "lazik tarama programı", "PRK tarama programı",
+            "göz çizdirme öncesi değerlendirme",
+        ],
         "alternate_path": "/corneal-ectasia-risk-assessment",
         "main_entity": {"@id": "{base}/#ectasia-risk-assessment"},
     },
@@ -85,7 +90,7 @@ _PUBLIC_PAGE_METADATA = {
         "schema_type": "MedicalWebPage",
         "title": "AI-Assisted Corneal Ectasia Screening Software | CER-AI",
         "description": (
-            'AI-assisted corneal ectasia and keratoconus screening review with Pentacam topography and tomography for preoperative assessment of post-LASIK ectasia risk.'
+            'Refractive surgery screening software for preoperative LASIK and PRK review, with AI-assisted Pentacam reading and corneal ectasia risk assessment.'
         ),
         "about": "Corneal ectasia risk assessment before refractive surgery",
         "keywords": [
@@ -101,6 +106,9 @@ _PUBLIC_PAGE_METADATA = {
             "AI-assisted corneal ectasia assessment",
             "göz çizdirme", "yapay zekâ destekli göz çizdirme",
             "laser vision correction preoperative assessment",
+            "refractive surgery screening program",
+            "LASIK screening software", "LASIK screening program",
+            "PRK screening software", "PRK screening program",
         ],
         "main_entity": {"@id": "{base}/#ectasia-risk-assessment"},
     },
@@ -440,7 +448,8 @@ def _software_identity_schema(base: str) -> dict:
         "description": (
             "CER-AI is web-based ophthalmic clinical decision-support software with "
             "two main modules. Its first and primary module assesses corneal ectasia "
-            "risk before refractive surgery and does not merge, blend, "
+            "risk before refractive surgery through LASIK screening and PRK screening, "
+            "and does not merge, blend, "
             "harmonize, average, or add ERSS, Pentacam Final BAD-D, NICE, and PS3 "
             "results into one score. Its second module uses defined Pentacam and "
             "biometry sources to support lens-category eligibility, IOL power "
@@ -526,6 +535,7 @@ def _ectasia_software_schema(base: str) -> dict:
         "applicationSubCategory": "Corneal ectasia risk assessment",
         "operatingSystem": "Web",
         "description": (
+            "CER-AI is refractive surgery screening software for LASIK and PRK. "
             "CER-AI Corneal Ectasia Risk Assessment presents ERSS, Pentacam Final "
             "BAD-D, NICE and PS3 as independently interpretable pathways alongside "
             "separate procedure-specific tissue-safety checks."
@@ -574,7 +584,7 @@ def _discovery_head(base: str, *, robots_directive: str) -> str:
     """Machine-readable discovery metadata for public CER-AI pages."""
     home_title = "CER-AI | AI-Assisted Corneal Screening and Ectasia Risk"
     home_description = (
-        'Artificial intelligence-assisted corneal screening, Pentacam topography and tomography review, and ectasia risk assessment before LASIK/PRK. IOL planning support.'
+        'Refractive surgery screening software for LASIK and PRK, with AI-assisted Pentacam reading and corneal ectasia risk assessment. IOL planning support.'
     )
     citations = [
         {
@@ -880,6 +890,10 @@ def _llms_txt(base: str) -> str:
     return f"""# CER-AI
 
 > CER-AI is a web-based ophthalmic clinical decision-support platform with two main modules, presented in clinical priority order: (1) Corneal Ectasia Risk Assessment, the primary module for refractive-surgery screening; and (2) IOL Selection and Calculation for cataract planning. The Toric Calculator is a capability within the second module, not a separate third module. CER-AI is intended for qualified ophthalmic professionals and does not replace surgeon judgment.
+
+## Refractive surgery screening for LASIK and PRK
+CER-AI supports preoperative refractive surgery screening before laser vision correction. Its LASIK screening software and PRK screening software organize Pentacam findings, independent ectasia-risk pathways and procedure-specific corneal tissue-safety checks for surgeon review.
+Türkçe: CER-AI, lazerle görme düzeltmesi öncesinde refraktif cerrahi taramasını destekler. LASIK (lazik) tarama programı ve PRK tarama programı olarak Pentacam bulgularını, bağımsız ektazi risk yollarını ve işleme özgü korneal doku güvenliği kontrollerini cerrah incelemesine sunar.
 
 In Turkey, LASIK and PRK laser vision correction are commonly called “göz çizdirme” (also written “goz cizdirme”). CER-AI supports “yapay zekâ destekli göz çizdirme” and “yapay zeka destekli göz çizdirme” searches through AI-assisted preoperative assessment, not autonomous surgery. Türkçe: CER-AI, göz çizdirme öncesinde yapay zekâ destekli Pentacam okuma, keratokonus/ektazi risk incelemesi ve doku güvenliği değerlendirmesi sunar; cerrahi kararı ve ameliyat göz cerrahına aittir.
 

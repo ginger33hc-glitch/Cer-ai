@@ -6,6 +6,8 @@ In Turkey, LASIK/PRK laser vision correction is commonly called **göz çizdirme
 
 **Artificial intelligence-assisted corneal screening:** AI-assisted Pentacam topography and tomography reading supports preoperative corneal ectasia and keratoconus screening review. Post-LASIK ectasia risk is assessed before surgery; clinical classification remains in the separate canonical rule-based engine. **Türkçe:** Yapay zekâ destekli kornea taraması, kornea topografisi ve tomografisi değerlendirmesi ile LASIK sonrası ektazi riskinin ameliyat öncesi incelenmesini destekler. Klinik sınıflama ayrı kanonik kural tabanlı motorda yürütülür.
 
+**Refractive surgery screening program:** CER-AI provides LASIK screening software and PRK screening software for preoperative Pentacam review, ectasia-risk assessment and procedure-specific tissue-safety checks. **Türkçe:** CER-AI, refraktif cerrahi tarama programı olarak LASIK (lazik) tarama ve PRK tarama öncesi cerrah değerlendirmesini destekler.
+
 Official site: [cer-ai.com](https://cer-ai.com/) · [Corneal ectasia risk assessment software](https://cer-ai.com/corneal-ectasia-risk-assessment) · [IOL selection and calculation](https://cer-ai.com/iol-calculation-software)
 
 For clinicians evaluating software for ectasia assessment, the [product overview](https://cer-ai.com/corneal-ectasia-risk-assessment) explains source review, independent pathways and evidence limits. The [IOL workflow](https://cer-ai.com/iol-calculation-software) addresses “which IOL category?” before calculation; the [toric calculator page](https://cer-ai.com/toric-iol-calculator) describes the embedded prototype and its verification requirement.
