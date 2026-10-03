@@ -43,6 +43,7 @@ from pentacam_field_registry import (
     PASSIVE_INFORMATIONAL_FIELDS,
 )
 from reports import ReportContractError, build_conclusion_pdf, build_docx, build_pdf
+from release_identity import SOFTWARE_VERSION
 
 
 @asynccontextmanager
@@ -57,7 +58,7 @@ async def canonical_runtime_lifespan(application: FastAPI):
 
 
 app = FastAPI(
-    title="CER-AI — Corneal Ectasia Risk Assessment Intelligence v2.0",
+    title=f"CER-AI — Corneal Ectasia Risk Assessment Intelligence v{SOFTWARE_VERSION}",
     lifespan=canonical_runtime_lifespan,
 )
 app.mount("/static", StaticFiles(directory="static"), name="static")

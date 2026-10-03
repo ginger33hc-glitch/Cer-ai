@@ -1,6 +1,10 @@
 name: Deep Import Isolation
 
 on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
   schedule:
     - cron: '0 2 * * 6'
   workflow_dispatch:
@@ -16,8 +20,8 @@ jobs:
       PYTHONPATH: ${{ github.workspace }}
       OPENAI_API_KEY: test-key-for-import-only
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
           cache: pip
@@ -26,6 +30,6 @@ jobs:
       - name: Test every file in an isolated process
         shell: bash
         run: |
-          for test_file in tests/test_*.py; do
+          for test_file in tests/test_*.py research/test_*.py; do
             python -m pytest -q "$test_file"
           done

@@ -16,6 +16,7 @@ from urllib.parse import quote
 from typing import Any
 
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
+from release_identity import deployment_sha as release_deployment_sha
 
 
 ROOT_HTML = Path("static/index.html")
@@ -190,7 +191,7 @@ def install(core: Any) -> None:
                     canary = case_archive.latest_storage_canary(archive_runtime.archive) or canary
                 except Exception:
                     canary = {"status": "ERROR"}
-            deployment_sha = str(os.getenv("RAILWAY_GIT_COMMIT_SHA") or "").strip()
+            deployment_sha = release_deployment_sha()
             return {
                 "software_version": str(getattr(core, "APP_VERSION", "")),
                 "deployment_sha": deployment_sha or None,

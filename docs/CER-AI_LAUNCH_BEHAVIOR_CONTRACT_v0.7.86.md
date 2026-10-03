@@ -236,7 +236,7 @@ Restrictiveness order:
 Clinical ordering: `PASS < PASS WITH CAUTION < CAUTION < STOP-DEFER`. Incompleteness blocks favorable completion; prior refractive surgery routes out of the virgin-cornea engine rather than being treated as another clinical score.
 
 For each eye, count CAUTION results from the completed ERSS, NICE, PS3 and Final BAD-D systems:
-zero or one yields PASS; two yields PASS WITH CAUTION; three or four yields CAUTION. Count systems, not individual findings. Independent
+zero yields PASS; one yields PASS WITH CAUTION; two or more yield CAUTION. Count systems, not individual findings. Independent
 CAUTION findings retain CAUTION. Incomplete inputs block favorable final status;
 STOP-DEFER dominates incomplete and caution results. The bilateral result preserves
 the more restrictive eye result; two PASS WITH CAUTION eyes do not become CAUTION.

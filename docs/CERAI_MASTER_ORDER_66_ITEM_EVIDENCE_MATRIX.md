@@ -110,7 +110,7 @@ These amendments are carried forward from the checkpoint protocol, test-retireme
 source registry, canonical owners and associated regression tests. They are operational CER-AI
 policies, not new claims of clinical validation.
 
-- Final disposition counts completed ERSS/NICE/PS3/Final BAD-D systems once: zero or one caution = PASS, two = PASS WITH CAUTION, three/four = CAUTION. Independent caution, incompleteness and STOP-DEFER gates retain their precedence.
+- Final disposition counts completed ERSS/NICE/PS3/Final BAD-D systems once: zero caution = PASS, one = PASS WITH CAUTION, two or more = CAUTION. Independent caution, incompleteness and STOP-DEFER gates retain their precedence.
 - PS3 astigmatism comparison activates only if either magnitude exceeds 3.00 D; both at/below 3.00 D add no factor. Its axis comes only from the BAD flat Axis beside K1. Shared SRAX is always evaluated by PS3, even after other deferring factors.
 - ERSS and PS3 use the shared independent geometric SRAX evidence with a strict >20.0° boundary. Reverse-KISA and older inclusive-20/separate-22 rules are retired.
 - PRK includes canonical ERSS using residual stroma; LASIK and PRK share requested myopic ablation resolution. Definitive LASIK failure evaluates PRK once per failed eye, retaining LASIK history and all shared safety/completion gates.

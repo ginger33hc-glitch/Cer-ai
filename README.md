@@ -12,11 +12,20 @@ For clinicians evaluating software for ectasia assessment, the [product overview
 
 The public pages describe the workflow and evidence boundaries; they do not assess individual patients or establish external validation of the complete software.
 
-## What v2.0 implements
+## What v2.0.1 implements
+
+- Release identity is shared by the runtime, report renderers and public software metadata.
+  New assessment snapshots retain the full Railway deployment commit SHA, alongside the
+  software and clinical-policy versions. PDF, Word, the single-page conclusion and research
+  CSV preserve that original identity when regenerated. Older snapshots without a commit
+  remain explicitly unknown; the current deployment is never substituted retroactively.
+- Independent test-file checks run on pull requests, main-branch updates, weekly and on
+  demand, including the research contract test. Required branch-protection checks must be
+  configured separately by the repository owner.
 
 - Clinical dispositions now use one centralized four-category contract: `PASS`,
   `PASS WITH CAUTION`, `CAUTION`, and `STOP-DEFER`. Across the four completed independent systems,
-  zero or one `CAUTION` yields `PASS`, two yield `PASS WITH CAUTION`, and three or four yield
+  zero `CAUTION` yields `PASS`, one yields `PASS WITH CAUTION`, and two or more yield
   `CAUTION`; any hard stop yields `STOP-DEFER`. Incomplete-data and post-refractive routing states
   remain separate.
 

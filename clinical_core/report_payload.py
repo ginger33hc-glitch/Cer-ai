@@ -78,6 +78,7 @@ def build_report_payload(
     clinical_policy_version: str,
     source_registry_version: str,
     srax_algorithm_version: str,
+    deployment_sha: str | None = None,
     source_eye: Mapping[str, Any] | None = None,
     planning: Any = None,
     microkeratome_planning: Any = None,
@@ -177,5 +178,6 @@ def build_report_payload(
             "clinical_policy": clinical_policy_version,
             "source_registry": source_registry_version,
             "srax_algorithm": srax_algorithm_version,
+            "deployment_sha": deployment_sha,
         },
     }

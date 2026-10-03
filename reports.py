@@ -27,6 +27,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import KeepInFrame, KeepTogether, PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 from cerai_i18n import authorship_notice, liability_notice, normalize_locale, translate_text
+from release_identity import SOFTWARE_VERSION
 
 
 NAVY = "173B57"
@@ -40,7 +41,7 @@ GRAY = "52616D"
 GRAY_FILL = "EEF2F5"
 LINE = "D7E0E7"
 INK = "17212B"
-APP_VERSION = "2.0"
+APP_VERSION = SOFTWARE_VERSION
 PROGRAM_NAME = "Corneal Ectasia Risk Assessment Intelligence"
 
 PDF_UNICODE_REGULAR = "CER-AI-Vera"
@@ -712,6 +713,9 @@ def build_conclusion_pdf(payload: Mapping[str, Any]) -> bytes:
             _conclusion_eye_rows(eye), styles, regular, bold,
             eye.get("status"), locale=locale,
         ))
+        versions = eye.get("versions") or {}
+        provenance = " · ".join(f"{key}: {_text(value)}" for key, value in versions.items())
+        content.append(Paragraph(escape(provenance), styles["Cell"]))
 
     conclusion_notice = (
         "This report is generated under the CER-AI Preoperative Ectasia Risk Assessment Protocol "

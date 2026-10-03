@@ -51,14 +51,24 @@ jobs:
           python -m playwright install --with-deps chromium
       - name: Desktop and phone EN/TR presentation
         run: |
-          python -m http.server 8765 --bind 127.0.0.1 >/tmp/cerai-public-http.log 2>&1 &
+          PORT=8765 python start.py >/tmp/cerai-public-http.log 2>&1 &
           SERVER_PID=$!
           trap 'kill "$SERVER_PID"' EXIT
           python - <<'PY'
           from pathlib import Path
+          import time
+          import urllib.request
           from playwright.sync_api import sync_playwright, expect
           out = Path('public-discovery-artifacts')
           out.mkdir(exist_ok=True)
+          for attempt in range(50):
+              try:
+                  urllib.request.urlopen('http://127.0.0.1:8765/health', timeout=1).close()
+                  break
+              except OSError:
+                  time.sleep(0.2)
+          else:
+              raise RuntimeError('Canonical application did not become ready')
           with sync_playwright() as p:
               browser = p.chromium.launch()
               for width, height in ((1440, 1000), (390, 844)):
@@ -66,27 +76,24 @@ jobs:
                   page = context.new_page()
                   errors = []
                   page.on('pageerror', lambda error: errors.append(str(error)))
-                  page.goto('http://127.0.0.1:8765/static/corneal-ectasia-risk-assessment.html', wait_until='networkidle')
-                  expect(page.locator('[data-language-variant="en"]:visible')).to_have_count(5)
-                  expect(page.locator('[data-language-variant="tr"]:visible')).to_have_count(0)
+                  page.goto('http://127.0.0.1:8765/corneal-ectasia-risk-assessment', wait_until='networkidle')
+                  expect(page.locator('html')).to_have_attribute('lang', 'en')
                   expect(page.get_by_role('heading', name='How does CER-AI use artificial intelligence?')).to_be_visible()
                   assert page.evaluate('document.documentElement.scrollWidth <= innerWidth + 1'), 'Horizontal overflow in EN'
                   page.screenshot(path=str(out / f'product-{width}-en.png'), full_page=True)
-                  page.locator('#cerai-public-language button[data-lang="tr"]').click()
+                  page.locator('.language-links a[hreflang="tr"]').click()
                   expect(page.locator('html')).to_have_attribute('lang', 'tr')
-                  expect(page.locator('[data-language-variant="tr"]:visible')).to_have_count(5)
-                  expect(page.locator('[data-language-variant="en"]:visible')).to_have_count(0)
+                  expect(page).to_have_url('http://127.0.0.1:8765/tr/korneal-ektazi-risk-degerlendirmesi')
                   expect(page.get_by_role('heading', name='CER-AI yapay zekâyı nasıl kullanır?')).to_be_visible()
                   assert page.evaluate('document.documentElement.scrollWidth <= innerWidth + 1'), 'Horizontal overflow in TR'
                   page.screenshot(path=str(out / f'product-{width}-tr.png'), full_page=True)
                   page.reload(wait_until='networkidle')
                   expect(page.locator('html')).to_have_attribute('lang', 'tr')
-                  expect(page.locator('[data-language-variant="tr"]:visible')).to_have_count(5)
-                  page.locator('#cerai-public-language button[data-lang="en"]').click()
+                  page.locator('.language-links a[hreflang="en"]').click()
                   expect(page.locator('html')).to_have_attribute('lang', 'en')
                   expect(page.get_by_role('heading', name='How does CER-AI use artificial intelligence?')).to_be_visible()
                   assert not errors, errors
-                  print(f'PASS: {width}px EN -> TR -> persisted TR -> EN, no horizontal overflow or JS errors')
+                  print(f'PASS: {width}px EN -> TR URL -> reload TR -> EN, no horizontal overflow or JS errors')
                   context.close()
               browser.close()
           PY

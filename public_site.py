@@ -4,6 +4,7 @@ This module is presentation-only. It does not alter clinical decision logic,
 authentication, assessment endpoints, report generation, or archive behavior.
 """
 import json
+from release_identity import SOFTWARE_VERSION
 import os
 import re
 from html import escape
@@ -430,7 +431,7 @@ def _software_identity_schema(base: str) -> dict:
         "sameAs": [
             "https://vizyongozhastanesi.com/en/cer-ai-corneal-ectasia-risk-assessment/"
         ],
-        "softwareVersion": "2.0",
+        "softwareVersion": SOFTWARE_VERSION,
         "creator": {"@id": f"{base}/#clinical-author"},
         "applicationCategory": "MedicalApplication",
         "applicationSubCategory": "Ophthalmic surgical decision support",
@@ -483,7 +484,7 @@ def _iol_software_schema(base: str) -> dict:
         "url": product_page,
         "mainEntityOfPage": {"@id": f"{product_page}#page"},
         "isPartOf": {"@id": f"{base}/#software"},
-        "softwareVersion": "2.0",
+        "softwareVersion": SOFTWARE_VERSION,
         "creator": {"@id": f"{base}/#clinical-author"},
         "applicationCategory": "MedicalApplication",
         "applicationSubCategory": "IOL calculation and cataract-surgery decision support",
@@ -519,7 +520,7 @@ def _ectasia_software_schema(base: str) -> dict:
         "url": product_page,
         "mainEntityOfPage": {"@id": f"{product_page}#page"},
         "isPartOf": {"@id": f"{base}/#software"},
-        "softwareVersion": "2.0",
+        "softwareVersion": SOFTWARE_VERSION,
         "creator": {"@id": f"{base}/#clinical-author"},
         "applicationCategory": "MedicalApplication",
         "applicationSubCategory": "Corneal ectasia risk assessment",
@@ -544,7 +545,7 @@ def _toric_software_schema(base: str) -> dict:
         "url": product_page,
         "mainEntityOfPage": {"@id": f"{product_page}#page"},
         "isPartOf": {"@id": f"{base}/#iol-calculation-software"},
-        "softwareVersion": "2.0",
+        "softwareVersion": SOFTWARE_VERSION,
         "creator": {"@id": f"{base}/#clinical-author"},
         "applicationCategory": "MedicalApplication",
         "applicationSubCategory": "Toric IOL calculation and astigmatism planning",

@@ -52,6 +52,7 @@ from clinical_core.version import CLINICAL_POLICY_VERSION, SRAX_POLICY_VERSION
 from clinical_eligibility import evaluate_eligibility
 from pentacam_canonical_source_lock import POLICY_VERSION as SOURCE_REGISTRY_VERSION
 from planning.microkeratome import MicrokeratomePlanningInput, plan_microkeratome
+from release_identity import deployment_sha
 
 POST_REFRACTIVE = "POST-REFRACTIVE PATHWAY REQUIRED"
 SUPPORTED_PROCEDURES = frozenset({"LASIK", "PRK", "SMILE"})
@@ -172,6 +173,7 @@ def _report_payload(
         clinical_policy_version=CLINICAL_POLICY_VERSION,
         source_registry_version=SOURCE_REGISTRY_VERSION,
         srax_algorithm_version=SRAX_POLICY_VERSION,
+        deployment_sha=deployment_sha(),
         source_eye=source_eye,
         planning=planning,
         microkeratome_planning=microkeratome_planning,
@@ -745,6 +747,7 @@ def evaluate_case(
         "effective_eye_plans": _plain(effective_plans),
         "procedure_transitions": procedure_transitions,
         "version": software_version,
+        "deployment_sha": deployment_sha(),
         "policy_versions": {
             "clinical": CLINICAL_POLICY_VERSION,
             "source_registry": SOURCE_REGISTRY_VERSION,
