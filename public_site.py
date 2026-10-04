@@ -31,6 +31,7 @@ _PUBLIC_HOME = Path("static/public-home.html")
 _AI_LANDING = Path("static/corneal-ectasia-risk-assessment.html")
 _AI_LANDING_TR = Path("static/tr-korneal-ektazi-risk-degerlendirmesi.html")
 _IOL_LANDING = Path("static/iol-calculation-software.html")
+_IOL_LANDING_TR = Path("static/tr-akilli-mercek-iol-hesaplama.html")
 _TORIC_LANDING = Path("static/toric-iol-calculator.html")
 _EVIDENCE_PAGE = Path("static/clinical-evidence.html")
 _REFERENCES_PAGE = Path("static/references.html")
@@ -55,7 +56,8 @@ _PUBLIC_PAGE_LASTMOD = {
     "/tr/korneal-ektazi-risk-degerlendirmesi": "2026-10-03",
     "/": "2026-10-03",
     "/corneal-ectasia-risk-assessment": "2026-10-03",
-    "/iol-calculation-software": "2026-10-01",
+    "/iol-calculation-software": "2026-10-04",
+    "/tr/akilli-mercek-iol-hesaplama": "2026-10-04",
     "/toric-iol-calculator": "2026-09-30",
     "/clinical-evidence": "2026-09-12",
     "/references": "2026-09-12",
@@ -68,6 +70,7 @@ _PUBLIC_PAGE_LAST_REVIEWED = {
     "/tr/korneal-ektazi-risk-degerlendirmesi": "2026-09-29",
     "/corneal-ectasia-risk-assessment": "2026-09-29",
     "/iol-calculation-software": "2026-09-29",
+    "/tr/akilli-mercek-iol-hesaplama": "2026-09-29",
     "/toric-iol-calculator": "2026-09-29",
 }
 _PUBLIC_PAGE_METADATA = {
@@ -112,7 +115,23 @@ _PUBLIC_PAGE_METADATA = {
         ],
         "main_entity": {"@id": "{base}/#ectasia-risk-assessment"},
     },
+    "/tr/akilli-mercek-iol-hesaplama": {
+        "schema_type": "MedicalWebPage",
+        "title": "Mersin Akıllı Mercek ve Akıllı Lens Planlaması | CER-AI",
+        "description": "Mersin Vizyon Göz Hastanesi’nde CER-AI ile akıllı mercek ve akıllı lens seçimine karar desteği, IOL gücü hesabı ve torik planlama. Nihai karar cerrahındır.",
+        "about": "Katarakt cerrahisinde göz içi mercek seçimi ve IOL hesaplama desteği",
+        "in_language": "tr",
+        "alternate_path": "/iol-calculation-software",
+        "keywords": [
+            "akıllı mercek", "akıllı lens", "Mersin akıllı mercek",
+            "Mersin akıllı lens", "Mersin Vizyon Göz Hastanesi",
+            "IOL hesaplama", "göz içi mercek seçimi", "Cooke K6",
+        ],
+        "main_entity": {"@id": "{base}/#iol-calculation-software"},
+    },
     "/iol-calculation-software": {
+        "in_language": "en",
+        "alternate_path": "/tr/akilli-mercek-iol-hesaplama",
         "schema_type": "MedicalWebPage",
         "title": "IOL Calculation and Selection Software | CER-AI",
         "description": (
@@ -791,6 +810,7 @@ def _public_page_discovery_head(base: str, canonical_path: str) -> str:
         "/corneal-ectasia-risk-assessment": _ectasia_software_schema,
         "/tr/korneal-ektazi-risk-degerlendirmesi": _ectasia_software_schema,
         "/iol-calculation-software": _iol_software_schema,
+        "/tr/akilli-mercek-iol-hesaplama": _iol_software_schema,
         "/toric-iol-calculator": _toric_software_schema,
     }.get(canonical_path)
     if software_factory is not None:
@@ -973,6 +993,7 @@ def _sitemap_xml(base: str) -> str:
         (f"{base}/corneal-ectasia-risk-assessment", "0.9"),
         (f"{base}/tr/korneal-ektazi-risk-degerlendirmesi", "0.9"),
         (f"{base}/iol-calculation-software", "0.9"),
+        (f"{base}/tr/akilli-mercek-iol-hesaplama", "0.9"),
         (f"{base}/toric-iol-calculator", "0.9"),
         (f"{base}/clinical-evidence", "0.9"),
         (f"{base}/references", "0.9"),
@@ -1137,6 +1158,12 @@ def install(core) -> None:
     def iol_calculation_software(request: Request) -> HTMLResponse:
         return _render_public_page(
             _IOL_LANDING, request, "/iol-calculation-software"
+        )
+
+    @core.app.get("/tr/akilli-mercek-iol-hesaplama", include_in_schema=False)
+    def iol_calculation_software_tr(request: Request) -> HTMLResponse:
+        return _render_public_page(
+            _IOL_LANDING_TR, request, "/tr/akilli-mercek-iol-hesaplama"
         )
 
     @core.app.get("/toric-iol-calculator", include_in_schema=False)

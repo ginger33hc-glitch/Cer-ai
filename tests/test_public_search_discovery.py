@@ -294,7 +294,7 @@ def test_static_public_pages_have_page_specific_discovery_identity(
     assert schema["name"] == title
     expected_date = {
         "/corneal-ectasia-risk-assessment": "2026-10-03",
-        "/iol-calculation-software": "2026-10-01",
+        "/iol-calculation-software": "2026-10-04",
         "/toric-iol-calculator": "2026-09-30",
         "/clinical-evidence": "2026-09-12",
         "/references": "2026-09-12",
@@ -403,3 +403,56 @@ def test_relevant_learning_pages_link_to_physician_ectasia_assessment(public_app
         'href="/corneal-ectasia-risk-assessment">CER-AI corneal ectasia risk assessment</a>'
         in response.text
     )
+
+
+@pytest.mark.parametrize('path,language,other', [
+    ('/iol-calculation-software', 'en', '/tr/akilli-mercek-iol-hesaplama'),
+    ('/tr/akilli-mercek-iol-hesaplama', 'tr', '/iol-calculation-software'),
+])
+def test_iol_locales_have_consistent_metadata_and_crawlable_links(public_app, path, language, other):
+    with TestClient(public_app, base_url='https://cer-ai.com') as client:
+        response = client.get(path)
+        sitemap = client.get('/sitemap.xml')
+    assert response.status_code == 200
+    assert response.headers['x-robots-tag'].startswith('index,follow')
+    html = response.text
+    page = PageStructure(html)
+    assert page.attributes('html')[0]['lang'] == language
+    assert 'public-i18n.js' not in html
+    assert 'data-language-variant' not in html
+    assert len(page.attributes('h1')) == 1
+    assert len(page.attributes('title')) == 1
+    links = page.attributes('link')
+    assert [a['href'] for a in links if a.get('rel') == 'canonical'] == [f'https://cer-ai.com{path}']
+    assert {(a['hreflang'], a['href']) for a in links if a.get('rel') == 'alternate'} == {
+        ('en', 'https://cer-ai.com/iol-calculation-software'),
+        ('tr', 'https://cer-ai.com/tr/akilli-mercek-iol-hesaplama'),
+    }
+    assert other in {a.get('href') for a in page.attributes('a')}
+    schema = json.loads(re.search(r'<script id="cerai-page-discovery" type="application/ld\+json">(.*?)</script>', html, re.S)[1])
+    assert schema['inLanguage'] == language
+    assert schema['mainEntity']['@id'] == 'https://cer-ai.com/#iol-calculation-software'
+    assert schema['lastReviewed'] == '2026-09-29'
+    title = re.search(r'<title>(.*?)</title>', html)[1]
+    descriptions = [a['content'] for a in page.attributes('meta') if a.get('name') == 'description']
+    assert descriptions == [schema['description']]
+    assert title == schema['name']
+    assert f'<loc>https://cer-ai.com{path}</loc><lastmod>2026-10-04</lastmod>' in sitemap.text
+    if language == 'tr':
+        for phrase in ('akıllı mercek', 'akıllı lens', 'Mersin'):
+            assert phrase.casefold() in title.casefold()
+            assert phrase in descriptions[0]
+            assert phrase in html
+        assert 'Mersin Vizyon Göz Hastanesi' in html
+        assert 'nihai lens kararı cerrahın sorumluluğundadır' in html
+        assert 'klinik olarak doğrulanmamıştır' in html
+        assert 'Cooke K6' in html
+        assert 'akıllı lens' in schema['keywords']
+
+
+def test_turkish_iol_is_not_indexable_on_staging(public_app):
+    with TestClient(public_app, base_url='https://cer-ai-staging.up.railway.app') as client:
+        response = client.get('/tr/akilli-mercek-iol-hesaplama')
+        assert response.status_code == 200
+        assert response.headers['x-robots-tag'] == 'noindex,nofollow'
+        assert '<loc>' not in client.get('/sitemap.xml').text

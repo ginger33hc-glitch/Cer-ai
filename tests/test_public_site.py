@@ -50,7 +50,7 @@ def test_public_homepage_mobile_navigation_exposes_learning_resources():
     with TestClient(canonical_engine.app, base_url="https://cer-ai.com") as client:
         response = client.get("/")
         assert response.status_code == 200
-        assert '/static/public-i18n.js?v=8' in response.text
+        assert '/static/public-i18n.js?v=9' in response.text
         assert '/static/public-tr-home-overrides.js?v=4' in response.text
     helper = open("static/public-tr-home-overrides.js", encoding="utf-8").read()
     assert "testing-notice" not in helper
@@ -142,7 +142,7 @@ def test_sitemap_contains_only_public_discovery_pages():
             "/learning/surgical-safety-concepts", "/learning/clinical-cases",
             "/learning/cer-ai-methodology", "/learning/surgeon-learning-modules",
             "/learning/faq", "/corneal-ectasia-risk-assessment",
-            "/iol-calculation-software", "/toric-iol-calculator",
+            "/iol-calculation-software", "/tr/akilli-mercek-iol-hesaplama", "/toric-iol-calculator",
             "/clinical-evidence", "/references", "/about/huseyin-cengiz",
             "/editorial-policy",
             "/what-is-recommended-for-corneal-ectasia-screening",
@@ -178,6 +178,7 @@ def test_all_public_pages_have_absolute_https_canonicals():
                 "https://cer-ai.com/corneal-ectasia-risk-assessment"
             ),
             "/iol-calculation-software": "https://cer-ai.com/iol-calculation-software",
+            "/tr/akilli-mercek-iol-hesaplama": "https://cer-ai.com/tr/akilli-mercek-iol-hesaplama",
             "/toric-iol-calculator": "https://cer-ai.com/toric-iol-calculator",
             "/clinical-evidence": "https://cer-ai.com/clinical-evidence",
             "/references": "https://cer-ai.com/references",

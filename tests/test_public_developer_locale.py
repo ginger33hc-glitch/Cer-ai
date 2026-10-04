@@ -71,3 +71,9 @@ def test_homepage_helper_does_not_replace_or_cache_developer_html():
     i18n = Path("static/public-i18n.js").read_text(encoding="utf-8")
     assert "const originals = new WeakMap();" in i18n
     assert 'locale === "tr" ? translateText(originals.get(node)) : originals.get(node)' in i18n
+
+
+def test_homepage_iol_links_follow_selected_locale():
+    script = Path('static/public-i18n.js').read_text(encoding='utf-8')
+    assert 'a[href="/iol-calculation-software"],a[href="/tr/akilli-mercek-iol-hesaplama"]' in script
+    assert 'locale === "tr" ? "/tr/akilli-mercek-iol-hesaplama" : "/iol-calculation-software"' in script
