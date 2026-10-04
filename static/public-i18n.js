@@ -377,6 +377,9 @@
   }
 
   function routeLearningCenterLinks() {
+    document.querySelectorAll('a[href="/iol-calculation-software"],a[href="/tr/akilli-mercek-iol-hesaplama"]').forEach(link => {
+      link.setAttribute("href", locale === "tr" ? "/tr/akilli-mercek-iol-hesaplama" : "/iol-calculation-software");
+    });
     document.querySelectorAll('a[href="/corneal-ectasia-risk-assessment"],a[href="/tr/korneal-ektazi-risk-degerlendirmesi"]').forEach(link => {
       link.setAttribute("href", locale === "tr" ? "/tr/korneal-ektazi-risk-degerlendirmesi" : "/corneal-ectasia-risk-assessment");
     });
