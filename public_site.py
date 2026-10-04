@@ -53,9 +53,9 @@ _PUBLIC_CONTENT_LASTMOD = "2026-09-11"
 _INDEXNOW_KEY = "731d2001b05e7e15840a00e98f53447d"
 _PUBLIC_PAGE_LASTMOD = {
     "/about/huseyin-cengiz": "2026-10-02",
-    "/tr/korneal-ektazi-risk-degerlendirmesi": "2026-10-03",
-    "/": "2026-10-03",
-    "/corneal-ectasia-risk-assessment": "2026-10-03",
+    "/tr/korneal-ektazi-risk-degerlendirmesi": "2026-10-04",
+    "/": "2026-10-04",
+    "/corneal-ectasia-risk-assessment": "2026-10-04",
     "/iol-calculation-software": "2026-10-04",
     "/tr/akilli-mercek-iol-hesaplama": "2026-10-04",
     "/toric-iol-calculator": "2026-09-30",
@@ -77,13 +77,13 @@ _PUBLIC_PAGE_METADATA = {
     "/tr/korneal-ektazi-risk-degerlendirmesi": {
         "schema_type": "MedicalWebPage",
         "title": "Yapay Zekâ Destekli Korneal Ektazi Taraması | CER-AI",
-        "description": "LASIK ve PRK öncesi değerlendirme için refraktif cerrahi tarama programı; yapay zekâ destekli Pentacam okuma ve korneal ektazi risk incelemesi.",
+        "description": "LASIK ve PRK öncesi korneal ektazi ve gizli keratokonus değerlendirmesine yardımcı yapay zekâ destekli yazılım. Pentacam okuma ve hekime karar desteği.",
         "about": "Refraktif cerrahi öncesi korneal ektazi risk değerlendirmesi",
         "in_language": "tr",
         "keywords": [
             "refraktif cerrahi tarama programı", "LASIK tarama programı",
             "lazik tarama programı", "PRK tarama programı",
-            "göz çizdirme öncesi değerlendirme",
+            "göz çizdirme öncesi değerlendirme", "gizli keratokonus", "subklinik keratokonus", "keratokonus teşhisine yardımcı yazılım",
         ],
         "alternate_path": "/corneal-ectasia-risk-assessment",
         "main_entity": {"@id": "{base}/#ectasia-risk-assessment"},
@@ -93,7 +93,7 @@ _PUBLIC_PAGE_METADATA = {
         "schema_type": "MedicalWebPage",
         "title": "AI-Assisted Corneal Ectasia Screening Software | CER-AI",
         "description": (
-            'Refractive surgery screening software for preoperative LASIK and PRK review, with AI-assisted Pentacam reading and corneal ectasia risk assessment.'
+            'AI-assisted software supporting subclinical keratoconus and corneal ectasia assessment before LASIK and PRK, with Pentacam report reading for surgeon review.'
         ),
         "about": "Corneal ectasia risk assessment before refractive surgery",
         "keywords": [
@@ -102,7 +102,7 @@ _PUBLIC_PAGE_METADATA = {
             "corneal ectasia screening",
             "preoperative ectasia screening",
             "post-LASIK ectasia risk assessment",
-            "keratoconus screening review",
+            "keratoconus screening review", "subclinical keratoconus assessment software", "AI-assisted keratoconus screening",
             "LASIK ectasia risk assessment",
             "Pentacam ectasia screening",
             "corneal ectasia screening software",
