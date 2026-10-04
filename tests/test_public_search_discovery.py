@@ -293,7 +293,7 @@ def test_static_public_pages_have_page_specific_discovery_identity(
     assert schema["url"] == f"https://cer-ai.com{path}"
     assert schema["name"] == title
     expected_date = {
-        "/corneal-ectasia-risk-assessment": "2026-10-03",
+        "/corneal-ectasia-risk-assessment": "2026-10-04",
         "/iol-calculation-software": "2026-10-04",
         "/toric-iol-calculator": "2026-09-30",
         "/clinical-evidence": "2026-09-12",
