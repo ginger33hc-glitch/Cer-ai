@@ -279,11 +279,7 @@ def _candidate_matches_actual_plan(plan: Mapping[str, Any], spec: Mapping[str, A
 
 def _candidate_ablation(plan, spec, intended_group, intended_mrse_d):
     actual = _plan_number(plan, "max_ablation_um", "ablation_um")
-    explicit_zones = _plan_number(plan, "optical_zone_mm") is not None
-    if actual is not None and (
-        _candidate_matches_actual_plan(plan, spec)
-        or (not explicit_zones and spec["name"] == "Plan A")
-    ):
+    if actual is not None and _candidate_matches_actual_plan(plan, spec):
         return actual, str(plan.get("ablation_source") or "ENTERED_OR_ACTUAL_PLAN_MAX_ABLATION")
     if intended_group == MYOPIC:
         estimated = estimate_myopic_ablation_um(intended_mrse_d, spec["optical_zone_mm"])
@@ -387,20 +383,11 @@ def _evaluate_lasik_planning(source_eye, resolved_plan, *, age_years, extracted,
             resolved_plan, spec, intended_group, preliminary.intended_mrse_d
         )
         candidate["ablation_source"] = source
-        if ablation is None:
-            reason = (
-                "Actual maximum ablation is required for this plan; the myopic linear "
-                "estimate is not permitted for this refractive profile."
-            )
-            candidate_meta[spec["name"]] = {
-                "candidate_plan": candidate,
-                "status": ASSESSMENT_INCOMPLETE,
-                "ablation_um": None,
-                "ablation_source": source,
-            }
-            return PlanEvaluation(spec["name"], False, (reason,))
-        candidate["ablation_um"] = float(ablation)
-        candidate["max_ablation_um"] = float(ablation)
+        # Clear both aliases when the actual treatment zones do not match.
+        # The canonical core must report missing safety data rather than inherit
+        # the requested plan's ablation or a favorable preliminary disposition.
+        candidate["ablation_um"] = ablation
+        candidate["max_ablation_um"] = ablation
         normalized = build_clinical_core_input(
             source_eye,
             candidate,
@@ -417,7 +404,7 @@ def _evaluate_lasik_planning(source_eye, resolved_plan, *, age_years, extracted,
         candidate_meta[spec["name"]] = {
             "candidate_plan": candidate,
             "status": status,
-            "ablation_um": float(ablation),
+            "ablation_um": ablation,
             "ablation_source": source,
         }
         return PlanEvaluation(spec["name"], safe, reasons, core_result)
