@@ -120,7 +120,8 @@ def test_public_and_login_pages_expose_bilingual_demo_request_entry():
     login = (root / "static" / "login.html").read_text(encoding="utf-8")
     translations = (root / "static" / "public-i18n.js").read_text(encoding="utf-8")
     phrase = "Not a member yet? Click here to request a free 10-patient demo membership."
-    assert phrase in homepage
+    assert "Free 10-patient demo" in homepage
+    assert '"Free 10-patient demo":"10 hastalık ücretsiz demo"' in translations
     assert phrase in login
     assert 'href="/demo-membership"' in homepage
     assert 'href="/demo-membership"' in login
