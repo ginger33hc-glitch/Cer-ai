@@ -821,7 +821,7 @@ def test_conflicting_single_eye_page_cannot_trigger_wrong_eye_reread():
 
 
 @pytest.mark.parametrize("verified", [-0.98, 0.98, 1.40])
-def test_positive_is_requires_three_independent_signed_reads(monkeypatch, verified):
+def test_positive_is_requires_surgeon_even_after_three_concordant_reads(monkeypatch, verified):
     result = pentacam_result(I_S=0.98)
     eye = result["eyes"][0]
     eye["canonical_source_ids"] = {"I_S": targeted.canonical_source_id("I_S")}
@@ -839,10 +839,10 @@ def test_positive_is_requires_three_independent_signed_reads(monkeypatch, verifi
     monkeypatch.setattr(targeted, "targeted_reread", reread)
     targeted.verify_threshold_level_readings(Core, result, b"image", "show2.png")
     assert calls == [{"OD": ["I_S"]}] * 3
-    assert eye["I_S"] == verified
+    assert eye["I_S"] is None
     audit = eye["threshold_is_verification_evidence"]["I_S"]
     assert audit["primary_value"] == 0.98
-    assert audit["status"] == "VERIFIED_SIGNED_VALUE"
+    assert audit["status"] == "SURGEON_CONFIRMATION_REQUIRED"
     assert len(audit["attempts"]) == 3
 
 
@@ -910,8 +910,8 @@ def test_is_verification_keeps_eyes_separate_and_audit_survives_merge(monkeypatc
     earlier = pentacam_result()
     merged = canonical_engine.core.merge_extractions([earlier, result])
     eyes = {eye['eye']: eye for eye in merged['eyes']}
-    assert eyes['OD']['I_S'] == -0.98
-    assert eyes['OS']['I_S'] == 0.75
+    assert eyes['OD']['I_S'] is None
+    assert eyes['OS']['I_S'] is None
     for eye in eyes.values():
         assert len(eye['threshold_is_verification_evidence']['I_S']['attempts']) == 3
 
@@ -933,3 +933,25 @@ def test_is_invalid_verification_never_reaches_report_as_primary(monkeypatch, mo
     assert eye['I_S'] is None
     request = assessment_workflow._request('OD', 'NICE: I_S', result)
     assert request['kind'] == 'number'
+
+
+@pytest.mark.parametrize("pending_first", [True, False])
+def test_duplicate_source_cannot_restore_unconfirmed_is(monkeypatch, pending_first):
+    result = pentacam_result(I_S=0.9)
+    eye = result['eyes'][0]
+    eye['canonical_source_ids'] = {'I_S': targeted.canonical_source_id('I_S')}
+    monkeypatch.setattr(targeted, 'targeted_reread', lambda *_args: {
+        'screen_family': 'SHOW_2_EXAMS_TOPOMETRIC', 'readings': [
+            reading('I_S', 0.9, 'I-S', group='Indices (in 8 mm zone)')
+        ]
+    })
+    targeted.verify_threshold_level_readings(Core, result, b'image', 'show2.png')
+    assert eye['unreadable_source_regions']['I_S']['file'] == 'show2.png'
+    duplicate = pentacam_result(I_S=0.9)
+    duplicate['eyes'][0]['canonical_source_ids'] = eye['canonical_source_ids'].copy()
+    ordered = [result, duplicate] if pending_first else [duplicate, result]
+    merged = canonical_engine.core.merge_extractions(ordered)
+    assert merged['eyes'][0]['I_S'] is None
+    corrected = assessment_workflow._overrides(merged, {'OD': {'I_S': -0.9}})
+    assert corrected['eyes'][0]['I_S'] == -0.9
+    assert not any(item.startswith('I_S:') for item in corrected['eyes'][0]['data_conflicts'])

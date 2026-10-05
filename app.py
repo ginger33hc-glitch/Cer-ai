@@ -737,6 +737,16 @@ def merge_extractions(
                 )
 
     for eye in by_eye.values():
+        # A duplicate upload cannot refill an I-S value awaiting explicit sign
+        # confirmation. Surgeon overrides run later through their canonical path.
+        is_audit = (eye.get("threshold_is_verification_evidence") or {}).get("I_S") or {}
+        if is_audit.get("status") == "SURGEON_CONFIRMATION_REQUIRED":
+            eye["I_S"] = None
+            eye["table_verified_numeric_fields"] = [
+                field for field in eye.get("table_verified_numeric_fields", []) if field != "I_S"
+            ]
+            if "I_S" not in eye.setdefault("missing_or_unreadable", []):
+                eye["missing_or_unreadable"].append("I_S")
         # Remove any legacy/non-decision entries defensively before returning the payload.
         eye["data_conflicts"] = sorted(
             conflict for conflict in set(eye.get("data_conflicts", []))

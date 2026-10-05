@@ -1079,7 +1079,8 @@ def verify_threshold_level_readings(
 ) -> dict[str, Any]:
     """Independently verify decision-sensitive values before clinical scoring.
 
-    I-S >+0.50 D requires three concordant signed canonical-source rereads.
+    I-S >+0.50 D is reread three times for audit, but always requires
+    surgeon numeric confirmation: concordant AI reads can repeat a sign error.
     BAD elevations retain their stricter rule: only three concordant readings
     at or below their existing thresholds resolve automatically. All unresolved
     values require surgeon numeric confirmation rather than a majority vote.
@@ -1182,9 +1183,10 @@ def verify_threshold_level_readings(
         readings = accepted[(eye_id, field)]
         values = [float(item["value"]) for item in readings]
         resolved = (
-            len(readings) == THRESHOLD_VERIFICATION_READS
+            field != "I_S"
+            and len(readings) == THRESHOLD_VERIFICATION_READS
             and _same_number(values)
-            and (field == "I_S" or values[0] <= threshold)
+            and values[0] <= threshold
         )
         unit = "D" if field == "I_S" else "µm"
         evidence_key = ("threshold_is_verification_evidence" if field == "I_S"
@@ -1194,8 +1196,7 @@ def verify_threshold_level_readings(
             "primary_value": primary_value,
             ("threshold_D" if field == "I_S" else "threshold_um"): threshold,
             "attempts": records,
-            "status": (("VERIFIED_SIGNED_VALUE" if field == "I_S" else "VERIFIED_BELOW_THRESHOLD")
-                       if resolved else "SURGEON_CONFIRMATION_REQUIRED"),
+            "status": "VERIFIED_BELOW_THRESHOLD" if resolved else "SURGEON_CONFIRMATION_REQUIRED",
         }
         if resolved:
             verified_value = values[0]
@@ -1209,6 +1210,10 @@ def verify_threshold_level_readings(
             continue
 
         eye[field] = None
+        if field == "I_S":
+            conflict = "I_S: signed value requires surgeon numeric confirmation"
+            if conflict not in eye.setdefault("data_conflicts", []):
+                eye["data_conflicts"].append(conflict)
         eye["table_verified_numeric_fields"] = [
             item for item in eye.get("table_verified_numeric_fields") or [] if item != field
         ]
@@ -1219,15 +1224,25 @@ def verify_threshold_level_readings(
         located = next(
             (item for item in reversed(records) if item.get("source_box") is not None), None
         )
+        if field == "I_S" and not located:
+            # No trustworthy local box: retain the actual full source, never
+            # manufacture a crop or silently omit the surgeon's image evidence.
+            record_unreadable_region(
+                eye, field, filename=filename, tile="ORIGINAL",
+                source_box=None, printed_label="I-S (verify leading sign)",
+            )
         if located:
             record_unreadable_region(
                 eye, field, filename=filename, tile=located.get("tile"),
                 source_box=located.get("source_box"),
                 printed_label=located.get("printed_label"),
             )
+        reason = (
+            "I-S requires surgeon sign confirmation even when all three reads agree"
+            if field == "I_S" else "three rereads did not resolve below the verification threshold"
+        )
         result.setdefault("global_warnings", []).append(
-            f"{eye_id} {field} exceeded {threshold:g} {unit} on the primary read and did not "
-            "satisfy its three-read canonical-source verification rule; "
+            f"{eye_id} {field} exceeded {threshold:g} {unit} on the primary read; {reason}; "
             "surgeon numeric confirmation is required before the report."
         )
     return result

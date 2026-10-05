@@ -409,3 +409,17 @@ def test_workflow_trace_redacts_unlisted_blocker_text_and_never_logs_values(capl
     assert "UNLISTED_BLOCKER" in message
     assert "patient-secret" not in message
     assert "YES" not in message and "NO" not in message
+
+
+def test_repeated_positive_is_requires_signed_surgeon_input_before_report():
+    od = _eye(I_S=None, data_conflicts=['I_S: signed value requires surgeon numeric confirmation'],
+              table_verified_numeric_fields=['pachy_thinnest_um', 'BAD_D', 'Df', 'Db', 'Dp',
+                                             'Dt', 'Da', 'ARTmax_um', 'PPI_max', 'corneal_diameter_mm'])
+    response = _respond(od=od)
+    assert response['workflow_status'] == 'NEEDS_INPUT'
+    assert any(item['kind'] == 'number' and item['key'] in {'I_S', 'surgeon_I_S_D'}
+               for item in response['input_requests'])
+    response = _respond(od=od, overrides={'OD': {'I_S': -0.9}})
+    assert response['workflow_status'] == 'READY'
+    assert response['decision']['eyes'][0]['score']['category'] == 'NORMAL_SYMMETRIC'
+    assert response['decision']['eyes'][0]['score']['rows']['topography'] == 0
