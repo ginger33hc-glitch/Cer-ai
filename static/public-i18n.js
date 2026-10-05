@@ -6,6 +6,17 @@
   let locale = SUPPORTED.has(requested) ? requested : "en";
 
   const TR = {
+    "AI-assisted Pentacam reading, independent ectasia-risk assessment, and IOL planning support in one clinical workflow.":"Yapay zekâ destekli Pentacam okuma, bağımsız ektazi risk değerlendirmesi ve IOL planlama desteği tek klinik iş akışında.",
+    "Final clinical decisions remain with the surgeon.":"Nihai klinik kararlar cerraha aittir.",
+    "Free 10-patient demo":"10 hastalık ücretsiz demo",
+    "Sample report":"Örnek rapor",
+    "Single-page assessment with patient and reviewer identification removed. Original clinical findings are preserved.":"Hasta ve değerlendiren hekim kimlik bilgileri kaldırılmış tek sayfalık değerlendirme. Rapordaki klinik bulgular korunmuştur.",
+    "Open anonymized sample report":"Kimlik bilgileri kaldırılmış örnek raporu aç",
+    "View full report (PDF)":"Raporun tamamını görüntüle (PDF)",
+    "Turkish report · illustrative example, not a new assessment.":"Türkçe rapor · Tanıtım amaçlı örnektir, yeni bir değerlendirme değildir.",
+    "Explore CER-AI":"CER-AI hakkında",
+    "Clinical background and references":"Klinik bilgiler ve kaynaklar",
+
     "AI-assisted software for subclinical keratoconus assessment":"Gizli keratokonus değerlendirmesine yardımcı yapay zekâ destekli yazılım",
     "CER-AI helps ophthalmologists review findings that may raise suspicion of subclinical keratoconus before LASIK or PRK. It supports the clinician’s diagnostic assessment by organizing Pentacam topography and tomography findings, including corneal asymmetry, thickness distribution and the device-reported Final BAD-D.":"CER-AI, LASIK veya PRK öncesinde gizli (subklinik) keratokonus şüphesi oluşturabilecek bulguların göz hekimi tarafından değerlendirilmesine ve teşhis sürecine yardımcı olur. Pentacam kornea topografisi ve tomografisi bulgularını, kornea asimetrisini, kalınlık dağılımını ve cihaz raporundaki Final BAD-D bilgisini yapılandırılmış biçimde sunar.",
     "Artificial intelligence assists with reading uploaded Pentacam reports; separate, transparent rule-based algorithms organize the clinical risk assessment. Subclinical keratoconus screening is not a confirmed diagnosis. The ophthalmologist interprets the imaging together with the examination and, when needed, repeat or longitudinal measurements. CER-AI does not independently diagnose or exclude keratoconus, and validated CER-AI-specific diagnostic sensitivity or specificity is not claimed.":"Yapay zekâ yüklenen Pentacam raporlarından verilerin okunmasına yardımcı olur; klinik risk değerlendirmesi ayrı, açıklanabilir kural tabanlı algoritmalarla yapılır. Gizli keratokonus taraması kesin teşhis değildir. Görüntüler muayene bulguları ve gerektiğinde tekrarlanan veya zaman içindeki ölçümlerle birlikte göz hekimi tarafından yorumlanır. CER-AI tek başına keratokonus teşhisi koymaz veya hastalığı dışlamaz; yazılıma özgü doğrulanmış tanısal duyarlılık ve özgüllük iddiası bulunmaz.",

@@ -66,6 +66,7 @@
     scroller.className = "cerai-mobile-section-scroll";
 
     const links = isTurkish ? [
+      ["Örnek rapor", "#sample-report"],
       ["Eğitim Merkezi", "/tr/learning-center"],
       ["Ektazi Değerlendirmesi", "/corneal-ectasia-risk-assessment"],
       ["Klinik Kanıtlar", "/clinical-evidence"],
@@ -75,6 +76,7 @@
       ["Hakkında", "#about"],
       ["Geliştirici", "#developer"]
     ] : [
+      ["Sample report", "#sample-report"],
       ["Learning Center", "/learning-center"],
       ["Ectasia Assessment", "/corneal-ectasia-risk-assessment"],
       ["Clinical Evidence", "/clinical-evidence"],
@@ -124,6 +126,20 @@
     ensurePwaMetadata();
     ensureMobileSectionNav();
     watchLanguageSwitch();
+    const revealTarget = hash => {
+      if (!hash || !hash.startsWith("#")) return;
+      const target = document.getElementById(hash.slice(1));
+      if (!target) return;
+      for (let node = target.parentElement; node; node = node.parentElement) {
+        if (node.tagName === "DETAILS") node.open = true;
+      }
+    };
+    document.addEventListener("click", event => {
+      const link = event.target.closest?.('a[href^="#"]');
+      if (link) revealTarget(link.getAttribute("href"));
+    });
+    revealTarget(window.location.hash);
+    window.addEventListener("hashchange", () => revealTarget(window.location.hash));
     registerServiceWorker();
   }
 
