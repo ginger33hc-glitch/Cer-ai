@@ -6,6 +6,17 @@
   let locale = SUPPORTED.has(requested) ? requested : "en";
 
   const TR = {
+    "Sample reports":"Örnek raporlar",
+    "Anonymized CER-AI reports. Original clinical findings are preserved.":"Kimlik bilgileri kaldırılmış CER-AI raporları. Rapordaki klinik bulgular korunmuştur.",
+    "Single-page summary (PDF)":"Tek sayfalık özet (PDF)",
+    "Detailed sample reports":"Ayrıntılı örnek raporlar",
+    "Sample 01":"Örnek 01",
+    "Sample 02":"Örnek 02",
+    "Sample 03":"Örnek 03",
+    "PASS · 10 pages · PDF":"PASS · 10 sayfa · PDF",
+    "PASS WITH CAUTION · 11 pages · PDF":"PASS WITH CAUTION · 11 sayfa · PDF",
+    "STOP-DEFER · 10 pages · PDF":"STOP-DEFER · 10 sayfa · PDF",
+    "Summary in Turkish; detailed PDFs in English. Historical examples, not new assessments.":"Özet Türkçe, ayrıntılı PDF’ler İngilizcedir. Önceki rapor örnekleridir; yeni değerlendirme değildir.",
     "AI-assisted Pentacam reading, independent ectasia-risk assessment, and IOL planning support in one clinical workflow.":"Yapay zekâ destekli Pentacam okuma, bağımsız ektazi risk değerlendirmesi ve IOL planlama desteği tek klinik iş akışında.",
     "Final clinical decisions remain with the surgeon.":"Nihai klinik kararlar cerraha aittir.",
     "Free 10-patient demo":"10 hastalık ücretsiz demo",
@@ -433,3 +444,4 @@
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init, {once:true});
   else init();
 })();
+
