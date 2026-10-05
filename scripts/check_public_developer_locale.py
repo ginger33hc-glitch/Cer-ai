@@ -68,6 +68,13 @@ def settled(page):
     page.evaluate("() => new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done)))")
 
 
+def open_developer(page):
+    disclosure = page.locator("details.home-details").filter(has=page.locator("#developer"))
+    if disclosure.count() and disclosure.get_attribute("open") is None:
+        disclosure.locator("summary").click()
+    expect(page.locator("#developer")).to_be_visible()
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--environment", choices=tuple(BASES), default="local")
@@ -114,6 +121,7 @@ def main():
             expect(page.locator("html")).to_have_attribute("lang", "en")
             expect(page.locator("#developer .section-kicker")).to_have_text("Geliştirici ve Klinik Lider")
             summary["legacy_bug_reproduced"] = True
+            open_developer(page)
             page.locator("#developer").screenshot(path=str(out / "legacy-english-shows-turkish.png"))
             context.close()
             print("REPRODUCED on original scripts: saved TR -> English selected -> Turkish developer heading")
@@ -126,6 +134,7 @@ def main():
                 page.on("pageerror", lambda error: errors.append(str(error)))
                 response = page.goto(url, wait_until="networkidle")
                 assert response is not None and response.status == 200
+                open_developer(page)
                 expected = page.evaluate("""({html, translations}) => {
                     const documentCopy = new DOMParser().parseFromString(html, 'text/html');
                     const section = documentCopy.querySelector('#developer');
@@ -158,6 +167,7 @@ def main():
                     page.locator(f'#cerai-public-language button[data-lang="{locale}"]').click()
                     verify(locale)
                     page.reload(wait_until="networkidle")
+                    open_developer(page)
                     page.evaluate("window.__developerGrid = document.querySelector('#developer .developer-grid')")
                     verify(locale)
                     opposite = "en" if locale == "tr" else "tr"
