@@ -50,7 +50,7 @@ def test_public_homepage_mobile_navigation_exposes_learning_resources():
     with TestClient(canonical_engine.app, base_url="https://cer-ai.com") as client:
         response = client.get("/")
         assert response.status_code == 200
-        assert '/static/public-i18n.js?v=11' in response.text
+        assert '/static/public-i18n.js?v=12' in response.text
         assert '/static/public-tr-home-overrides.js?v=5' in response.text
     helper = open("static/public-tr-home-overrides.js", encoding="utf-8").read()
     assert "testing-notice" not in helper
@@ -97,7 +97,7 @@ def test_public_homepage_identifies_software_and_clinical_author():
         assert by_type["Person"]["sameAs"] == [
             "https://www.linkedin.com/in/huseyin-cengiz-md-881b9797/"
         ]
-        assert by_type["MedicalWebPage"]["dateModified"] == "2026-10-04"
+        assert by_type["MedicalWebPage"]["dateModified"] == "2026-10-06"
 
 
 def test_clinical_app_has_stable_app_entry():
