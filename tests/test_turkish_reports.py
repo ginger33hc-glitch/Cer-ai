@@ -8,6 +8,7 @@ from docx.oxml.ns import qn
 from pypdf import PdfReader
 import pytest
 
+from clinical_core.version import CLINICAL_POLICY_VERSION
 from cerai_i18n import translate_text
 import reports
 from test_step10_canonical_reports import _payload
@@ -43,7 +44,7 @@ def test_turkish_exports_translate_current_report_sections_and_preserve_snapshot
             'Kaynak: Axial/Sagittal Curvature (Front).',
                 'No Source Şule Işık', 'Dr. Çağrı Şen',
             'SHOW_2_CORNEA_BACK / show2.png', 'BAD_D_STRIP / OD-bad.png',
-                    'CER-AI-2026-10-03-CAUTION-AGGREGATION-V12',
+                    CLINICAL_POLICY_VERSION,
         ):
             assert required in content
         assert 'PASS-NO-035' not in content

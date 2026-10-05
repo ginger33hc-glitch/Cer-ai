@@ -88,6 +88,7 @@ def test_i_s_1_40_sets_four_point_topography_without_requiring_srax():
     od = _evaluate(1.40, None)
     assert od["score"]["rows"]["topography"] == 4
     assert od["score"]["category"] == "ABNORMAL_ECTATIC"
+    assert od["status"] == "STOP-DEFER"
     assert "Randleman: SRAX" not in od["missing"]
 
 
@@ -102,8 +103,8 @@ def test_srax_runtime_boundary_is_strictly_greater_than_20():
 
 def test_negative_i_s_stays_non_inferior_even_with_large_srax():
     od = _evaluate(-0.94, 45.0)
-    assert od["score"]["category"] == "ASYMMETRIC_BOWTIE"
-    assert od["score"]["rows"]["topography"] == 1
+    assert od["score"]["category"] == "NORMAL_SYMMETRIC"
+    assert od["score"]["rows"]["topography"] == 0
     assert "Randleman: SRAX" not in od["missing"]
 
 
@@ -118,3 +119,16 @@ def test_missing_i_s_is_incomplete_even_when_srax_is_positive():
     assert od["score"]["rows"]["topography"] is None
     assert od["score"]["total"] is None
     assert "Randleman: I_S" in od["missing"]
+
+
+def test_negative_asymmetry_boundary_reaches_runtime_score():
+    for value, category, points in [
+        (-0.90, "NORMAL_SYMMETRIC", 0),
+        (-2.49, "NORMAL_SYMMETRIC", 0),
+        (-2.50, "ASYMMETRIC_BOWTIE", 1),
+        (-3.00, "ASYMMETRIC_BOWTIE", 1),
+    ]:
+        od = _evaluate(value, None)
+        assert od["score"]["category"] == category
+        assert od["score"]["rows"]["topography"] == points
+        assert "Randleman: SRAX" not in od["missing"]

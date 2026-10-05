@@ -28,22 +28,22 @@ def test_i_s_positive_abt_scores_one():
     assert erss_topography_points(ASYMMETRIC_BOWTIE) == 1
 
 
-def test_negative_i_s_has_no_lower_boundary_for_abt():
-    for value in (-0.51, -1.0, -1.5, -5.0):
+def test_negative_i_s_abt_starts_at_minus_two_point_five():
+    for value in (-2.5, -3.0, -5.0):
         assert signed_i_s_category(value) == ASYMMETRIC_BOWTIE
         assert erss_topography_points(ASYMMETRIC_BOWTIE) == 1
 
 
 def test_negative_i_s_cannot_be_relabelled_as_inferior_steepening_by_srax():
-    assert erss_topography_category(-0.94, 35.0) == ASYMMETRIC_BOWTIE
+    assert erss_topography_category(-0.94, 35.0) == NORMAL_SYMMETRIC
     assert erss_topography_category(-0.18, 35.0) == NORMAL_SYMMETRIC
 
 
 def test_negative_i_s_does_not_require_srax_to_complete_erss():
     result = erss_total(35, 545, -0.94, None, 330, -2.5)
-    assert result["category"] == ASYMMETRIC_BOWTIE
-    assert result["rows"]["topography"] == 1
-    assert result["total"] == 1
+    assert result["category"] == NORMAL_SYMMETRIC
+    assert result["rows"]["topography"] == 0
+    assert result["total"] == 0
     assert result["missing"] == []
 
 

@@ -58,7 +58,11 @@ def erss_pachymetry_points(thinnest_um) -> Optional[int]:
 
 
 def signed_i_s_category(i_s_d) -> str:
-    """Mutually exclusive signed Topometric I-S category."""
+    """CER-AI signed I-S bands; negative ABT begins at -2.50 D inclusive.
+
+    Values >-2.50 through +0.50 D are normal on this numeric criterion.
+    Positive inferior-steepening and ectatic boundaries remain independent.
+    """
     if not _finite(i_s_d):
         return UNCERTAIN
     value = float(i_s_d)
@@ -66,7 +70,7 @@ def signed_i_s_category(i_s_d) -> str:
         return ABNORMAL_ECTATIC
     if value > 1.00:
         return INFERIOR_STEEPENING_SRA
-    if value > 0.50 or value < -0.50:
+    if value > 0.50 or value <= -2.50:
         return ASYMMETRIC_BOWTIE
     return NORMAL_SYMMETRIC
 

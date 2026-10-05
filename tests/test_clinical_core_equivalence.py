@@ -37,7 +37,9 @@ def test_canonical_final_bad_d_boundaries():
 
 def test_signed_i_s_monday_boundaries():
     expected = {
-        -0.51: "ASYMMETRIC_BOWTIE",
+        -2.50: "ASYMMETRIC_BOWTIE",
+        -2.49: "NORMAL_SYMMETRIC",
+        -0.51: "NORMAL_SYMMETRIC",
         -0.50: "NORMAL_SYMMETRIC",
         0.50: "NORMAL_SYMMETRIC",
         0.51: "ASYMMETRIC_BOWTIE",
@@ -49,8 +51,8 @@ def test_signed_i_s_monday_boundaries():
     assert {value: signed_i_s_category(value) for value in expected} == expected
 
 
-def test_negative_i_s_has_no_artificial_lower_ast_limit():
-    for value in (-0.51, -1.0, -1.5, -3.0):
+def test_negative_i_s_abt_has_inclusive_minus_two_point_five_boundary():
+    for value in (-2.50, -2.51, -3.0):
         assert signed_i_s_category(value) == "ASYMMETRIC_BOWTIE"
 
 
@@ -61,7 +63,7 @@ def test_srax_boundary_is_strictly_greater_than_20_degrees():
 
 
 def test_srax_never_converts_negative_i_s_to_inferior_steepening():
-    assert erss_topography_category(-0.51, 20.1) == "ASYMMETRIC_BOWTIE"
+    assert erss_topography_category(-0.51, 20.1) == "NORMAL_SYMMETRIC"
     assert erss_topography_category(-3.0, 90.0) == "ASYMMETRIC_BOWTIE"
     assert erss_topography_category(-0.50, 90.0) == "NORMAL_SYMMETRIC"
 
@@ -79,7 +81,7 @@ def test_missing_i_s_does_not_disappear_behind_srax():
 def test_missing_srax_is_not_treated_as_negative_when_i_s_is_below_three_point_band():
     assert erss_topography_category(0.0, None) == UNCERTAIN
     assert erss_topography_category(0.8, None) == UNCERTAIN
-    assert erss_topography_category(-0.8, None) == "ASYMMETRIC_BOWTIE"
+    assert erss_topography_category(-0.8, None) == "NORMAL_SYMMETRIC"
 
 
 def test_i_s_and_srax_are_one_category_never_additive():

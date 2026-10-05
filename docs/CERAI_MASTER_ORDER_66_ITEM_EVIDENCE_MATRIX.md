@@ -45,7 +45,7 @@ represented as known-image, real-case, Railway, mobile-device, or production val
 | 6 | Posterior Rmin from Show 2 Cornea Back | **PASS (LOCAL)** | `Rmin_mm` is locked to Cornea Back; front source is rejected; obsolete `rmin_front_source_policy.py` is absent. |
 | 7 | Topometric indices from center 8-mm box | **PASS (LOCAL)** | ISV/IVA/KI/CKI/IHA/IHD/topometric RMin/KISA/I-S are locked to `SHOW_2_INDICES`; no derivation is allowed. TKC is intentionally not extracted. |
 | 8 | Keep posterior and topometric RMin distinct | **PASS (LOCAL)** | Separate fields and separate source IDs; explicit cross-source rejection in `test_source_interchange_regression.py`. |
-| 9 | Signed I-S classification, unlimited negative AST | **PASS (LOCAL)** | Canonical rule classifies every value <−0.50 D as AST; −1.00/−1.50/−3.00 and positive boundaries are tested. Exactly −0.50 is normal. |
+| 9 | Signed I-S classification, negative ABT boundary | **UPDATED 2026-10-05** | Owner-approved CER-AI rule: I-S ≤−2.50 D is asymmetric bow-tie; >−2.50 through +0.50 D is normal on this numeric criterion. Positive bands remain >+0.50 through +1.00 ABT, >+1.00 to <+1.40 inferior steepening, and ≥+1.40 abnormal/ectatic. |
 | 10 | Four Maps lower-left numerical box | **PASS (LOCAL)** | Pupil Center, Thinnest, Kmax, and HWTW are locked to the labeled lower-left box; label interchange tests prevent Pupil Center/Thinnest and K/Kmax swaps. |
 | 11 | BAD central F.Ele.Th and B.Ele.Th | **PASS (LOCAL)** | Both fields are direct BAD-center values; label/source locks reject neighboring or map values. |
 | 12 | BAD PPI section | **PASS (LOCAL)** | PPI Min/Avg/Max and ARTmax are direct `BAD_PPI` reads; no CTSP/PTI reconstruction path exists. |

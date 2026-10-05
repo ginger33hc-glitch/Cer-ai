@@ -269,12 +269,12 @@ def test_negative_i_s_completes_erss_and_ps3_without_srax_risk():
               field_provenance={'srax': [{'source': 'SURGEON_CONFIRMED'}]})
     result = _evaluate(extracted=_case(od), plans={'OD': _plan('PRK'), 'OS': _plan('PRK')})
     eye = result['eyes'][0]
-    assert eye['score']['total'] == 1
+    assert eye['score']['total'] == 0
     assert eye['ps3']['complete']
     assert eye['status'] == 'PASS'
     od['field_provenance'] = {}
     eye = _evaluate(extracted=_case(od))['eyes'][0]
-    assert eye['score']['total'] == 1
+    assert eye['score']['total'] == 0
     assert eye['ps3']['complete']
     assert eye['status'] == 'PASS'
 
