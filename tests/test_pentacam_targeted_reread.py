@@ -12,6 +12,8 @@ import sys
 from pathlib import Path
 from types import SimpleNamespace
 
+import pytest
+
 import canonical_engine
 from pentacam_canonical_source_lock import (
     BAD_ELEVATION_ROW,
@@ -212,10 +214,10 @@ def test_threshold_level_bad_elevations_are_read_exactly_three_times(monkeypatch
         }
 
     monkeypatch.setattr(targeted, "targeted_reread", reread)
-    targeted.verify_threshold_level_bad_elevations(Core, result, b"image", "od-bad.png")
+    targeted.verify_threshold_level_readings(Core, result, b"image", "od-bad.png")
 
     eye = result["eyes"][0]
-    assert len(calls) == targeted.BAD_ELEVATION_VERIFICATION_READS == 3
+    assert len(calls) == targeted.THRESHOLD_VERIFICATION_READS == 3
     assert all(call == {"OD": ["F_Ele_Th_um", "B_Ele_Th_um"]} for call in calls)
     assert eye["F_Ele_Th_um"] == eye["B_Ele_Th_um"] == 4
     assert eye["threshold_elevation_verification_evidence"]["B_Ele_Th_um"]["primary_value"] == 44
@@ -233,7 +235,7 @@ def test_three_concordant_still_high_bad_elevations_require_surgeon(monkeypatch)
         "warnings": [],
     })
 
-    targeted.verify_threshold_level_bad_elevations(Core, result, b"image", "od-bad.png")
+    targeted.verify_threshold_level_readings(Core, result, b"image", "od-bad.png")
 
     eye = result["eyes"][0]
     assert eye["F_Ele_Th_um"] is None
@@ -270,7 +272,7 @@ def test_discordant_or_unreadable_bad_elevation_rereads_require_surgeon(monkeypa
         }
 
     monkeypatch.setattr(targeted, "targeted_reread", reread)
-    targeted.verify_threshold_level_bad_elevations(Core, result, b"image", "od-bad.png")
+    targeted.verify_threshold_level_readings(Core, result, b"image", "od-bad.png")
 
     eye = result["eyes"][0]
     assert eye["F_Ele_Th_um"] is None
@@ -284,7 +286,7 @@ def test_bad_elevation_verification_does_not_trigger_at_exact_boundaries(monkeyp
         targeted, "targeted_reread",
         lambda *_args: (_ for _ in ()).throw(AssertionError("must not reread")),
     )
-    targeted.verify_threshold_level_bad_elevations(Core, result, b"image", "od-bad.png")
+    targeted.verify_threshold_level_readings(Core, result, b"image", "od-bad.png")
     assert result["eyes"][0]["F_Ele_Th_um"] == 12
     assert result["eyes"][0]["B_Ele_Th_um"] == 15
 
@@ -816,3 +818,118 @@ def test_conflicting_single_eye_page_cannot_trigger_wrong_eye_reread():
     result = {"document_context":{"document_type":"PENTACAM_TOPOGRAPHY", "laterality":"OS"},
               "eyes":[{"eye":"OD", "screen_types":["FOUR_MAPS_REFRACTIVE"]}]}
     assert targeted.missing_targets_by_eye(result) == {}
+
+
+@pytest.mark.parametrize("verified", [-0.98, 0.98, 1.40])
+def test_positive_is_requires_three_independent_signed_reads(monkeypatch, verified):
+    result = pentacam_result(I_S=0.98)
+    eye = result["eyes"][0]
+    eye["canonical_source_ids"] = {"I_S": targeted.canonical_source_id("I_S")}
+    eye["table_verified_numeric_fields"] = ["I_S"]
+    calls = []
+
+    def reread(_core, _raw, _filename, requested, *_args):
+        calls.append(requested)
+        # A previous attempt must not alter the input to the next attempt.
+        assert eye["I_S"] == 0.98
+        return {"screen_family": "SHOW_2_EXAMS_TOPOMETRIC", "readings": [
+            reading("I_S", verified, "I-S", group="Indices (in 8 mm zone)")
+        ]}
+
+    monkeypatch.setattr(targeted, "targeted_reread", reread)
+    targeted.verify_threshold_level_readings(Core, result, b"image", "show2.png")
+    assert calls == [{"OD": ["I_S"]}] * 3
+    assert eye["I_S"] == verified
+    audit = eye["threshold_is_verification_evidence"]["I_S"]
+    assert audit["primary_value"] == 0.98
+    assert audit["status"] == "VERIFIED_SIGNED_VALUE"
+    assert len(audit["attempts"]) == 3
+
+
+@pytest.mark.parametrize("values", [(-0.98, 0.98, -0.98), (-0.98, None, -0.98)])
+def test_is_sign_disagreement_or_unreadable_requires_numeric_completion(monkeypatch, values):
+    result = pentacam_result(I_S=0.98)
+    eye = result["eyes"][0]
+    eye["canonical_source_ids"] = {"I_S": targeted.canonical_source_id("I_S")}
+    eye["table_verified_numeric_fields"] = ["I_S"]
+    values = iter(values)
+
+    def reread(*_args):
+        value = next(values)
+        return {"screen_family": "SHOW_2_EXAMS_TOPOMETRIC", "readings": [
+            reading("I_S", value, "I-S", group="Indices (in 8 mm zone)",
+                    status="CONFIDENT" if value is not None else "UNREADABLE",
+                    source_box=[100, 100, 400, 200])
+        ]}
+
+    monkeypatch.setattr(targeted, "targeted_reread", reread)
+    targeted.verify_threshold_level_readings(Core, result, b"image", "show2.png")
+    assert eye["I_S"] is None
+    assert "I_S" in eye["missing_or_unreadable"]
+    assert "I_S" not in eye["table_verified_numeric_fields"]
+    assert eye["threshold_is_verification_evidence"]["I_S"]["status"] == "SURGEON_CONFIRMATION_REQUIRED"
+
+
+@pytest.mark.parametrize("value", [-0.98, 0, 0.50])
+def test_is_threshold_is_strictly_positive_above_half_diopter(monkeypatch, value):
+    result = pentacam_result(I_S=value)
+    result["eyes"][0]["canonical_source_ids"] = {"I_S": targeted.canonical_source_id("I_S")}
+    monkeypatch.setattr(targeted, "targeted_reread", lambda *_args: pytest.fail("unexpected reread"))
+    targeted.verify_threshold_level_readings(Core, result, b"image", "show2.png")
+    assert result["eyes"][0]["I_S"] == value
+
+
+def test_is_failed_reads_cannot_retain_primary_positive_value(monkeypatch):
+    result = pentacam_result(I_S=0.98)
+    eye = result["eyes"][0]
+    eye["canonical_source_ids"] = {"I_S": targeted.canonical_source_id("I_S")}
+    def fail(*_args):
+        raise RuntimeError("unavailable")
+    monkeypatch.setattr(targeted, "targeted_reread", fail)
+    targeted.verify_threshold_level_readings(Core, result, b"image", "show2.png")
+    assert eye["I_S"] is None
+    assert len(eye["threshold_is_verification_evidence"]["I_S"]["attempts"]) == 3
+
+
+def test_is_verification_keeps_eyes_separate_and_audit_survives_merge(monkeypatch):
+    result = pentacam_result(I_S=0.98)
+    other = dict(result['eyes'][0], eye='OS', I_S=0.75)
+    result['eyes'].append(other)
+    for eye in result['eyes']:
+        eye['canonical_source_ids'] = {'I_S': targeted.canonical_source_id('I_S')}
+        eye['table_verified_numeric_fields'] = ['I_S']
+        eye['screen_types'] = ['SHOW_2_EXAMS_TOPOMETRIC']
+        eye['_source_filename'] = 'show2.png'
+    monkeypatch.setattr(targeted, 'targeted_reread', lambda *_args: {
+        'screen_family': 'SHOW_2_EXAMS_TOPOMETRIC', 'readings': [
+            reading('I_S', -0.98, 'I-S', eye='OD', group='Indices (in 8 mm zone)'),
+            reading('I_S', 0.75, 'I-S', eye='OS', group='Indices (in 8 mm zone)'),
+        ]
+    })
+    targeted.verify_threshold_level_readings(Core, result, b'image', 'show2.png')
+    earlier = pentacam_result()
+    merged = canonical_engine.core.merge_extractions([earlier, result])
+    eyes = {eye['eye']: eye for eye in merged['eyes']}
+    assert eyes['OD']['I_S'] == -0.98
+    assert eyes['OS']['I_S'] == 0.75
+    for eye in eyes.values():
+        assert len(eye['threshold_is_verification_evidence']['I_S']['attempts']) == 3
+
+
+@pytest.mark.parametrize('mode', ['wrong_eye', 'wrong_label', 'budget'])
+def test_is_invalid_verification_never_reaches_report_as_primary(monkeypatch, mode):
+    result = pentacam_result(I_S=0.98)
+    eye = result['eyes'][0]
+    eye['canonical_source_ids'] = {'I_S': targeted.canonical_source_id('I_S')}
+    monkeypatch.setattr(targeted, 'targeted_reread', lambda *_args: {
+        'screen_family': 'SHOW_2_EXAMS_TOPOMETRIC', 'readings': [
+            reading('I_S', -0.98, 'ISV' if mode == 'wrong_label' else 'I-S',
+                    eye='OS' if mode == 'wrong_eye' else 'OD', group='Indices (in 8 mm zone)')
+        ]
+    })
+    if mode == 'budget':
+        monkeypatch.setattr(targeted, '_call_timeout', lambda *_args: None)
+    targeted.verify_threshold_level_readings(Core, result, b'image', 'show2.png')
+    assert eye['I_S'] is None
+    request = assessment_workflow._request('OD', 'NICE: I_S', result)
+    assert request['kind'] == 'number'

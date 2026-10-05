@@ -668,6 +668,9 @@ def merge_extractions(
             target["threshold_elevation_verification_evidence"].update(
                 eye.get("threshold_elevation_verification_evidence") or {}
             )
+            target.setdefault("threshold_is_verification_evidence", {}).update(
+                eye.get("threshold_is_verification_evidence") or {}
+            )
             target.setdefault("unreadable_source_regions", {})
             for field, region in (eye.get("unreadable_source_regions") or {}).items():
                 target["unreadable_source_regions"].setdefault(field, dict(region))
@@ -695,7 +698,7 @@ def merge_extractions(
                     "source_files", "quality_by_source", "_source_filename",
                     "_pentacam_qs", "pentacam_qs", "scoring_morphology", "field_provenance",
                     "planning_data_issues", "targeted_reread_evidence",
-                    "threshold_elevation_verification_evidence",
+                    "threshold_elevation_verification_evidence", "threshold_is_verification_evidence",
                     "canonical_source_ids", "unreadable_source_regions", "data_conflicts",
                 ):
                     continue
@@ -1226,7 +1229,7 @@ async def _run_image_assessment(
                         deadline_monotonic=automation_deadline,
                     )
                     reread = await asyncio.to_thread(
-                        pentacam_targeted_reread.verify_threshold_level_bad_elevations,
+                        pentacam_targeted_reread.verify_threshold_level_readings,
                         sys.modules[__name__], reread, raw, filename,
                         deadline_monotonic=automation_deadline,
                     )

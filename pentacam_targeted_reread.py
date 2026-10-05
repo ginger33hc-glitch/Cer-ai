@@ -49,10 +49,11 @@ PENTACAM_SCREEN_FAMILIES = {
 }
 TARGETED_REREAD_MAX_ATTEMPTS = 5
 REPORT_CONTEXT_REREAD_MAX_SECONDS = 60.0
-BAD_ELEVATION_VERIFICATION_READS = 3
-BAD_ELEVATION_VERIFICATION_THRESHOLDS = {
+THRESHOLD_VERIFICATION_READS = 3
+THRESHOLD_VERIFICATION_LIMITS = {
     "F_Ele_Th_um": 12.0,
     "B_Ele_Th_um": 15.0,
+    "I_S": 0.50,
 }
 
 SOURCE_TILES = (
@@ -244,6 +245,9 @@ topometric indices, K values, axes, HWTW, elevation, or pachymetry from colors o
 numbers. A map spot or color scale is not a labeled table value. Cornea Diameter/W2W is acceptable
 for corneal_diameter_mm only when it is the Pentacam horizontal white-to-white output. I_S is only
 the printed IS or I-S field, not ISV, IVA, IHD, IHA, or KISA.
+For I_S, inspect the leading sign explicitly: preserve a printed minus sign. Never
+use an absolute value. If the sign cannot be determined, return UNCERTAIN with
+value=null. Read each requested eye independently from its own labeled panel.
 
 PENTACAM LANDMARK LABELS:
 - K1_D, K1_axis_deg, K2_D, K2_axis_deg, and Kmean_D are accepted only when the complete original
@@ -1065,7 +1069,7 @@ def enrich_extraction(
     return result
 
 
-def verify_threshold_level_bad_elevations(
+def verify_threshold_level_readings(
     core: Any,
     result: dict[str, Any],
     raw: bytes,
@@ -1073,15 +1077,13 @@ def verify_threshold_level_bad_elevations(
     *,
     deadline_monotonic: float | None = None,
 ) -> dict[str, Any]:
-    """Triple-read threshold-level BAD elevations before any clinical scoring.
+    """Independently verify decision-sensitive values before clinical scoring.
 
-    A primary F.Ele.Th >12 µm or B.Ele.Th >15 µm is never passed directly to
-    NICE, PS3, or the report.  Three independent, canonical-label rereads are
-    required.  Only three identical, confident readings at or below the field's
-    threshold replace the primary value automatically.  Every other outcome is
-    left unresolved for explicit surgeon numeric confirmation.
+    I-S >+0.50 D requires three concordant signed canonical-source rereads.
+    BAD elevations retain their stricter rule: only three concordant readings
+    at or below their existing thresholds resolve automatically. All unresolved
+    values require surgeon numeric confirmation rather than a majority vote.
     """
-    source_id = canonical_source_id("F_Ele_Th_um")
     requested: dict[str, list[str]] = {}
     originals: dict[tuple[str, str], float] = {}
     eyes = {
@@ -1089,11 +1091,11 @@ def verify_threshold_level_bad_elevations(
         if eye.get("eye") in {"OD", "OS"}
     }
     for eye_id, eye in eyes.items():
-        for field, threshold in BAD_ELEVATION_VERIFICATION_THRESHOLDS.items():
+        for field, threshold in THRESHOLD_VERIFICATION_LIMITS.items():
             value = eye.get(field)
             if not core.is_number(value) or float(value) <= threshold:
                 continue
-            if (eye.get("canonical_source_ids") or {}).get(field) != source_id:
+            if (eye.get("canonical_source_ids") or {}).get(field) != canonical_source_id(field):
                 continue
             requested.setdefault(eye_id, []).append(field)
             originals[(eye_id, field)] = float(value)
@@ -1102,7 +1104,7 @@ def verify_threshold_level_bad_elevations(
 
     accepted: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
     attempts: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
-    for attempt_number in range(1, BAD_ELEVATION_VERIFICATION_READS + 1):
+    for attempt_number in range(1, THRESHOLD_VERIFICATION_READS + 1):
         timeout_seconds = _call_timeout(deadline_monotonic)
         if timeout_seconds is None:
             _record_budget_exhausted(result)
@@ -1175,21 +1177,25 @@ def verify_threshold_level_bad_elevations(
 
     for (eye_id, field), primary_value in originals.items():
         eye = eyes[eye_id]
-        threshold = BAD_ELEVATION_VERIFICATION_THRESHOLDS[field]
+        threshold = THRESHOLD_VERIFICATION_LIMITS[field]
         records = attempts[(eye_id, field)]
         readings = accepted[(eye_id, field)]
         values = [float(item["value"]) for item in readings]
         resolved = (
-            len(readings) == BAD_ELEVATION_VERIFICATION_READS
+            len(readings) == THRESHOLD_VERIFICATION_READS
             and _same_number(values)
-            and values[0] <= threshold
+            and (field == "I_S" or values[0] <= threshold)
         )
-        eye.setdefault("threshold_elevation_verification_evidence", {})[field] = {
+        unit = "D" if field == "I_S" else "µm"
+        evidence_key = ("threshold_is_verification_evidence" if field == "I_S"
+                        else "threshold_elevation_verification_evidence")
+        eye.setdefault(evidence_key, {})[field] = {
             "file": filename,
             "primary_value": primary_value,
-            "threshold_um": threshold,
+            ("threshold_D" if field == "I_S" else "threshold_um"): threshold,
             "attempts": records,
-            "status": "VERIFIED_BELOW_THRESHOLD" if resolved else "SURGEON_CONFIRMATION_REQUIRED",
+            "status": (("VERIFIED_SIGNED_VALUE" if field == "I_S" else "VERIFIED_BELOW_THRESHOLD")
+                       if resolved else "SURGEON_CONFIRMATION_REQUIRED"),
         }
         if resolved:
             verified_value = values[0]
@@ -1198,7 +1204,7 @@ def verify_threshold_level_bad_elevations(
             evidence.extend(readings)
             result.setdefault("global_warnings", []).append(
                 f"{eye_id} {field} corrected by three concordant canonical-box rereads "
-                f"from {primary_value:g} µm to {verified_value:g} µm."
+                f"from {primary_value:+g} {unit} to {verified_value:+g} {unit}."
             )
             continue
 
@@ -1220,8 +1226,8 @@ def verify_threshold_level_bad_elevations(
                 printed_label=located.get("printed_label"),
             )
         result.setdefault("global_warnings", []).append(
-            f"{eye_id} {field} exceeded {threshold:g} µm on the primary read and did not "
-            "resolve below threshold on three concordant canonical-box rereads; "
+            f"{eye_id} {field} exceeded {threshold:g} {unit} on the primary read and did not "
+            "satisfy its three-read canonical-source verification rule; "
             "surgeon numeric confirmation is required before the report."
         )
     return result
