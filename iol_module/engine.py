@@ -12,7 +12,7 @@ from .models import (
     RetinaStatus,
 )
 
-ENGINE_VERSION = "IOL_CANONICAL_3.5"
+ENGINE_VERSION = "IOL_CANONICAL_3.6"
 LEGAL_NOTICE = (
     "This application provides clinical decision support only. "
     "Final responsibility rests with the surgeon at all times and under all circumstances."
@@ -74,12 +74,7 @@ def evaluate_case(case: IOLCaseInput) -> IOLRecommendation:
         warnings.append("WARN_HOA_HIGH")
     elif hoa_moderate:
         warnings.append("WARN_HOA_MODERATE")
-    if kappa_high:
-        exclusions.append("MF_EXCL_KAPPA_HIGH")
-        warnings.append("WARN_KAPPA_HIGH")
-    if alpha_high:
-        exclusions.append("MF_EXCL_ALPHA_HIGH")
-        warnings.append("WARN_ALPHA_HIGH")
+    # Chord mu/kappa and chord alpha are risk modifiers, not stand-alone exclusions.\n    # Published evidence does not support a universal candidacy cutoff; retain >0.50 mm\n    # as a prominent surgeon-review warning while other independent exclusions decide eligibility.\n    if kappa_high:\n        warnings.append("WARN_KAPPA_HIGH_SURGEON_REVIEW")\n    if alpha_high:\n        warnings.append("WARN_ALPHA_HIGH_SURGEON_REVIEW")
     if pupil_small:
         exclusions.append("MF_EXCL_PUPIL_SMALL")
         warnings.append("WARN_PUPIL_TOO_SMALL")
