@@ -190,21 +190,49 @@ class DemoAccessLedger:
             raise HTTPException(404, "Demo request not found.")
         return match
 
+    def create_full_doctor(self, doctor_name: Any, username: Any, password: Any, owner) -> dict[str, Any]:
+        """Create a persistent full-access DOCTOR account. OWNER only; password is never stored raw."""
+        doctor = _clean(doctor_name, maximum=160)
+        username_display = _clean(username, maximum=64)
+        if not 2 <= len(doctor) or not any(character.isalpha() for character in doctor):
+            raise HTTPException(422, "Doctor name is required.")
+        if not _USERNAME_RE.fullmatch(username_display):
+            raise HTTPException(422, "Username must be 3-64 characters using letters, numbers, dot, underscore or hyphen.")
+        if user_access.configured_username_exists(username_display):
+            raise HTTPException(409, "That username is already in use.")
+        try:
+            password_hash = user_access.hash_password(str(password or ""))
+        except ValueError as exc:
+            raise HTTPException(422, str(exc)) from exc
+        user_id = f"doctor-{uuid4().hex[:24]}"
+        event = self._write("FULL_DOCTOR_CREATED", {
+            "user_id": user_id,
+            "username": username_display,
+            "doctor_name": doctor,
+            "password_hash": password_hash,
+            "created_by_user_id": owner.user_id,
+        })
+        return {"status": "ACTIVE", "user_id": user_id, "username": username_display,
+                "doctor_name": doctor, "access_plan": "FULL",
+                "created_at_utc": event["created_at_utc"]}
+
     def approved_accounts(self) -> list[user_access.UserAccount]:
         if not self.enabled:
             return []
         accounts: list[user_access.UserAccount] = []
         for event in self._events():
-            if event.get("event_type") != "DEMO_APPROVED":
+            event_type = event.get("event_type")
+            if event_type not in {"DEMO_APPROVED", "FULL_DOCTOR_CREATED"}:
                 continue
+            is_full = event_type == "FULL_DOCTOR_CREATED"
             principal = user_access.Principal(
                 user_id=str(event["user_id"]),
                 username=str(event["username"]),
                 display_name=str(event["doctor_name"]),
                 role=user_access.ROLE_DOCTOR,
-                access_plan="DEMO",
-                demo_quota_limit=int(event.get("quota_limit") or DEMO_QUOTA_LIMIT),
-                demo_request_id=str(event["request_id"]),
+                access_plan="FULL" if is_full else "DEMO",
+                demo_quota_limit=None if is_full else int(event.get("quota_limit") or DEMO_QUOTA_LIMIT),
+                demo_request_id=None if is_full else str(event["request_id"]),
             )
             accounts.append(user_access.UserAccount(
                 principal=principal,
@@ -388,6 +416,13 @@ def install(core: Any) -> None:
     def demo_requests():
         _require_owner()
         return {"requests": ledger.requests()}
+
+    @core.app.post("/demo-access/admin/doctors", include_in_schema=False)
+    def create_full_doctor(payload: dict[str, Any] = Body(...)):
+        owner = _require_owner()
+        return ledger.create_full_doctor(
+            payload.get("doctor_name"), payload.get("username"), payload.get("password"), owner
+        )
 
     @core.app.get("/demo-access/admin/notification-setup", include_in_schema=False)
     def demo_notification_setup():
