@@ -71,6 +71,20 @@ def test_pupil_3d_boundaries(pupil, expected):
     assert result({"pentacam_pupil_3d_mm": pupil}).main_category == expected
 
 
+def test_high_alpha_or_kappa_alone_warns_but_does_not_exclude_multifocal():
+    cases = (
+        ("angle_kappa_mm", "WARN_KAPPA_HIGH_SURGEON_REVIEW"),
+        ("angle_alpha_mm", "WARN_ALPHA_HIGH_SURGEON_REVIEW"),
+    )
+    for field, warning in cases:
+        recommendation = result({field: 0.70})
+        assert recommendation.multifocal_eligible is True
+        assert recommendation.main_category == "MULTIFOCAL"
+        assert warning in recommendation.warning_codes
+        assert "MF_EXCL_KAPPA_HIGH" not in recommendation.decisive_reason_codes
+        assert "MF_EXCL_ALPHA_HIGH" not in recommendation.decisive_reason_codes
+
+
 def test_toric_threshold_uses_active_iolmaster_k_difference_and_regularity():
     non_toric = result({"iolm500_k2_d": 42.999})
     toric = result({"iolm500_k2_d": 43.0, "astigmatism_type": "REGULAR"})
