@@ -868,6 +868,10 @@ def test_is_sign_disagreement_or_unreadable_requires_numeric_completion(monkeypa
     assert "I_S" in eye["missing_or_unreadable"]
     assert "I_S" not in eye["table_verified_numeric_fields"]
     assert eye["threshold_is_verification_evidence"]["I_S"]["status"] == "SURGEON_CONFIRMATION_REQUIRED"
+    region = eye["unreadable_source_regions"]["I_S"]
+    assert region["tile"] == "ORIGINAL"
+    assert region["source_box"] is None
+    assert region["printed_label"].startswith("OD I-S")
 
 
 @pytest.mark.parametrize("value", [-0.98, 0, 0.50])

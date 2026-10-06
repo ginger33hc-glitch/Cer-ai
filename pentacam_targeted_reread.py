@@ -1224,14 +1224,18 @@ def verify_threshold_level_readings(
         located = next(
             (item for item in reversed(records) if item.get("source_box") is not None), None
         )
-        if field == "I_S" and not located:
-            # No trustworthy local box: retain the actual full source, never
-            # manufacture a crop or silently omit the surgeon's image evidence.
+        if field == "I_S":
+            # I-S completion is safety-critical and Show 2 Exams is bilateral. Model-returned
+            # local coordinates are transcription evidence, not authoritative laterality
+            # geometry. Never expose those coordinates as the surgeon-confirmation crop:
+            # a coordinate that belongs to the fellow eye can otherwise look plausible.
+            # Retain the actual Show 2 source and let the surgeon verify the printed I-S
+            # with both eye labels visible.
             record_unreadable_region(
                 eye, field, filename=filename, tile="ORIGINAL",
-                source_box=None, printed_label="I-S (verify leading sign)",
+                source_box=None, printed_label=f"{eye_id} I-S — Show 2 Exams Topometric center Indices (8 mm)",
             )
-        if located:
+        elif located:
             record_unreadable_region(
                 eye, field, filename=filename, tile=located.get("tile"),
                 source_box=located.get("source_box"),
