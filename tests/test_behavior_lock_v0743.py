@@ -40,8 +40,8 @@ def test_canonical_version_lock():
 
 
 def test_canonical_age_boundaries():
-    assert [(age, erss_age_points(age)) for age in (18, 19, 20, 21, 30)] == [
-        (18, 3), (19, 2), (20, 2), (21, 0), (30, 0)
+    assert [(age, erss_age_points(age)) for age in (18, 21, 22, 25, 26, 29, 30)] == [
+        (18, 3), (21, 3), (22, 2), (25, 2), (26, 1), (29, 1), (30, 0)
     ]
 
 
