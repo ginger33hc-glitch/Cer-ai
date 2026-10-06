@@ -163,7 +163,7 @@ const eyeTemplate = (eye) => `
   <div class="row"><label>Intended treatment cylinder (D; + or −)</label><div class="signed-number"><input id="${eye}_cylinder" type="text" inputmode="decimal" autocomplete="off" data-min="-15" data-max="15"><button type="button" class="sign-button" data-positive-target="${eye}_cylinder" aria-label="Make intended cylinder positive">+</button><button type="button" class="sign-button" data-negative-target="${eye}_cylinder" aria-label="Make intended cylinder negative">−</button></div></div>
   <p class="note">Intended treatment initially follows manifest refraction. An explicit zero cylinder also sets the intended cylinder and axis to zero; a nonzero cylinder requires an axis.</p>
   <div class="row"><label>Cylinder axis (degrees)</label><input id="${eye}_axis" type="number" step="1" min="0" max="180"></div>
-  <div class="row"><label>Actual maximum ablation (µm)</label><input id="${eye}_ablation" type="number" step=".1" min="0"></div>
+  <div class="row"><label>Actual maximum ablation (µm) <span id="${eye}_ablation_requirement" class="note">— optional except mixed astigmatism</span></label><input id="${eye}_ablation" type="number" step=".1" min="0"></div>
   <div class="row"><label>Laser platform</label><input id="${eye}_platform" type="text" value="Alcon EX500" readonly aria-readonly="true"></div>
   <div class="row"><label>Planned LASIK flap (µm)</label><select id="${eye}_flap"><option value="">Select</option><option value="90">90 µm</option><option value="100" selected>100 µm</option><option value="110">110 µm</option><option value="120">120 µm</option></select></div>
   <div class="row"><label>PRK epithelial thickness (µm)</label><input id="${eye}_epithelium" type="text" value="50" readonly aria-readonly="true"></div>
@@ -451,6 +451,29 @@ function validateRefractionInputs(){
     }
   }
   return firstInvalid;
+}
+function validateMixedAstigmatismAblation(){
+  let firstInvalid=null;
+  for(const eye of ["od","os"]){
+    const sphere=parsedClinicalNumber(`${eye}_sphere`);
+    const cylinder=parsedClinicalNumber(`${eye}_cylinder`);
+    const ablation=document.getElementById(`${eye}_ablation`);
+    const note=document.getElementById(`${eye}_ablation_requirement`);
+    ablation.setCustomValidity("");
+    const mixed=sphere.state==="valid"&&cylinder.state==="valid"&&sphere.value!==0&&cylinder.value!==0&&
+      Math.sign(sphere.value)!==Math.sign(sphere.value+cylinder.value);
+    if(note)note.textContent=mixed?"— required for mixed astigmatism":"— optional except mixed astigmatism";
+    if(mixed&&!ablation.value.trim()){
+      ablation.setCustomValidity(`${eye.toUpperCase()} actual maximum ablation is required for mixed astigmatism.`);
+      firstInvalid??=ablation;
+    }
+  }
+  return firstInvalid;
+}
+for(const eye of ["od","os"]){
+  for(const suffix of ["sphere","cylinder"]){
+    document.getElementById(`${eye}_${suffix}`).addEventListener("input",validateMixedAstigmatismAblation);
+  }
 }
 function validateERSSTopographyInputs(){
   for(const eye of ["od","os"]){
@@ -802,6 +825,12 @@ f.addEventListener("submit", async (e) => {
     invalidRefraction.focus();
     invalidRefraction.reportValidity();
     return;
+  }
+  const invalidAblation=validateMixedAstigmatismAblation();
+  if(invalidAblation){
+    showFormMessage(invalidAblation.validationMessage);
+    invalidAblation.scrollIntoView({behavior:"smooth",block:"center"});
+    invalidAblation.focus();invalidAblation.reportValidity();return;
   }
   const invalidERSSTopography=validateERSSTopographyInputs();
   if(invalidERSSTopography){
