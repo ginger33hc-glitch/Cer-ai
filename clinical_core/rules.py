@@ -30,10 +30,12 @@ def erss_age_points(age_years) -> Optional[int]:
     if not _finite(age_years) or float(age_years) < 18:
         return None
     age = float(age_years)
-    if age < 19:
+    if age <= 21:
         return 3
-    if age < 21:
+    if age <= 25:
         return 2
+    if age <= 29:
+        return 1
     return 0
 
 
