@@ -366,26 +366,40 @@ def install(core: Any, archive_runtime: Any) -> None:
             entry = _authorized_review_entry(
                 archive_runtime.archive, principal, case_id, revision_id
             )
-            if kind not in {"pdf", "docx"}:
+            if kind not in {"pdf", "docx", "conclusion"}:
                 raise HTTPException(404, "Unsupported archived report type.")
             locale = "tr" if str(locale).lower().startswith("tr") else "en"
             owner_deidentified = principal.role == "OWNER" and not _principal_created_entry(
                 principal, entry
             )
+            regenerated_summary = False
             if owner_deidentified:
-                from reports import build_docx, build_pdf
+                from reports import build_conclusion_pdf, build_docx, build_pdf
 
                 assessment = archive_runtime.archive.load_assessment(case_id, revision_id)
                 if assessment is None:
                     raise HTTPException(404, "Archived CER-AI canonical assessment not found.")
                 payload = archive_privacy.owner_assessment(assessment)
                 payload["locale"] = locale
-                content = build_pdf(payload) if kind == "pdf" else build_docx(payload)
+                content = {"pdf": build_pdf, "docx": build_docx,
+                           "conclusion": build_conclusion_pdf}[kind](payload)
             else:
                 ref = archive_runtime.archive.find_report(case_id, revision_id, locale, kind)
-                if ref is None:
+                if ref is None and kind == "conclusion":
+                    # Legacy revisions keep their immutable originals. Render only
+                    # from their saved snapshot, never from current patient data.
+                    from reports import build_conclusion_pdf
+                    assessment = archive_runtime.archive.load_assessment(case_id, revision_id)
+                    if assessment is None:
+                        raise HTTPException(404, "Archived CER-AI canonical assessment not found.")
+                    payload = dict(assessment)
+                    payload["locale"] = locale
+                    content = build_conclusion_pdf(payload)
+                    regenerated_summary = True
+                elif ref is None:
                     raise HTTPException(404, "Archived CER-AI report not found.")
-                content = archive_runtime.archive.get_bytes(ref)
+                else:
+                    content = archive_runtime.archive.get_bytes(ref)
             audit(
                 "REPORT_DOWNLOAD",
                 actor=principal,
@@ -393,12 +407,14 @@ def install(core: Any, archive_runtime: Any) -> None:
                 revision_id=revision_id,
                 details={"kind": kind, "locale": locale},
             )
-            if kind == "pdf":
+            if kind in {"pdf", "conclusion"}:
                 media_type = "application/pdf"
                 filename = (
                     "CER-AI_Deidentified_Report.pdf"
                     if owner_deidentified else "CER-AI_Report.pdf"
                 )
+                if kind == "conclusion":
+                    filename = filename.replace("Report", "Single_Page_Summary")
                 disposition = "inline"
             else:
                 media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
@@ -415,7 +431,10 @@ def install(core: Any, archive_runtime: Any) -> None:
                     "Cache-Control": "no-store",
                     "X-CER-AI-Report-Source": (
                         "owner-deidentified-canonical"
-                        if owner_deidentified else "archived-original"
+                        if owner_deidentified else (
+                            "archived-canonical-current-template"
+                            if regenerated_summary else "archived-original"
+                        )
                     ),
                 },
             )

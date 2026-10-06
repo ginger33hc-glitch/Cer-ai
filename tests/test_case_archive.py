@@ -486,7 +486,7 @@ def test_finalize_logs_phi_free_stage_and_s3_status_before_required_503(caplog):
 
     runtime = case_archive.CaseArchiveRuntime(FailingArchive(), required=True)
     runtime._remember(runtime._token_case, "assessment-token", "b" * 32)
-    core = SimpleNamespace(build_pdf=lambda payload: b"pdf", build_docx=lambda payload: b"docx")
+    core = SimpleNamespace(build_pdf=lambda payload: b"pdf", build_conclusion_pdf=lambda payload: b"summary", build_docx=lambda payload: b"docx")
     response = {
         "assessment_token": "assessment-token",
         "report_token": "report-token",
@@ -548,3 +548,24 @@ def test_canonical_runtime_has_archive_boundary_installed():
 
     assert canonical_engine.core._cerai_case_archive_installed is True
     assert canonical_engine.core._cerai_case_archive_runtime is not None
+
+
+def test_summary_is_encrypted_in_same_revision_and_both_languages():
+    archive = make_archive()
+    ready = ready_payload()
+    original = deepcopy(ready)
+    revision = archive.archive_ready(
+        archive.new_case_id(), ready,
+        pdf_builder=pdf_builder, docx_builder=docx_builder,
+        conclusion_builder=lambda p: ("SUMMARY:" + p["locale"] + ":" + p["patient"]["name"]).encode(),
+    )
+    assert ready == original
+    assert len(revision.artifacts) == 8
+    for locale in ("en", "tr"):
+        ref = archive.find_report(revision.case_id, revision.revision_id, locale, "conclusion")
+        assert ref in revision.artifacts
+        expected = f"SUMMARY:{locale}:Test Patient".encode()
+        assert archive.get_bytes(ref) == expected
+        assert expected not in archive.store.get(ref.key).data
+        assert archive.find_report(revision.case_id, revision.revision_id, locale, "pdf")
+    assert archive.find_report(revision.case_id, revision.revision_id, "en", "unsupported") is None

@@ -58,7 +58,7 @@ def test_archive_and_catalog_installers_do_not_replace_workflow_upload_or_report
     )
     core = SimpleNamespace(
         build_pdf=lambda payload: b"pdf",
-        build_docx=lambda payload: b"docx",
+        build_conclusion_pdf=lambda payload: b"summary", build_docx=lambda payload: b"docx",
         _cerai_named_users_enabled=False,
     )
     runtime = case_archive.CaseArchiveRuntime(_archive(), required=False)
@@ -81,7 +81,7 @@ def test_one_archive_runtime_persists_sources_snapshot_reports_catalog_and_attri
     core = SimpleNamespace(
         APP_VERSION="stage12-test",
         build_pdf=lambda payload: f"PDF:{payload.get('locale')}".encode(),
-        build_docx=lambda payload: f"DOCX:{payload.get('locale')}".encode(),
+        build_conclusion_pdf=lambda payload: b"summary", build_docx=lambda payload: f"DOCX:{payload.get('locale')}".encode(),
         _cerai_current_principal=lambda: actor,
         _cerai_audit_event=lambda event_type, **kwargs: audit_events.append((event_type, kwargs)),
     )
@@ -140,7 +140,7 @@ def test_one_archive_runtime_persists_sources_snapshot_reports_catalog_and_attri
     assert [name for name, _details in audit_events] == ["CASE_ARCHIVED", "CASE_ARCHIVED"]
 
 
-def _route_client(monkeypatch, actor=None):
+def _route_client(monkeypatch, actor=None, with_summary=False):
     archive = _archive()
     actor = actor or _principal()
     current = {"principal": actor}
@@ -150,6 +150,7 @@ def _route_client(monkeypatch, actor=None):
         _ready(),
         pdf_builder=lambda payload: f"ORIGINAL-PDF:{payload['locale']}".encode(),
         docx_builder=lambda payload: f"ORIGINAL-DOCX:{payload['locale']}".encode(),
+        conclusion_builder=(lambda payload: f"ORIGINAL-SUMMARY:{payload['locale']}".encode()) if with_summary else None,
     )
     case_catalog.write_entry(archive, revision, _ready(), actor=actor)
     events = []
@@ -331,3 +332,36 @@ def test_background_assessment_job_is_protected_and_bound_to_its_doctor(monkeypa
         assert response.status_code == 200
         assert response.json()["result"]["workflow_status"] == "READY"
         assert response.json()["result"]["actor_user_id"] == "doctor-1"
+
+
+def test_legacy_summary_uses_saved_snapshot_and_preserves_access_controls(monkeypatch):
+    client, current, revision, _events = _route_client(monkeypatch)
+    seen = []
+    def summary(payload):
+        seen.append(payload)
+        return f"SUMMARY:{payload['locale']}".encode()
+    monkeypatch.setattr(reports, "build_conclusion_pdf", summary)
+    url = f"/archive/cases/{CASE_ID}/revisions/{revision.revision_id}/report/conclusion?locale=tr"
+    response = client.get(url)
+    assert response.status_code == 200
+    assert response.content == b"SUMMARY:tr"
+    assert seen[-1]["patient"]["name"] == "Archive Patient"
+    assert response.headers["x-cer-ai-report-source"] == "archived-canonical-current-template"
+    current["principal"] = _principal("doctor-2", "Dr. Other")
+    assert client.get(url).status_code == 403
+    current["principal"] = _principal("owner", "Owner", "OWNER")
+    response = client.get(url)
+    assert response.status_code == 200
+    assert "Archive Patient" not in str(seen[-1])
+    assert response.headers["x-cer-ai-report-source"] == "owner-deidentified-canonical"
+
+
+def test_archived_summary_opens_original_bytes(monkeypatch):
+    client, current, revision, _events = _route_client(monkeypatch, with_summary=True)
+    for locale in ("en", "tr"):
+        response = client.get(f"/archive/cases/{CASE_ID}/revisions/{revision.revision_id}/report/conclusion?locale={locale}")
+        assert response.status_code == 200
+        assert response.content == f"ORIGINAL-SUMMARY:{locale}".encode()
+        assert response.headers["x-cer-ai-report-source"] == "archived-original"
+        assert response.headers["content-type"] == "application/pdf"
+        assert response.headers["cache-control"] == "no-store"

@@ -495,6 +495,7 @@ class EncryptedArchive:
         *,
         pdf_builder: Callable[[Dict[str, Any]], bytes],
         docx_builder: Callable[[Dict[str, Any]], bytes],
+        conclusion_builder: Optional[Callable[[Dict[str, Any]], bytes]] = None,
     ) -> RevisionRef:
         canonical = self._canonical_ready(ready)
         canonical_bytes = json.dumps(
@@ -539,6 +540,11 @@ class EncryptedArchive:
                     locale=locale,
                 )
             )
+            if conclusion_builder is not None:
+                refs.append(self.put_bytes(
+                    case_id, group, "conclusion-pdf", conclusion_builder(localized),
+                    media_type="application/pdf", locale=locale,
+                ))
         manifest = {
             "archive_format": ARCHIVE_FORMAT,
             "case_id": case_id,
@@ -571,7 +577,10 @@ class EncryptedArchive:
         kind: str,
     ) -> Optional[ArtifactRef]:
         locale = "tr" if str(locale).lower().startswith("tr") else "en"
-        kind = "report-pdf" if kind == "pdf" else "report-docx"
+        kind = {"pdf": "report-pdf", "docx": "report-docx",
+                "conclusion": "conclusion-pdf"}.get(kind)
+        if kind is None:
+            return None
         prefix = f"cases/{case_id}/revisions/{revision_id}/{kind}-{locale}-"
         keys = self.store.list(prefix)
         if len(keys) != 1:
@@ -793,6 +802,7 @@ class CaseArchiveRuntime:
                 ready,
                 pdf_builder=core.build_pdf,
                 docx_builder=core.build_docx,
+                conclusion_builder=core.build_conclusion_pdf,
             )
             stage = "catalog_write"
             import case_catalog
