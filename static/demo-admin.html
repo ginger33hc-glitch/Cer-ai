@@ -15,7 +15,18 @@
 <main>
   <h1>Demo membership requests</h1>
   <p class="lead">Review a doctor’s request, define the personal username and password, and activate a 10-patient demo account.</p>
-  <div id="phoneSetup" class="card" hidden></div>
+  <section class="card">
+  <h2 style="margin-top:0;color:var(--navy)">Create full-access doctor</h2>
+  <p class="lead">OWNER only. Create a permanent doctor login with full clinical access.</p>
+  <div class="approval">
+    <div class="field"><label>Doctor name</label><input id="fullDoctorName" maxlength="160" autocomplete="off"></div>
+    <div class="field"><label>Username</label><input id="fullDoctorUsername" maxlength="64" autocomplete="off"></div>
+    <div class="field"><label>Password — minimum 12 characters</label><input id="fullDoctorPassword" type="password" minlength="12" autocomplete="new-password"></div>
+    <button id="createFullDoctor" type="button">Create doctor</button>
+  </div>
+  <div class="security">Password is hashed before storage and is never displayed again.</div>
+</section>
+<div id="phoneSetup" class="card" hidden></div>
   <div class="tabs"><button type="button" data-filter="PENDING">Pending</button><button type="button" data-filter="ALL">All requests</button></div>
   <div id="status" class="status" aria-live="polite">Loading requests…</div>
   <div id="requests"></div>
@@ -28,6 +39,19 @@
   const esc=value=>String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch]));
   const api=async(url,options={})=>{const response=await fetch(url,{credentials:"same-origin",cache:"no-store",...options});if(response.status===401){window.location.replace("/auth/login-page?next=/demo-admin");throw new Error("CER-AI sign-in required.");}const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.detail||"Request failed.");return data;};
   const setup=document.getElementById("phoneSetup");
+  const createDoctor=document.getElementById("createFullDoctor");
+  createDoctor.addEventListener("click",async()=>{
+    const doctor_name=document.getElementById("fullDoctorName").value.trim();
+    const username=document.getElementById("fullDoctorUsername").value.trim();
+    const password=document.getElementById("fullDoctorPassword").value;
+    if(!doctor_name||!username||password.length<12){status.className="status error";status.textContent="Enter doctor name, username, and a password of at least 12 characters.";return;}
+    createDoctor.disabled=true;
+    try{
+      const result=await api("/demo-access/admin/doctors",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({doctor_name,username,password})});
+      status.className="status approved";status.textContent="Doctor account created: "+result.username;
+      document.getElementById("fullDoctorName").value="";document.getElementById("fullDoctorUsername").value="";document.getElementById("fullDoctorPassword").value="";
+    }catch(error){status.className="status error";status.textContent=error.message;}finally{createDoctor.disabled=false;}
+  });
   api("/demo-access/admin/notification-setup").then(data=>{if(data.provider!=="NTFY"||!data.subscription_url)return;setup.hidden=false;setup.innerHTML=`<strong>${esc(tr("Phone alerts for demo requests"))}</strong><p>${esc(tr("Install the ntfy Android app, then open the private subscription link on your phone. Keep the topic private; notifications contain no applicant details."))}</p><a href="${esc(data.subscription_url)}">${esc(tr("Subscribe to owner alerts"))}</a>`;}).catch(()=>{});
   const render=()=>{const shown=records.filter(item=>filter==="ALL"||item.status===filter);if(!shown.length){list.innerHTML=`<div class="card empty">${esc(tr(filter==="PENDING"?"No pending demo requests.":"No demo requests."))}</div>`;return;}list.innerHTML=shown.map(item=>{
     const final=item.status!=="PENDING"?`<div class="${item.status==="APPROVED"?"approved":"rejected"}"><strong>${esc(item.status)}</strong>${item.username?` · ${esc(item.username)} · ${esc(item.credits_used??0)}/${esc(item.quota_limit??10)} ${esc(tr("patient credits used"))}`:""}</div>`:"";
