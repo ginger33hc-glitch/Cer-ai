@@ -10,6 +10,8 @@
     "CER-AI brings together four literature-informed assessments: Randleman ERSS, CER-AI-adapted NICE, Pentacam Final BAD-D and PS3. Each is evaluated independently, and its score or result is presented transparently to the surgeon.":"CER-AI, literatüre dayalı dört ayrı değerlendirmeyi bir araya getirir: Randleman ERSS, CER-AI’ye uyarlanmış NICE, Pentacam Final BAD-D ve PS3. Her biri bağımsız olarak değerlendirilir; skoru veya sonucu cerraha şeffaf biçimde sunulur.",
     "When screening and separate tissue-safety checks permit treatment, the application automatically performs LASIK or PRK planning calculations according to the surgeon’s chosen procedure and parameters.":"Risk taraması ve ayrı doku güvenliği kontrolleri tedaviye izin verdiğinde uygulama, cerrahın seçtiği yönteme ve parametrelere göre LASIK veya PRK planlama hesaplamalarını otomatik olarak gerçekleştirir.",
     "Sample reports":"Örnek raporlar",
+    "Türkçe — Tek sayfalık rapor (PDF)":"Türkçe — Tek sayfalık rapor (PDF)",
+    "English — Single-page report (PDF)":"İngilizce — Tek sayfalık rapor (PDF)",
     "Anonymized CER-AI reports. Original clinical findings are preserved.":"Kimlik bilgileri kaldırılmış CER-AI raporları. Rapordaki klinik bulgular korunmuştur.",
     "Single-page summary (PDF)":"Tek sayfalık özet (PDF)",
     "Detailed sample reports":"Ayrıntılı örnek raporlar",
