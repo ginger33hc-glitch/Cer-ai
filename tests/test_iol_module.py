@@ -85,6 +85,33 @@ def test_high_alpha_or_kappa_alone_warns_but_does_not_exclude_multifocal():
         assert "MF_EXCL_ALPHA_HIGH" not in recommendation.decisive_reason_codes
 
 
+@pytest.mark.parametrize("field,warning", [
+    ("angle_kappa_mm", "WARN_KAPPA_HIGH_SURGEON_REVIEW"),
+    ("angle_alpha_mm", "WARN_ALPHA_HIGH_SURGEON_REVIEW"),
+])
+def test_alpha_kappa_boundary_is_inclusive_without_warning_and_above_threshold_warns(field, warning):
+    at_boundary = result({field: 0.50})
+    assert at_boundary.multifocal_eligible is True
+    assert at_boundary.main_category == "MULTIFOCAL"
+    assert warning not in at_boundary.warning_codes
+
+    above_boundary = result({field: 0.5001})
+    assert above_boundary.multifocal_eligible is True
+    assert above_boundary.main_category == "MULTIFOCAL"
+    assert warning in above_boundary.warning_codes
+
+
+def test_iol_ui_maps_only_surgeon_review_alpha_kappa_warning_codes():
+    script = Path("static/iol.js").read_text(encoding="utf-8")
+    translations = Path("static/i18n.js").read_text(encoding="utf-8")
+    assert "WARN_KAPPA_HIGH_SURGEON_REVIEW" in script
+    assert "WARN_ALPHA_HIGH_SURGEON_REVIEW" in script
+    assert 'WARN_KAPPA_HIGH:"High angle kappa: multifocal IOL excluded."' not in script
+    assert 'WARN_ALPHA_HIGH:"High angle alpha: multifocal IOL excluded."' not in script
+    assert "this finding alone does not exclude a multifocal IOL" in script
+    assert "tek başına multifokal IOL uygunluğunu dışlamaz" in translations
+
+
 def test_toric_threshold_uses_active_iolmaster_k_difference_and_regularity():
     non_toric = result({"iolm500_k2_d": 42.999})
     toric = result({"iolm500_k2_d": 43.0, "astigmatism_type": "REGULAR"})
