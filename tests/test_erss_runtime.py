@@ -104,3 +104,49 @@ def test_missing_i_s_is_incomplete_even_if_srax_geometry_is_positive():
     result = erss_total(30, 530, None, 25.0, 330, -3.0)
     assert result["total"] is None
     assert "I_S" in result["missing"]
+
+
+def test_randleman_2008_age_bands_are_exact():
+    from clinical_core.rules import erss_age_points
+
+    expected = {
+        18: 3, 21: 3,
+        22: 2, 25: 2,
+        26: 1, 29: 1,
+        30: 0, 60: 0,
+    }
+    for age, points in expected.items():
+        assert erss_age_points(age) == points
+
+
+def test_randleman_2008_rsb_boundaries_are_exact():
+    from clinical_core.erss import erss_rsb_points
+
+    expected = {
+        239: 4, 240: 3, 259: 3, 260: 2,
+        279: 2, 280: 1, 299: 1, 300: 0,
+    }
+    for rsb, points in expected.items():
+        assert erss_rsb_points(rsb) == points
+
+
+def test_randleman_2008_ct_integer_boundaries_are_exact():
+    from clinical_core.rules import erss_pachymetry_points
+
+    expected = {
+        449: 4, 450: 4, 451: 3, 480: 3,
+        481: 2, 510: 2, 511: 0,
+    }
+    for ct, points in expected.items():
+        assert erss_pachymetry_points(ct) == points
+
+
+def test_randleman_2008_mrse_boundaries_are_exact():
+    from clinical_core.erss import erss_mrse_points
+
+    expected = {
+        -14.01: 4, -14.0: 3, -12.01: 3, -12.0: 2,
+        -10.01: 2, -10.0: 1, -8.01: 1, -8.0: 0,
+    }
+    for mrse, points in expected.items():
+        assert erss_mrse_points(mrse) == points
