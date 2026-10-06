@@ -19,7 +19,7 @@
     "PASS · 10 pages · PDF":"PASS · 10 sayfa · PDF",
     "PASS WITH CAUTION · 11 pages · PDF":"PASS WITH CAUTION · 11 sayfa · PDF",
     "STOP-DEFER · 10 pages · PDF":"STOP-DEFER · 10 sayfa · PDF",
-    "Summary in Turkish; detailed PDFs in English. Historical examples, not new assessments.":"Özet Türkçe, ayrıntılı PDF’ler İngilizcedir. Önceki rapor örnekleridir; yeni değerlendirme değildir.",
+    "Single-page reports in Turkish and English. Detailed PDFs in English. Historical examples, not new assessments.":"Tek sayfalık raporlar Türkçe ve İngilizcedir. Ayrıntılı PDF’ler İngilizcedir. Önceki rapor örnekleridir; yeni değerlendirme değildir.",
     "AI-assisted Pentacam reading, independent ectasia-risk assessment, and IOL planning support in one clinical workflow.":"Yapay zekâ destekli Pentacam okuma, bağımsız ektazi risk değerlendirmesi ve IOL planlama desteği tek klinik iş akışında.",
     "Final clinical decisions remain with the surgeon.":"Nihai klinik kararlar cerraha aittir.",
     "Free 10-patient demo":"10 hastalık ücretsiz demo",
