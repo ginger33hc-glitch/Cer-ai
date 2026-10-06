@@ -270,6 +270,14 @@ def test_non_toric_success_keeps_escrs_for_independent_review():
     assert plan.inputs["biological_sex"] == "Female"
 
 
+def test_short_eye_ui_blocks_before_losing_embedded_toric_route():
+    script = Path("static/iol.js").read_text(encoding="utf-8")
+    assert 'al < 22' in script
+    assert 'numberOrNull("lensThickness") === null || numberOrNull("wtw") === null' in script
+    assert "Cooke K6 and the embedded toric calculation require" in script
+    assert 'firstMissing.focus()' in script
+
+
 def test_short_eye_requires_real_lens_thickness_and_wtw():
     with patch("iol_module.power.urlopen") as mocked:
         plan = plan_iol_power(power_payload(axial_length_mm=21.9, lens_thickness_mm=None))

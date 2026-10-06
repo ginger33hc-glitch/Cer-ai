@@ -205,6 +205,17 @@
     if (!recommendation) { $("powerStatus").textContent = tr("Evaluate this eye before calculating its lens power."); return false; }
     if (!document.getElementById("patientForm").reportValidity() || !$("iolForm").reportValidity()) return false;
     const status = $("powerStatus"); status.className="status"; const difference = kDifference();
+    const al = numberOrNull("al");
+    if (al !== null && al < 22 && (numberOrNull("lensThickness") === null || numberOrNull("wtw") === null)) {
+      const missing = [];
+      if (numberOrNull("lensThickness") === null) missing.push(tr("Lens thickness (mm)"));
+      if (numberOrNull("wtw") === null) missing.push(tr("HWTW (mm)"));
+      status.textContent = `${tr("Short eye (AL < 22.00 mm): Cooke K6 and the embedded toric calculation require")} ${missing.join(" + ")}. ${tr("Enter the missing measured value(s) before calculating.")}`;
+      status.classList.add("error");
+      const firstMissing = numberOrNull("lensThickness") === null ? $("lensThickness") : $("wtw");
+      firstMissing.focus();
+      return false;
+    }
     const corneaBack = corneaBackByEye[$("eye").value];
     if (corneaBack) posteriorFields.forEach(key => {
       if (!$("back_field_"+key).hidden) {
