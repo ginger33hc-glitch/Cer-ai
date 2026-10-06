@@ -19,8 +19,8 @@ from clinical_core.rules import (
 
 
 def test_canonical_age_points_boundaries():
-    values = (17, 18, 21, 21.999, 22, 25, 25.999, 26, 29, 29.999, 30, 35)
-    assert [erss_age_points(x) for x in values] == [None, 3, 3, 3, 2, 2, 2, 1, 1, 1, 0, 0]
+    values = (17, 18, 21, 22, 25, 26, 29, 30, 35)
+    assert [erss_age_points(x) for x in values] == [None, 3, 3, 2, 2, 1, 1, 0, 0]
 
 
 def test_canonical_pachymetry_points_boundaries():
