@@ -41,7 +41,7 @@ def _authenticated_destination(request) -> str:
     return path
 
 
-def _authenticated_module_html(html: str, display_name: str) -> str:
+def _authenticated_module_html(html: str, display_name: str, role: str = "") -> str:
     # Make the visual CER-AI logo itself a native link back to the public website.
     # A real anchor is used instead of JavaScript so the navigation works reliably
     # across browsers, touch devices, cached pages, and CSP/security wrappers.
@@ -56,11 +56,12 @@ def _authenticated_module_html(html: str, display_name: str) -> str:
         .replace(">", "\\u003e")
         .replace("&", "\\u0026")
     )
+    owner_link = '<a href="/demo-admin" style="font-weight:bold;color:#1f5e8c;margin-right:8px">Manage Doctors</a>' if role == "OWNER" else ""
     injection = f"""
 <div id="cerAiAccountBar" style="position:fixed;right:12px;bottom:12px;z-index:9999;background:#fff;border:1px solid #bcc8d1;border-radius:9px;padding:8px 10px;box-shadow:0 4px 18px rgba(0,0,0,.14);font:12px Arial,sans-serif;color:#173b57">
   <span style="margin-right:8px">{label}</span>
   <a href="/clinical-modules" style="font-weight:bold;color:#1f5e8c;margin-right:8px">Modules</a>
-  <a href="/archive-ui" style="font-weight:bold;color:#1f5e8c;margin-right:8px">Case Archive</a>
+  <a href="/archive-ui" style="font-weight:bold;color:#1f5e8c;margin-right:8px">Case Archive</a>\n  {owner_link}
   <button id="cerAiLogoutButton" type="button" style="border:1px solid #9caeba;border-radius:6px;background:#f6f9fb;color:#173b57;padding:4px 7px;font:inherit;cursor:pointer">Log out</button>
 </div>
 <script>
@@ -100,18 +101,18 @@ if (typeof ceraiFetch === "function") {{
     return html.replace("</body>", injection + "\n</body>")
 
 
-def _authenticated_root_html(display_name: str) -> str:
+def _authenticated_root_html(display_name: str, role: str = "") -> str:
     html = ROOT_HTML.read_text(encoding="utf-8")
     # Authentication must preserve the canonical mobile transport. Without
     # this client, the browser posts directly to /analyze and the proxy closes
     # long-running assessments at five minutes.
     from analysis_job_service import inject_client
 
-    return _authenticated_module_html(inject_client(html), display_name)
+    return _authenticated_module_html(inject_client(html), display_name, role)
 
 
-def _authenticated_iol_html(display_name: str) -> str:
-    return _authenticated_module_html(IOL_HTML.read_text(encoding="utf-8"), display_name)
+def _authenticated_iol_html(display_name: str, role: str = "") -> str:
+    return _authenticated_module_html(IOL_HTML.read_text(encoding="utf-8"), display_name, role)
 
 
 def install(core: Any) -> None:
@@ -252,13 +253,13 @@ def install(core: Any) -> None:
                     )
                 if path == "/app":
                     response = HTMLResponse(
-                        _authenticated_root_html(principal.display_name),
+                        _authenticated_root_html(principal.display_name, principal.role),
                         headers={"Cache-Control": "no-store"},
                     )
                     return operational_security._secure_response(response, path)
                 if path == "/iol":
                     response = HTMLResponse(
-                        _authenticated_iol_html(principal.display_name),
+                        _authenticated_iol_html(principal.display_name, principal.role),
                         headers={"Cache-Control": "no-store"},
                     )
                     return operational_security._secure_response(response, path)
