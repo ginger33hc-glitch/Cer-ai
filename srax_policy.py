@@ -18,7 +18,7 @@ def srax_positive(derived_srax_deg=None, confirmed: Optional[bool] = None) -> Op
         isinstance(derived_srax_deg, (int, float))
         and not isinstance(derived_srax_deg, bool)
         and isfinite(float(derived_srax_deg))
-        and 0.0 <= float(derived_srax_deg) <= 20.0
+        and 0.0 <= float(derived_srax_deg) < 20.0
     ):
         return False
     return None
