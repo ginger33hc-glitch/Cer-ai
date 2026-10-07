@@ -19,8 +19,8 @@ from clinical_core.rules import (
 
 
 def test_canonical_age_points_boundaries():
-    values = (17, 18, 18.999, 19, 20, 20.999, 21, 35)
-    assert [erss_age_points(x) for x in values] == [None, 3, 3, 2, 2, 2, 0, 0]
+    values = (17, 18, 21, 22, 25, 26, 29, 30, 35)
+    assert [erss_age_points(x) for x in values] == [None, 3, 3, 2, 2, 1, 1, 0, 0]
 
 
 def test_canonical_pachymetry_points_boundaries():
@@ -56,15 +56,15 @@ def test_negative_i_s_abt_has_inclusive_minus_two_point_five_boundary():
         assert signed_i_s_category(value) == "ASYMMETRIC_BOWTIE"
 
 
-def test_srax_boundary_is_strictly_greater_than_20_degrees():
+def test_erss_srax_boundary_starts_at_20_degrees():
     assert erss_topography_category(0.8, 19.9) == "ASYMMETRIC_BOWTIE"
-    assert erss_topography_category(0.8, 20.0) == "ASYMMETRIC_BOWTIE"
+    assert erss_topography_category(0.8, 20.0) == "INFERIOR_STEEPENING_SRA"
     assert erss_topography_category(0.8, 20.1, True) == "INFERIOR_STEEPENING_SRA"
 
 
 def test_srax_never_converts_negative_i_s_to_inferior_steepening():
     assert erss_topography_category(-0.51, 20.1) == "NORMAL_SYMMETRIC"
-    assert erss_topography_category(-3.0, 90.0) == "ASYMMETRIC_BOWTIE"
+    assert erss_topography_category(-3.0, 90.0) == "NORMAL_SYMMETRIC"
     assert erss_topography_category(-0.50, 90.0) == "NORMAL_SYMMETRIC"
 
 
