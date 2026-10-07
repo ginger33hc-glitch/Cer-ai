@@ -30,10 +30,12 @@ def erss_age_points(age_years) -> Optional[int]:
     if not _finite(age_years) or float(age_years) < 18:
         return None
     age = float(age_years)
-    if age < 19:
+    if age <= 21:
         return 3
-    if age < 21:
+    if age <= 25:
         return 2
+    if age <= 29:
+        return 1
     return 0
 
 
@@ -58,9 +60,9 @@ def erss_pachymetry_points(thinnest_um) -> Optional[int]:
 
 
 def signed_i_s_category(i_s_d) -> str:
-    """CER-AI signed I-S bands; negative ABT begins at -2.50 D inclusive.
+    """CER-AI signed I-S bands; published ERSS positive asymmetry bands are used.
 
-    Values >-2.50 through +0.50 D are normal on this numeric criterion.
+    Values through +0.50 D are normal on this ERSS numeric criterion.
     Positive inferior-steepening and ectatic boundaries remain independent.
     """
     if not _finite(i_s_d):
@@ -68,9 +70,9 @@ def signed_i_s_category(i_s_d) -> str:
     value = float(i_s_d)
     if value >= 1.40:
         return ABNORMAL_ECTATIC
-    if value > 1.00:
+    if value >= 1.00:
         return INFERIOR_STEEPENING_SRA
-    if value > 0.50 or value <= -2.50:
+    if value > 0.50:
         return ASYMMETRIC_BOWTIE
     return NORMAL_SYMMETRIC
 
