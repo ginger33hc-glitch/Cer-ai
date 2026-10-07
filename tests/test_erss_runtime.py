@@ -73,8 +73,8 @@ def test_front_map_srax_over_20_scores_three_when_i_s_can_be_upgraded():
     assert erss_topography_points(category) == 3
 
 
-def test_exact_20_does_not_trigger_srax():
-    assert erss_topography_category(0.5, 20.0) == NORMAL_SYMMETRIC
+def test_exact_20_d_triggers_published_erss_srax():
+    assert erss_topography_category(0.5, 20.0) == INFERIOR_STEEPENING_SRA
 
 
 def test_higher_single_category_wins_without_addition():
