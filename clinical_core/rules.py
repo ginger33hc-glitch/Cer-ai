@@ -60,11 +60,25 @@ def erss_pachymetry_points(thinnest_um) -> Optional[int]:
 
 
 def signed_i_s_category(i_s_d) -> str:
-    """CER-AI signed I-S bands; published ERSS positive asymmetry bands are used.
+    """CER-AI signed I-S bands; negative ABT begins at -2.50 D inclusive.
 
-    Values through +0.50 D are normal on this ERSS numeric criterion.
+    Values >-2.50 through +0.50 D are normal on this numeric criterion.
     Positive inferior-steepening and ectatic boundaries remain independent.
     """
+    if not _finite(i_s_d):
+        return UNCERTAIN
+    value = float(i_s_d)
+    if value >= 1.40:
+        return ABNORMAL_ECTATIC
+    if value > 1.00:
+        return INFERIOR_STEEPENING_SRA
+    if value > 0.50 or value <= -2.50:
+        return ASYMMETRIC_BOWTIE
+    return NORMAL_SYMMETRIC
+
+
+def erss_i_s_category(i_s_d) -> str:
+    """Published Randleman ERSS I-S categories, isolated from CER-AI HC signed-I-S policy."""
     if not _finite(i_s_d):
         return UNCERTAIN
     value = float(i_s_d)
@@ -101,7 +115,7 @@ def erss_topography_category(
     Exact measured 20.0° is negative. Above 20° requires surgeon confirmation.
     I-S and SRAX are never added.
     """
-    i_s_category = signed_i_s_category(i_s_d)
+    i_s_category = erss_i_s_category(i_s_d)
     if i_s_category == UNCERTAIN:
         return UNCERTAIN
     if i_s_category in {INFERIOR_STEEPENING_SRA, ABNORMAL_ECTATIC}:
@@ -109,6 +123,8 @@ def erss_topography_category(
     if float(i_s_d) < 0.0:
         return i_s_category
 
+    if _finite(derived_srax_deg) and float(derived_srax_deg) == 20.0:
+        return INFERIOR_STEEPENING_SRA
     positive = srax_positive(derived_srax_deg, srax_gt20_confirmed)
     if positive is None:
         return UNCERTAIN
