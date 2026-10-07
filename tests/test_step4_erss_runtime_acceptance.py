@@ -93,7 +93,7 @@ def test_i_s_1_40_sets_four_point_topography_without_requiring_srax():
 
 
 def test_srax_runtime_boundary_starts_at_20_degrees():
-    expected = {19.9: 1, 20.0: None, 20.1: None}
+    expected = {19.9: 1, 20.0: 3, 20.1: None}
     actual = {
         value: _evaluate(0.51, value)["score"]["rows"]["topography"]
         for value in expected

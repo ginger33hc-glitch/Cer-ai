@@ -15,6 +15,7 @@ from clinical_core.rules import (
     UNCERTAIN,
     erss_topography_category,
     signed_i_s_category,
+    erss_i_s_category,
 )
 
 
@@ -30,8 +31,9 @@ def test_i_s_positive_abt_scores_one():
 
 def test_negative_i_s_is_not_randleman_abt():
     for value in (-2.5, -3.0, -5.0):
-        assert signed_i_s_category(value) == NORMAL_SYMMETRIC
-        assert erss_topography_points(NORMAL_SYMMETRIC) == 0
+        assert signed_i_s_category(value) == ASYMMETRIC_BOWTIE
+        assert erss_i_s_category(value) == NORMAL_SYMMETRIC
+        assert erss_topography_points(erss_i_s_category(value)) == 0
 
 
 def test_negative_i_s_cannot_be_relabelled_as_inferior_steepening_by_srax():
@@ -55,8 +57,8 @@ def test_finite_sub_480_pachymetry_remains_scored_despite_independent_hard_stop(
 
 
 def test_i_s_inferior_steepening_band_scores_three():
-    assert signed_i_s_category(1.0) == INFERIOR_STEEPENING_SRA
-    assert signed_i_s_category(1.2) == INFERIOR_STEEPENING_SRA
+    assert erss_i_s_category(1.0) == INFERIOR_STEEPENING_SRA
+    assert erss_i_s_category(1.2) == INFERIOR_STEEPENING_SRA
     assert erss_topography_points(INFERIOR_STEEPENING_SRA) == 3
 
 
