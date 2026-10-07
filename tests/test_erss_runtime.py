@@ -28,10 +28,10 @@ def test_i_s_positive_abt_scores_one():
     assert erss_topography_points(ASYMMETRIC_BOWTIE) == 1
 
 
-def test_negative_i_s_abt_starts_at_minus_two_point_five():
+def test_negative_i_s_is_not_randleman_abt():
     for value in (-2.5, -3.0, -5.0):
-        assert signed_i_s_category(value) == ASYMMETRIC_BOWTIE
-        assert erss_topography_points(ASYMMETRIC_BOWTIE) == 1
+        assert signed_i_s_category(value) == NORMAL_SYMMETRIC
+        assert erss_topography_points(NORMAL_SYMMETRIC) == 0
 
 
 def test_negative_i_s_cannot_be_relabelled_as_inferior_steepening_by_srax():
@@ -55,6 +55,7 @@ def test_finite_sub_480_pachymetry_remains_scored_despite_independent_hard_stop(
 
 
 def test_i_s_inferior_steepening_band_scores_three():
+    assert signed_i_s_category(1.0) == INFERIOR_STEEPENING_SRA
     assert signed_i_s_category(1.2) == INFERIOR_STEEPENING_SRA
     assert erss_topography_points(INFERIOR_STEEPENING_SRA) == 3
 
