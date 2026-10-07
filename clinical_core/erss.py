@@ -21,7 +21,7 @@ from .rules import (
     erss_age_points,
     erss_pachymetry_points,
     erss_topography_category,
-    signed_i_s_category,
+    erss_i_s_category,
 )
 
 
@@ -69,9 +69,9 @@ def erss_topography_points(category: str) -> Optional[int]:
 
 
 def _topography_missing(i_s_d, derived_srax_deg, srax_gt20_confirmed) -> list[str]:
-    if signed_i_s_category(i_s_d) == UNCERTAIN:
+    if erss_i_s_category(i_s_d) == UNCERTAIN:
         return ["I_S"]
-    i_s_category = signed_i_s_category(i_s_d)
+    i_s_category = erss_i_s_category(i_s_d)
     if i_s_category in {INFERIOR_STEEPENING_SRA, ABNORMAL_ECTATIC}:
         return []
     if _finite(i_s_d) and float(i_s_d) < 0.0:
