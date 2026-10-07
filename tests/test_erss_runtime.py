@@ -104,3 +104,24 @@ def test_missing_i_s_is_incomplete_even_if_srax_geometry_is_positive():
     result = erss_total(30, 530, None, 25.0, 330, -3.0)
     assert result["total"] is None
     assert "I_S" in result["missing"]
+
+
+def test_randleman_age_boundaries():
+    from clinical_core.rules import erss_age_points
+    assert [erss_age_points(x) for x in (18, 21, 22, 25, 26, 29, 30)] == [3, 3, 2, 2, 1, 1, 0]
+
+def test_randleman_rsb_boundaries():
+    from clinical_core.erss import erss_rsb_points
+    assert [erss_rsb_points(x) for x in (239, 240, 259, 260, 279, 280, 299, 300)] == [4, 3, 3, 2, 2, 1, 1, 0]
+
+def test_randleman_pachymetry_boundaries():
+    from clinical_core.rules import erss_pachymetry_points
+    assert [erss_pachymetry_points(x) for x in (449, 450, 451, 480, 481, 510, 511)] == [4, 4, 3, 3, 2, 2, 0]
+
+def test_randleman_mrse_boundaries():
+    from clinical_core.erss import erss_mrse_points
+    assert [erss_mrse_points(x) for x in (-14.01, -14, -12.01, -12, -10.01, -10, -8.01, -8)] == [4, 3, 3, 2, 2, 1, 1, 0]
+
+def test_randleman_disposition_boundaries():
+    from clinical_core.erss import erss_disposition
+    assert [erss_disposition(x) for x in (0, 2, 3, 4)] == ['PASS', 'PASS', 'CAUTION', 'STOP-DEFER']
