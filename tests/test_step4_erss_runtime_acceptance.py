@@ -77,8 +77,8 @@ def _evaluate(i_s, srax_deg, confirmation=None):
     return {eye["eye"]: eye for eye in result["eyes"]}["OD"]
 
 
-def test_i_s_1_01_sets_three_point_topography_without_requiring_srax():
-    od = _evaluate(1.01, None)
+def test_i_s_1_00_sets_three_point_topography_without_requiring_srax():
+    od = _evaluate(1.00, None)
     assert od["score"]["rows"]["topography"] == 3
     assert od["score"]["category"] == "INFERIOR_STEEPENING_SRA"
     assert "Randleman: SRAX" not in od["missing"]
@@ -121,12 +121,12 @@ def test_missing_i_s_is_incomplete_even_when_srax_is_positive():
     assert "Randleman: I_S" in od["missing"]
 
 
-def test_negative_asymmetry_boundary_reaches_runtime_score():
+def test_negative_i_s_remains_non_abt_in_randleman_runtime():
     for value, category, points in [
         (-0.90, "NORMAL_SYMMETRIC", 0),
         (-2.49, "NORMAL_SYMMETRIC", 0),
-        (-2.50, "ASYMMETRIC_BOWTIE", 1),
-        (-3.00, "ASYMMETRIC_BOWTIE", 1),
+        (-2.50, "NORMAL_SYMMETRIC", 0),
+        (-3.00, "NORMAL_SYMMETRIC", 0),
     ]:
         od = _evaluate(value, None)
         assert od["score"]["category"] == category
