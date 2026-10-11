@@ -287,7 +287,7 @@ def test_short_eye_requires_real_lens_thickness_and_wtw():
     assert plan.escrs_url == "https://iolcalculator.escrs.org/"
 
 
-@pytest.mark.parametrize("acd,target", [(2.49, 0.25), (2.5, -0.25), (3.499, -0.25), (3.5, -0.5), (3.51, -0.5)])
+@pytest.mark.parametrize("acd,target", [(2.49, 0.0), (2.5, -0.25), (3.499, -0.25), (3.5, -0.5), (3.51, -0.5)])
 @pytest.mark.parametrize("al,check", [(21.99, True), (22.0, False), (26.0, False), (26.01, True)])
 def test_acd_target_and_axial_length_second_formula_are_independent(acd, target, al, check):
     case = power_payload(acd_mm=acd, axial_length_mm=al, lens_thickness_mm=4.5)
