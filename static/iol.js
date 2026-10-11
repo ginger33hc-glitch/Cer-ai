@@ -157,7 +157,10 @@
     const eligible = new Set(recommendation.eligible_categories || []);
     const toric = recommendation.toric_evaluation_required;
     const options = lensCatalog.filter(lens => eligible.has(lens.category) && (!toric || lens.subtype?.toLowerCase().includes("toric")));
-    $("selectedLens").innerHTML = `<option value="">Select an eligible lens</option>` + options.map(lens => `<option value="${lens.id}">${lens.name} — ${lens.category} — A ${lens.a_constant.toFixed(1)}</option>`).join("");
+    $("selectedLens").innerHTML = `<option value="">Select an eligible lens</option>` + options.map(lens => {
+      const route = toric ? (lens.embedded_toric_supported ? " — embedded prototype (TEST ONLY)" : " — external toric verification required") : "";
+      return `<option value="${lens.id}">${lens.name} — ${lens.category} — A ${lens.a_constant.toFixed(1)}${route}</option>`;
+    }).join("");
   }
 
   function escrsEyePayload(data) {
@@ -261,7 +264,7 @@
         html += `<div class="recommendation">${candidates[0]?.model ?? "—"} · ${fmt(candidates[0]?.marker_axis_deg, 1)}° marker axis</div>`;
         html += `<p>Predicted residual cylinder: ${fmt(candidates[0]?.residual_spectacle_cylinder_d)} D at ${fmt(candidates[0]?.residual_spectacle_axis_deg, 1)}° (prototype estimate).</p>`;
         html += `<div style="overflow-x:auto"><table class="table"><thead><tr><th>Model</th><th>IOL cylinder</th><th>Marker axis</th><th>Predicted residual cylinder</th></tr></thead><tbody>${candidates.map(c => `<tr><td>${c.model}</td><td>${fmt(c.cylinder_iol_d)} D</td><td>${fmt(c.marker_axis_deg, 1)}°</td><td>${fmt(c.residual_spectacle_cylinder_d)} D at ${fmt(c.residual_spectacle_axis_deg, 1)}°</td></tr>`).join("")}</tbody></table></div>`;
-      } else if(toricRoute) html += `<div class="warning"><strong>No embedded toric model or axis available.</strong> ${data.toric_status === "INPUTS_INCOMPLETE" ? "Upload the same-eye Pentacam 4 Maps Refractive image and verify Pachy Vertex." : "Review source measurements and the selected lens family."}</div>`;
+      } else if(toricRoute) html += `<div class="warning"><strong>No embedded toric model or axis available.</strong> ${data.toric_status === "INPUTS_INCOMPLETE" ? "Upload the same-eye Pentacam 4 Maps Refractive image and verify Pachy Vertex." : (data.toric_status === "UNSUPPORTED" ? "No validated embedded model series for this lens. Use the manufacturer calculator and ESCRS for independent verification." : "Review source measurements and the selected lens family.")}</div>`;
       if(data.predictions?.length){html+=`<h3>${toricRoute?"Stage 1 — Cooke K6 spherical power":"Cooke K6 power"}</h3><table class="table"><thead><tr><th>IOL power</th><th>Predicted refraction</th><th>Selection</th></tr></thead><tbody>${data.predictions.map(p=>`<tr><td>${Number(p.IOL ?? p.iol_power).toFixed(2)}</td><td>${Number(p.Rx ?? p.predicted_refraction).toFixed(2)}</td><td>${p.IsBestOption ? "K6 best option" : ""}</td></tr>`).join("")}</tbody></table>`;}
       if(data.calculator_url) html+=`<a class="external" target="_blank" rel="noopener noreferrer" href="${data.calculator_url}">Optional manufacturer toric calculator comparison</a>`;
       $("powerResult").innerHTML=html; status.textContent=tr(data.calculation_status.replaceAll("_"," "));
