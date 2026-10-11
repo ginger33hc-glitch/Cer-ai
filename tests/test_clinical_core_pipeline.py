@@ -231,3 +231,15 @@ def test_importing_pipeline_does_not_mutate_production_runtime():
     assert core.merge_extractions is before_merge
     assert not hasattr(core, "assess_eye")
     assert not hasattr(core, "hc_engine")
+
+
+@pytest.mark.parametrize("age, total, status", [(35, 1, PASS), (25, 3, CAUTION), (21, 4, STOP_DEFER)])
+def test_negative_abt_flows_through_existing_erss_score_and_disposition(age, total, status):
+    result = evaluate_normalized_case(normal_lasik(
+        age_years=age, i_s_d=-2.50, derived_srax_deg=None,
+        ps3_eye=complete_ps3_eye(i_s_d=-2.50, srax_deg=None),
+    ))
+    assert result["erss"]["category"] == "ASYMMETRIC_BOWTIE"
+    assert result["erss"]["rows"]["topography"] == 1
+    assert result["erss"]["total"] == total
+    assert result["erss_status"] == status
