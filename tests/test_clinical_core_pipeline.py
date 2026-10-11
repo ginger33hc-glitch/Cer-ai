@@ -215,6 +215,38 @@ def test_pta_at_or_over_40_is_a_global_stop_driver():
     assert result["status"] == STOP_DEFER
 
 
+def test_smile_uses_lasik_equivalent_rsb_and_pta_tissue_gates():
+    result = evaluate_normalized_case(normal_lasik(
+        procedure="SMILE", flap_um=120, ablation_um=80,
+    ))
+    safety = result["procedural_safety"]
+    assert safety["SMILE_RSB_um"] == 360
+    assert safety["SMILE_PTA_percent"] == pytest.approx(100 * 200 / 560)
+    assert safety["hard_stops"]["smile_rsb"] is False
+    assert safety["hard_stops"]["smile_pta"] is False
+
+
+def test_smile_pta_40_percent_is_stop_defer():
+    result = evaluate_normalized_case(normal_lasik(
+        procedure="SMILE", flap_um=120, ablation_um=104,
+    ))
+    safety = result["procedural_safety"]
+    assert safety["SMILE_PTA_percent"] == 40.0
+    assert safety["hard_stops"]["smile_pta"] is True
+    assert result["status"] == STOP_DEFER
+
+
+def test_smile_requires_cap_and_maximum_lenticule_thickness():
+    missing_cap = evaluate_normalized_case(normal_lasik(
+        procedure="SMILE", flap_um=None, ablation_um=70,
+    ))
+    missing_lenticule = evaluate_normalized_case(normal_lasik(
+        procedure="SMILE", flap_um=120, ablation_um=None,
+    ))
+    assert "smile_cap_um" in missing_cap["procedural_safety"]["missing"]
+    assert "ablation_um" in missing_lenticule["procedural_safety"]["missing"]
+
+
 def test_erss_rsb_and_mrse_boundary_contract_is_canonical():
     from clinical_core.erss import erss_mrse_points, erss_rsb_points
     rsb_values = (239.999, 240, 259.999, 260, 279.999, 280, 299.999, 300)
