@@ -81,7 +81,7 @@
       </div>
       <div class="grid">
         <div class="row"><label>Contact-lens type at imaging</label><select id="contact_lens_type" required><option value="">Select</option><option value="NONE">None</option><option value="SOFT">Soft</option><option value="RIGID">Rigid / RGP</option><option value="UNKNOWN">Unknown</option></select></div>
-        <div class="row"><label>Days discontinued before Pentacam</label><input id="contact_lens_days" type="number" min="0" max="3650" step="1"></div>
+        <div id="contact_lens_days_row" class="row" hidden><label>Days discontinued before Pentacam</label><input id="contact_lens_days" type="number" min="0" max="3650" step="1"></div>
       </div>
       <h3>Eye-specific plans</h3>
       <div class="grid">
@@ -154,6 +154,18 @@ async function ceraiFetch(url,options={}){
   return fetch(url,{...requestOptions,headers});
 }
 window.ceraiFetch=ceraiFetch;
+const contactLensType=document.getElementById("contact_lens_type");
+const contactLensDaysRow=document.getElementById("contact_lens_days_row");
+const contactLensDays=document.getElementById("contact_lens_days");
+function syncContactLensDays(){
+  const used=contactLensType.value==="SOFT"||contactLensType.value==="RIGID";
+  contactLensDaysRow.hidden=!used;
+  contactLensDays.required=used;
+  if(!used)contactLensDays.value="";
+}
+contactLensType.addEventListener("change",syncContactLensDays);
+syncContactLensDays();
+
 const eyeTemplate = (eye) => `
   <div class="row"><label>Prior corneal refractive surgery?</label><select id="${eye}_prior"><option value="no" selected>No</option><option value="prk">Yes — PRK</option><option value="lasik">Yes — LASIK</option><option value="smile">Yes — SMILE</option><option value="unknown">Not documented</option></select></div>
   <div class="row"><label>Procedure</label><select id="${eye}_procedure"><option value="">Select</option><option value="PRK">PRK</option><option value="LASIK">LASIK</option><option value="SMILE">SMILE</option></select></div>
