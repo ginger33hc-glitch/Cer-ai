@@ -475,7 +475,7 @@ def _conclusion_eye_rows(report: Mapping[str, Any]) -> list[list[str]]:
         [
             "Randleman / ERSS",
             _text(randleman.get("status"), "NOT APPLICABLE"),
-            f"Total: {_text(randleman.get('total'))}; Classification: {_text(randleman.get('category'))}",
+            f"Total: {_text(randleman.get('total'))}; Risk disposition: {_text(randleman.get('status'))}; Topography pattern: {_text(randleman.get('category'))}",
         ],
         [
             "NICE",
