@@ -437,7 +437,7 @@ def test_iol_locales_have_consistent_metadata_and_crawlable_links(public_app, pa
     descriptions = [a['content'] for a in page.attributes('meta') if a.get('name') == 'description']
     assert descriptions == [schema['description']]
     assert title == schema['name']
-    assert f'<loc>https://cer-ai.com{path}</loc><lastmod>2026-10-04</lastmod>' in sitemap.text
+    assert f'<loc>https://cer-ai.com{path}</loc><lastmod>2026-10-11</lastmod>' in sitemap.text
     if language == 'tr':
         for phrase in ('akıllı mercek', 'akıllı lens', 'Mersin'):
             assert phrase.casefold() in title.casefold()
