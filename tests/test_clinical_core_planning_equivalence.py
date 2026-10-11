@@ -7,6 +7,7 @@ from clinical_core.planning import (
     MMC_RECOMMENDED,
     MMC_REVIEW_REQUIRED,
     PlanEvaluation,
+    estimate_smile_max_lenticule_um,
     lasik_plan_definition,
     mmc_guidance,
     select_first_safe_lasik_plan,
@@ -83,3 +84,10 @@ def test_mixed_prk_does_not_borrow_myopic_scalar_mmc_rule():
 
 def test_mmc_is_not_applicable_to_lasik():
     assert mmc_guidance("LASIK", MYOPIC, -5.0) == MMC_NOT_APPLICABLE
+
+
+def test_smile_theoretical_lenticule_fallback_formula():
+    assert estimate_smile_max_lenticule_um(-3.0, 6.0) == 54.0
+    assert estimate_smile_max_lenticule_um(-3.0, 6.5) == 15.0 + 13.0 * 3.0 * (6.5 / 6.0) ** 2
+    assert estimate_smile_max_lenticule_um(+2.0, 6.5) is None
+    assert estimate_smile_max_lenticule_um(-3.0, None) is None
