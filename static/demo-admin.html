@@ -27,7 +27,8 @@
   <div class="security">Password is hashed before storage and is never displayed again.</div>
 </section>
 <div id="phoneSetup" class="card" hidden></div>
-  <div class="tabs"><button type="button" data-filter="PENDING">Pending</button><button type="button" data-filter="ALL">All requests</button></div>
+  <div class="tabs"><button type="button" id="registeredDoctorsButton">Kayıtlı Doktorlar</button><button type="button" data-filter="PENDING">Pending</button><button type="button" data-filter="ALL">All requests</button></div>
+  <section id="registeredDoctorsPanel" class="card" hidden><div class="head"><h2>Kayıtlı Doktorlar</h2><span id="doctorCount" class="badge">0</span></div><div id="registeredDoctors"></div></section>
   <div id="status" class="status" aria-live="polite">Loading requests…</div>
   <div id="requests"></div>
 </main>
@@ -38,6 +39,18 @@
   const tr=value=>window.CERAI_I18N?window.CERAI_I18N.translate(value):value;
   const esc=value=>String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch]));
   const api=async(url,options={})=>{const response=await fetch(url,{credentials:"same-origin",cache:"no-store",...options});if(response.status===401){window.location.replace("/auth/login-page?next=/demo-admin");throw new Error("CER-AI sign-in required.");}const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.detail||"Request failed.");return data;};
+  const registeredDoctorsButton=document.getElementById("registeredDoctorsButton");
+  const registeredDoctorsPanel=document.getElementById("registeredDoctorsPanel");
+  const registeredDoctors=document.getElementById("registeredDoctors");
+  registeredDoctorsButton.addEventListener("click",async()=>{
+    registeredDoctorsButton.disabled=true;
+    try{
+      const doctors=(await api("/demo-access/admin/doctors")).doctors||[];
+      document.getElementById("doctorCount").textContent=doctors.length;
+      registeredDoctors.innerHTML=doctors.length?doctors.map(doctor=>`<div class="meta" style="border-top:1px solid var(--line);padding-top:10px"><div><strong>${esc(doctor.doctor_name)}</strong><br>${esc(doctor.username)}</div><div><span class="badge" style="${doctor.status==="ACTIVE"?"color:var(--green)":"color:var(--red)"}">${esc(doctor.status==="ACTIVE"?"AKTİF":"PASİF")}</span> · ${esc(doctor.access_plan)}</div></div>`).join(""):`<div class="empty">Kayıtlı doktor bulunamadı.</div>`;
+      registeredDoctorsPanel.hidden=false;
+    }catch(error){status.className="status error";status.textContent=error.message;}finally{registeredDoctorsButton.disabled=false;}
+  });
   const setup=document.getElementById("phoneSetup");
   const createDoctor=document.getElementById("createFullDoctor");
   createDoctor.addEventListener("click",async()=>{
