@@ -110,7 +110,7 @@ def test_no_axis_is_not_invented():
 
 
 def test_non_four_maps_source_does_not_trigger_posterior_retry():
-    core = Reader(source(document_type="PENTACAM_CATARACT_PREOP", cornea_back={}, pentacam={"acd_internal_mm": 2.7}))
+    core = Reader(source(document_type="PENTACAM_CATARACT_PREOP", cornea_back={}))
     read(core)
     assert len(core.calls) == 1
 
@@ -121,33 +121,3 @@ def test_input_model_preserves_two_printed_axes_and_rejects_conflict():
     assert PosteriorCorneaInput(**payload).k1_axis_deg == 21
     with pytest.raises(ValidationError):
         PosteriorCorneaInput(**{**payload, "k1_axis_deg": 40})
-
-
-def test_internal_acd_retry_preserves_source_and_other_fields():
-    primary = source(document_type='PENTACAM_CATARACT_PREOP', pentacam={'acd_internal_mm': None, 'hwtw_mm': 11.8}, unreadable_fields=['pentacam.acd_internal_mm'])
-    core = Reader(primary, {'eye': 'OD', 'printed_label': 'ACD (Int.)', 'acd_internal_mm': 2.7})
-    result = read(core)
-    assert result['pentacam'] == {'acd_internal_mm': 2.7, 'hwtw_mm': 11.8}
-    assert result['unreadable_fields'] == []
-    assert len(core.calls) == 2
-
-
-@pytest.mark.parametrize('candidate', [
-    {'eye': 'OS', 'printed_label': 'ACD (Int.)', 'acd_internal_mm': 2.7},
-    {'eye': 'OD', 'printed_label': 'ACD (Ext.)', 'acd_internal_mm': 3.2},
-    {'eye': 'OD', 'printed_label': None, 'acd_internal_mm': 2.7},
-    {'eye': 'OD', 'printed_label': 'ACD (Int.)', 'acd_internal_mm': None},
-    {'eye': 'OD', 'printed_label': 'ACD (Int.)', 'acd_internal_mm': True},
-    RuntimeError('reader unavailable'),
-])
-def test_internal_acd_retry_does_not_invent_or_substitute(candidate):
-    primary = source(document_type='PENTACAM_CATARACT_PREOP', pentacam={'acd_internal_mm': None})
-    result = read(Reader(primary, candidate))
-    assert result['pentacam']['acd_internal_mm'] is None
-
-
-def test_readable_internal_acd_is_not_replaced():
-    primary = source(document_type='PENTACAM_CATARACT_PREOP', pentacam={'acd_internal_mm': 2.7})
-    core = Reader(primary)
-    assert read(core)['pentacam']['acd_internal_mm'] == 2.7
-    assert len(core.calls) == 1

@@ -111,7 +111,8 @@
       setIfPresent("al", bio.axial_length_mm); setIfPresent("k1", bio.k1_d);
       setIfPresent("k1Axis", bio.k1_axis_deg); setIfPresent("k2", bio.k2_d);
       setIfPresent("k2Axis", bio.k2_axis_deg); setIfPresent("lensThickness", bio.lens_thickness_mm);
-      if (!pentacam) setIfPresent("acd", bio.acd_mm);
+      setIfPresent("acd", bio.acd_mm);
+      $("acd").readOnly = Number.isFinite(bio.acd_mm);
       $("alMarker").textContent = bio.axial_length_edited_marker ? "IOLMaster printed an edited-value (*) marker; retained for visibility." : "";
       $("al").readOnly = Number.isFinite(bio.axial_length_mm); $("k1Axis").readOnly = Number.isFinite(bio.k1_axis_deg); $("k2Axis").readOnly = Number.isFinite(bio.k2_axis_deg);
     }
@@ -119,9 +120,7 @@
       setIfPresent("hoa", pentacam.total_corneal_hoa_4mm_um); setIfPresent("kappa", pentacam.angle_kappa_mm);
       setIfPresent("alpha", pentacam.angle_alpha_mm); setIfPresent("pupil3d", pentacam.pupil_dia_3d_mm);
       setIfPresent("cct", pentacam.cct_pachy_vertex_um); setIfPresent("wtw", pentacam.hwtw_mm);
-      setIfPresent("acd", pentacam.acd_internal_mm);
       $("cct").readOnly = Number.isFinite(pentacam.cct_pachy_vertex_um); $("wtw").readOnly = Number.isFinite(pentacam.hwtw_mm);
-      $("acd").readOnly = Number.isFinite(pentacam.acd_internal_mm);
     }
     const back = corneaBackByEye[eye];
     let missing = false;
@@ -166,7 +165,7 @@
   function escrsEyePayload(data) {
     const inputs = data.inputs;
     return {
-      axial_length_mm: inputs.axial_length_mm, acd_internal_mm: inputs.acd_internal_mm,
+      axial_length_mm: inputs.axial_length_mm, acd_mm: inputs.acd_mm,
       k1_d: inputs.k1_d, k2_d: inputs.k2_d,
       cct_um: inputs.cct_um ?? null, lens_thickness_mm: inputs.lens_thickness_mm ?? null,
       wtw_mm: inputs.wtw_mm ?? null

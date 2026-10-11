@@ -24,7 +24,7 @@ def _eye_data(eye) -> dict[str, object]:
     data: dict[str, object] = {
         "lens_status": "Phakic",
         "AL": eye.axial_length_mm,
-        "ACD": eye.acd_internal_mm,
+        "ACD": eye.acd_mm,
         "K1_magnitude": eye.k1_d,
         "K2_magnitude": eye.k2_d,
         "keratometric_index": 1.3375,
@@ -48,9 +48,9 @@ def build_biomdirect(case: EscrsTransferInput) -> dict[str, object]:
         },
         "extra_data": {
             "notes": (
-                "CER-AI composite source: AL and K values from IOLMaster 500; "
-                "ACD, CCT and WTW from Pentacam Cataract Pre-Op. ACD is "
-                "Pentacam ACD (Int.), excluding CCT. Verify every imported "
+                "CER-AI composite source: AL, K and ACD from IOLMaster 500; "
+                "CCT and WTW from Pentacam Cataract Pre-Op. "
+                "Verify every imported "
                 "value before calculation."
             )
         },

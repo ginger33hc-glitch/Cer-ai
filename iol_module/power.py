@@ -42,7 +42,7 @@ def _base_inputs(case: IOLPowerPlanInput) -> dict[str, object]:
         "eye": case.eye,
         "biological_sex": case.biological_sex,
         "axial_length_mm": case.axial_length_mm,
-        "acd_internal_mm": case.acd_mm,
+        "acd_mm": case.acd_mm,
         "k1_d": case.k1_d,
         "k1_axis_deg": case.k1_axis_deg,
         "k2_d": case.k2_d,

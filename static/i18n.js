@@ -234,6 +234,8 @@
     "3. Pentacam optical and complementary values":"3. Pentacam optik ve tamamlayıcı değerleri",
     "Total Corneal HOA (4 mm), µm":"Total Korneal HOA (4 mm), µm","Chord µ / kappa, mm":"Chord µ / kappa, mm","Chord α, mm":"Chord α, mm",
     "Pupil Dia (3D), mm":"Pupil Dia (3D), mm","Pachy Vertex / CCT, µm":"Pachy Vertex / CCT, µm","HWTW, mm":"HWTW, mm","ACD (Int.), mm":"ACD (Int.), mm",
+    "IOLMaster ACD, mm":"IOLMaster ön kamara derinliği (ACD), mm",
+    "ACD from the same-eye IOLMaster measurement. If unreadable, enter the printed value manually.":"Aynı gözün IOLMaster ölçümündeki ACD değeri kullanılır. Okunamazsa raporda yazan değeri elle girin.",
     "Internal ACD excludes corneal thickness; ACD (Ext.) is never substituted.":"İnternal ACD kornea kalınlığını içermez; ACD (Ext.) hiçbir zaman yerine kullanılmaz.",
     "4. IOLMaster 500 biometry":"4. IOLMaster 500 biyometrisi","Axial length, mm":"Aksiyel uzunluk, mm","K1, D":"K1, D","K1 axis, degrees":"K1 aksı, derece","K2, D":"K2, D","K2 axis, degrees":"K2 aksı, derece",
     "Surgeon-editable; extracted original retained.":"Cerrah tarafından düzenlenebilir; çıkarılan özgün değer korunur.",
