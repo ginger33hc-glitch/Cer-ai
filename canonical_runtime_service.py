@@ -475,12 +475,7 @@ def _non_lasik_planning(procedure, normalized, core_result):
 
 
 def _attach_selected_procedure_plan(planning, eye_name, effective_plan, core_result):
-    """Attach renderer-neutral parameters for the procedure actually assessed.
-
-    Eligibility and disposition remain owned by the canonical clinical systems.
-    This record only binds their final result to the already-resolved plan that
-    the report must display.
-    """
+    """Attach renderer-neutral parameters for the procedure actually assessed."""
     result = dict(planning or {})
     procedure = str((effective_plan or {}).get("procedure") or "").strip().upper()
     selected = {
@@ -498,18 +493,18 @@ def _attach_selected_procedure_plan(planning, eye_name, effective_plan, core_res
             _plan_number(effective_plan or {}, "max_ablation_um", "ablation_um")
             if procedure in {"LASIK", "PRK"} else None
         ),
-        "smile_cap_um": _plan_number(effective_plan or {}, "smile_cap_um", "cap_um") if procedure == "SMILE" else None,
-        "max_lenticule_thickness_um": (
-            _plan_number(effective_plan or {}, "max_lenticule_thickness_um", "lenticule_thickness_um", "ablation_um")
-            if procedure == "SMILE" else None
-        ),
-        "lenticule_source": (effective_plan or {}).get("lenticule_source") or (
-            (effective_plan or {}).get("ablation_source") if procedure == "SMILE" else None
-        ),
     }
+    if procedure == "SMILE":
+        selected.update({
+            "smile_cap_um": _plan_number(effective_plan or {}, "smile_cap_um", "cap_um", "flap_um"),
+            "max_lenticule_thickness_um": _plan_number(
+                effective_plan or {}, "max_lenticule_thickness_um", "lenticule_thickness_um", "ablation_um"
+            ),
+            "lenticule_source": (effective_plan or {}).get("lenticule_source")
+                or (effective_plan or {}).get("ablation_source"),
+        })
     result["selected_procedure_plan"] = selected
     return result
-
 
 def _keratometry(source_eye: Mapping[str, Any]):
     # K1/K2 are one canonical clinical measurement. ML7 consumes the same
