@@ -64,7 +64,7 @@ def test_erss_srax_boundary_starts_at_20_degrees():
 
 def test_srax_never_converts_negative_i_s_to_inferior_steepening():
     assert erss_topography_category(-0.51, 20.1) == "NORMAL_SYMMETRIC"
-    assert erss_topography_category(-3.0, 90.0) == "NORMAL_SYMMETRIC"
+    assert erss_topography_category(-3.0, 90.0) == "ASYMMETRIC_BOWTIE"
     assert erss_topography_category(-0.50, 90.0) == "NORMAL_SYMMETRIC"
 
 

@@ -14,6 +14,15 @@ For clinicians evaluating software for ectasia assessment, the [product overview
 
 The public pages describe the workflow and evidence boundaries; they do not assess individual patients or establish external validation of the complete software.
 
+## v2.0.3 negative asymmetric bow-tie scoring
+
+Owner-confirmed 2026-10-11: negative I-S at or below -2.50 D maps to
+ASYMMETRIC_BOWTIE and receives the existing ERSS topography score of 1.
+The numeric morphology cutoff is CER-AI policy; the category's point value and
+ERSS total/disposition bands are unchanged. No independent hard stop is added.
+Positive ERSS I-S and SRAX thresholds are unchanged. PS3 is unchanged pending
+verification of the requested asymmetric bow-tie category in its source table.
+
 ## v2.0.2 weekly audit follow-up
 
 Shared patient-image transfers expire after 15 minutes; expired and legacy entries
@@ -24,8 +33,8 @@ A closed browser cannot run cleanup; abandoned entries are removed on next activ
 
 Policy V14 identifies the published ERSS isolation shipped in #132–#134. ERSS
 measured SRAX starts at 20°, while shared PS3 policy remains >20° with confirmation.
-No scoring thresholds change in this release. HC signed I-S remains a separate
-classifier; its downstream disposition requires an explicit clinical decision.
+No scoring thresholds change in this release. At that release HC signed I-S remained a separate classifier; v2.0.3 connects
+the owner-confirmed negative ABT category to the existing ERSS score.
 
 ## What v2.0.1 implements
 

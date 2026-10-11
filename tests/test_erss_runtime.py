@@ -29,11 +29,11 @@ def test_i_s_positive_abt_scores_one():
     assert erss_topography_points(ASYMMETRIC_BOWTIE) == 1
 
 
-def test_negative_i_s_is_not_randleman_abt():
+def test_negative_abt_uses_existing_erss_category_points():
     for value in (-2.5, -3.0, -5.0):
         assert signed_i_s_category(value) == ASYMMETRIC_BOWTIE
-        assert erss_i_s_category(value) == NORMAL_SYMMETRIC
-        assert erss_topography_points(erss_i_s_category(value)) == 0
+        assert erss_i_s_category(value) == ASYMMETRIC_BOWTIE
+        assert erss_topography_points(erss_i_s_category(value)) == 1
 
 
 def test_negative_i_s_cannot_be_relabelled_as_inferior_steepening_by_srax():

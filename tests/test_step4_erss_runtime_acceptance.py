@@ -121,12 +121,12 @@ def test_missing_i_s_is_incomplete_even_when_srax_is_positive():
     assert "Randleman: I_S" in od["missing"]
 
 
-def test_negative_i_s_remains_non_abt_in_randleman_runtime():
+def test_negative_abt_reaches_runtime_topography_score():
     for value, category, points in [
         (-0.90, "NORMAL_SYMMETRIC", 0),
         (-2.49, "NORMAL_SYMMETRIC", 0),
-        (-2.50, "NORMAL_SYMMETRIC", 0),
-        (-3.00, "NORMAL_SYMMETRIC", 0),
+        (-2.50, "ASYMMETRIC_BOWTIE", 1),
+        (-3.00, "ASYMMETRIC_BOWTIE", 1),
     ]:
         od = _evaluate(value, None)
         assert od["score"]["category"] == category

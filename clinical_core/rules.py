@@ -78,10 +78,17 @@ def signed_i_s_category(i_s_d) -> str:
 
 
 def erss_i_s_category(i_s_d) -> str:
-    """Published Randleman ERSS I-S categories, isolated from CER-AI HC signed-I-S policy."""
+    """ERSS categories with the owner-defined negative I-S morphology mapping.
+
+    The negative numeric cutoff is CER-AI policy, not a published Randleman
+    cutoff. Once classified, asymmetric bow-tie uses the existing ERSS 1 point.
+    Published positive I-S boundaries remain unchanged.
+    """
     if not _finite(i_s_d):
         return UNCERTAIN
     value = float(i_s_d)
+    if value < 0.0:
+        return signed_i_s_category(value)
     if value >= 1.40:
         return ABNORMAL_ECTATIC
     if value >= 1.00:
