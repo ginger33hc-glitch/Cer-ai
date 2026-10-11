@@ -188,7 +188,7 @@ def _ps3_procedure_decision(
 
 def _erss_finding_detail(erss, i_s_d, procedure: str) -> str:
     """Describe the already-computed ERSS result without changing its score."""
-    if procedure not in {"LASIK", "PRK"} or erss is None:
+    if procedure not in {"LASIK", "PRK", "SMILE"} or erss is None:
         return "Not applicable"
     parts = [f"ERSS total: {erss.get('total')!r}"]
     category = erss.get("category")
@@ -313,13 +313,13 @@ def evaluate_normalized_case(
 
     erss = None
     erss_status = PASS
-    if procedure in {"LASIK", "PRK"}:
+    if procedure in {"LASIK", "PRK", "SMILE"}:
         erss = erss_total(
             inp.age_years,
             inp.thinnest_um,
             inp.i_s_d,
             inp.derived_srax_deg,
-            rsb if procedure == "LASIK" else rst,
+            rsb if procedure in {"LASIK", "SMILE"} else rst,
             inp.manifest_mrse_d,
             inp.srax_gt20_confirmed,
         )
