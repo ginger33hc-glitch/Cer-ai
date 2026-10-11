@@ -58,6 +58,23 @@ LENSES = (
     Lens("acrysof-iq-sn60wf", "AcrySof IQ SN60WF", "MONOFOCAL", None, 119.0, "Alcon", ALCON_TORIC_URL),
 )
 
+# Manufacturer-documented cylinder ranges are reference data only. They do NOT
+# authorize use by the unvalidated embedded toric optical prototype.
+MANUFACTURER_TORIC_REFERENCES = {
+    "rayone-emv-toric": {
+        "model": "RAO210T", "cylinder_iol_plane_d": [0.75, 1.50, 2.25, 3.00, 3.75, 4.50],
+        "source": "https://rayner.com/global/en/iol/monofocal/rayone-emv-toric/",
+        "clinical_calculation_authorized": False,
+    },
+    "clareon-vivity-toric-cnwet2": {
+        "models": ["CNWET7", "CNWET8", "CNWET9"],
+        "cylinder_iol_plane_d": [4.50, 5.25, 6.00],
+        "source": "https://www.accessdata.fda.gov/scripts/cdrh/cfdocs/cfpma/pma.cfm?ID=P190018S046",
+        "note": "FDA 2026 range extension only; not the complete model series.",
+        "clinical_calculation_authorized": False,
+    },
+}
+
 LENSES_BY_ID = {lens.id: lens for lens in LENSES}
 
 
@@ -66,4 +83,12 @@ def get_lens(lens_id: str) -> Lens | None:
 
 
 def public_catalog() -> list[dict[str, object]]:
-    return [lens.public_dict() for lens in LENSES]
+    return [{**lens.public_dict(),
+             "manufacturer_reference": MANUFACTURER_TORIC_REFERENCES.get(lens.id),
+             "embedded_toric_supported": lens.id in _embedded_toric_lens_ids()}
+            for lens in LENSES]
+
+
+def _embedded_toric_lens_ids() -> set[str]:
+    from .toric_formula import VERIFIED_LENS_STEPS
+    return set(VERIFIED_LENS_STEPS)
