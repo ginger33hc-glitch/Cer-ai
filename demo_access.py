@@ -241,6 +241,26 @@ class DemoAccessLedger:
             ))
         return accounts
 
+    def doctor_accounts(self) -> list[dict[str, Any]]:
+        """Owner-safe doctor inventory from the authoritative static + persistent registries."""
+        accounts = list(user_access.configured_accounts()) + self.approved_accounts()
+        result = []
+        seen = set()
+        for account in accounts:
+            principal = account.principal
+            if principal.role != user_access.ROLE_DOCTOR or principal.user_id in seen:
+                continue
+            seen.add(principal.user_id)
+            result.append({
+                "user_id": principal.user_id,
+                "username": principal.username,
+                "doctor_name": principal.display_name,
+                "access_plan": principal.access_plan,
+                "status": "ACTIVE" if account.enabled else "INACTIVE",
+            })
+        return sorted(result, key=lambda item: (item["status"] != "ACTIVE", item["doctor_name"].casefold()))
+
+
     def account_for_username(self, normalized_username: str) -> Optional[user_access.UserAccount]:
         for account in self.approved_accounts():
             if user_access.normalize_username(account.principal.username) == normalized_username:
@@ -416,6 +436,11 @@ def install(core: Any) -> None:
     def demo_requests():
         _require_owner()
         return {"requests": ledger.requests()}
+
+    @core.app.get("/demo-access/admin/doctors", include_in_schema=False)
+    def list_doctors():
+        _require_owner()
+        return {"doctors": ledger.doctor_accounts()}
 
     @core.app.post("/demo-access/admin/doctors", include_in_schema=False)
     def create_full_doctor(payload: dict[str, Any] = Body(...)):
