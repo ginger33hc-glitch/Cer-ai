@@ -215,6 +215,15 @@ def test_pta_at_or_over_40_is_a_global_stop_driver():
     assert result["status"] == STOP_DEFER
 
 
+def test_smile_uses_original_erss_with_smile_residual_stromal_bed():
+    result = evaluate_normalized_case(normal_lasik(
+        procedure="SMILE", flap_um=120, ablation_um=80,
+    ))
+    assert result["erss"] is not None
+    assert result["erss"]["rows"]["RSB"] == 0
+    assert result["erss_status"] == PASS
+
+
 def test_smile_uses_lasik_equivalent_rsb_and_pta_tissue_gates():
     result = evaluate_normalized_case(normal_lasik(
         procedure="SMILE", flap_um=120, ablation_um=80,
