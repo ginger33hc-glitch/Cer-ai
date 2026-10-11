@@ -107,12 +107,12 @@
     const eye = $("eye").value;
     const bio = originals[eye];
     const pentacam = pentacamByEye[eye];
+    $("acd").value = Number.isFinite(bio?.acd_mm) ? bio.acd_mm : "";
+    $("acd").readOnly = Number.isFinite(bio?.acd_mm);
     if (bio) {
       setIfPresent("al", bio.axial_length_mm); setIfPresent("k1", bio.k1_d);
       setIfPresent("k1Axis", bio.k1_axis_deg); setIfPresent("k2", bio.k2_d);
       setIfPresent("k2Axis", bio.k2_axis_deg); setIfPresent("lensThickness", bio.lens_thickness_mm);
-      setIfPresent("acd", bio.acd_mm);
-      $("acd").readOnly = Number.isFinite(bio.acd_mm);
       $("alMarker").textContent = bio.axial_length_edited_marker ? "IOLMaster printed an edited-value (*) marker; retained for visibility." : "";
       $("al").readOnly = Number.isFinite(bio.axial_length_mm); $("k1Axis").readOnly = Number.isFinite(bio.k1_axis_deg); $("k2Axis").readOnly = Number.isFinite(bio.k2_axis_deg);
     }

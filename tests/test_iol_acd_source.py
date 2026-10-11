@@ -11,7 +11,7 @@ def test_iolmaster_acd_wins_for_each_eye_and_missing_stays_missing():
 const assert = require('node:assert/strict');
 const fields = {};
 const $ = id => fields[id] ||= {value: '', readOnly: false};
-const setIfPresent = (id, value) => { $(id).value = Number.isFinite(value) ? value : ''; };
+const setIfPresent = (id, value) => { if (value !== null && value !== undefined) $(id).value = value; };
 const originals = {OD: {acd_mm: 3.2}, OS: {acd_mm: 2.8}};
 const pentacamByEye = {OD: {acd_internal_mm: 2.6}, OS: {acd_internal_mm: 2.2}};
 const corneaBackByEye = {};
