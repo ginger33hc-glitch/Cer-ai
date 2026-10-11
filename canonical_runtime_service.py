@@ -489,9 +489,23 @@ def _attach_selected_procedure_plan(planning, eye_name, effective_plan, core_res
         "procedure": procedure,
         "selected_lasik_plan": result.get("selected_plan") if procedure == "LASIK" else None,
         "optical_zone_mm": _plan_number(effective_plan or {}, "optical_zone_mm"),
-        "transition_zone_mm": _plan_number(effective_plan or {}, "transition_zone_mm"),
+        "transition_zone_mm": (
+            _plan_number(effective_plan or {}, "transition_zone_mm")
+            if procedure in {"LASIK", "PRK"} else None
+        ),
         "flap_um": _plan_number(effective_plan or {}, "flap_um") if procedure == "LASIK" else None,
-        "ablation_um": _plan_number(effective_plan or {}, "max_ablation_um", "ablation_um"),
+        "ablation_um": (
+            _plan_number(effective_plan or {}, "max_ablation_um", "ablation_um")
+            if procedure in {"LASIK", "PRK"} else None
+        ),
+        "smile_cap_um": _plan_number(effective_plan or {}, "smile_cap_um", "cap_um") if procedure == "SMILE" else None,
+        "max_lenticule_thickness_um": (
+            _plan_number(effective_plan or {}, "max_lenticule_thickness_um", "lenticule_thickness_um", "ablation_um")
+            if procedure == "SMILE" else None
+        ),
+        "lenticule_source": (effective_plan or {}).get("lenticule_source") or (
+            (effective_plan or {}).get("ablation_source") if procedure == "SMILE" else None
+        ),
     }
     result["selected_procedure_plan"] = selected
     return result
