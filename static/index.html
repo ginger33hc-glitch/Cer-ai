@@ -629,7 +629,7 @@ function plan(prefix){
   max_lenticule_thickness_um:procedure==="SMILE"?numberOrNull(`${prefix}_lenticule`):null,
   epithelium_um:50,
   laser_platform:procedure==="SMILE"?value(`${prefix}_smile_platform`):"Alcon EX500", optical_zone_mm:numberOrNull(`${prefix}_optical`),
-  transition_zone_mm:numberOrNull(`${prefix}_transition`), transition_zone_not_applicable:"no",
+  transition_zone_mm:procedure==="SMILE"?null:numberOrNull(`${prefix}_transition`), transition_zone_not_applicable:procedure==="SMILE"?"yes":"no",
   surgeon_I_S_D:numberOrNull(`${prefix}_surgeon_i_s`),
   stable:value(`${prefix}_stable`), progression:value(`${prefix}_progression`),
   cdva_below_20_20:value(`${prefix}_cdva`)
