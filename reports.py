@@ -172,16 +172,24 @@ def _selected_procedure_summary(planning: Mapping[str, Any]) -> tuple[str, str] 
         return None
     label = " — ".join(_text(selected.get(key)) for key in ("eye", "status", "procedure"))
     details = []
+    procedure = str(selected.get("procedure") or "").upper()
     if selected.get("selected_lasik_plan"):
         details.append(_text(selected.get("selected_lasik_plan")))
-    for name, key, unit in (
-        ("OZ", "optical_zone_mm", "mm"),
-        ("TZ", "transition_zone_mm", "mm"),
-        ("Flap", "flap_um", "µm"),
-        ("Ablation", "ablation_um", "µm"),
-    ):
+    fields = (
+        (("OZ", "optical_zone_mm", "mm"),
+         ("Cap", "smile_cap_um", "µm"),
+         ("Maximum Lenticule Thickness", "max_lenticule_thickness_um", "µm"))
+        if procedure == "SMILE"
+        else (("OZ", "optical_zone_mm", "mm"),
+              ("TZ", "transition_zone_mm", "mm"),
+              ("Flap", "flap_um", "µm"),
+              ("Ablation", "ablation_um", "µm"))
+    )
+    for name, key, unit in fields:
         if selected.get(key) is not None:
             details.append(f"{name} {_text(selected.get(key))} {unit}")
+    if procedure == "SMILE" and selected.get("lenticule_source"):
+        details.append(f"LT source: {_text(selected.get('lenticule_source'))}")
     return label, " — ".join(details) or "Plan parameters not documented"
 
 
