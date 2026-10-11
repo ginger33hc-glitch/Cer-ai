@@ -137,7 +137,7 @@ _PUBLIC_PAGE_METADATA = {
         "in_language": "en",
         "alternate_path": "/tr/akilli-mercek-iol-hesaplama",
         "schema_type": "MedicalWebPage",
-        "title": "IOL Calculation and Selection Software | CER-AI",
+        "title": "Cataract IOL Selection Software | Multifocal EDOF Toric – CER-AI",
         "description": (
             "Cataract and refractive lens surgery IOL selection software supporting "
             "monofocal, EDOF and multifocal suitability assessment, spherical IOL "
