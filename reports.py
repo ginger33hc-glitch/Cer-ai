@@ -266,7 +266,7 @@ def assert_complete_report_payload(payload: Mapping[str, Any]) -> list[dict[str,
         procedure = str(report.get("procedure") or "").upper()
         randleman = report.get("randleman")
         randleman_rows = (randleman or {}).get("rows") or {}
-        if procedure in {"LASIK", "PRK"} and (
+        if procedure in {"LASIK", "PRK", "SMILE"} and (
             not isinstance(randleman, Mapping)
             or randleman.get("total") is None
             or any(value is None for value in randleman_rows.values())
