@@ -128,8 +128,10 @@ def _values(core_result: Mapping[str, Any]) -> dict[str, Any]:
     bad_result = (core_result.get("bad_d") or {}).get("result")
     values = {
         "LASIK_RSB_um": safety.get("LASIK_RSB_um"),
+        "SMILE_RSB_um": safety.get("SMILE_RSB_um"),
         "PRK_RST_um": safety.get("PRK_RST_um"),
         "LASIK_PTA_percent": safety.get("LASIK_PTA_percent"),
+        "SMILE_PTA_percent": safety.get("SMILE_PTA_percent"),
         "PRK_PTA_percent": safety.get("PRK_PTA_percent"),
         "estimated_final_Kmean_D": safety.get("estimated_final_Kmean_D"),
         "final_Kmean_model": safety.get("final_Kmean_model"),
