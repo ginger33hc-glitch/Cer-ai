@@ -232,11 +232,9 @@ class IOLPowerPlanInput(StrictModel):
         return self
 
 
-class EscrsTransferInput(StrictModel):
-    """De-identified biometry accepted by the ESCRS BiomPIN handoff."""
+class EscrsEyeInput(StrictModel):
+    """One eye's de-identified biometry for the ESCRS BiomPIN handoff."""
 
-    biological_sex: Literal["Male", "Female"]
-    eye: Literal["OD", "OS"]
     axial_length_mm: float = Field(ge=12, le=38)
     acd_internal_mm: float = Field(gt=0, le=10)
     k1_d: float = Field(ge=30, le=60)
@@ -244,6 +242,20 @@ class EscrsTransferInput(StrictModel):
     cct_um: float | None = Field(default=None, ge=300, le=900)
     lens_thickness_mm: float | None = Field(default=None, ge=2.5, le=7)
     wtw_mm: float | None = Field(default=None, ge=8, le=16)
+
+
+class EscrsTransferInput(StrictModel):
+    """De-identified unilateral or bilateral biometry for one ESCRS handoff."""
+
+    biological_sex: Literal["Male", "Female"]
+    right_eye: EscrsEyeInput | None = None
+    left_eye: EscrsEyeInput | None = None
+
+    @model_validator(mode="after")
+    def require_at_least_one_eye(self):
+        if self.right_eye is None and self.left_eye is None:
+            raise ValueError("At least one eye is required for ESCRS transfer.")
+        return self
 
 
 class IOLPowerPlan(StrictModel):
