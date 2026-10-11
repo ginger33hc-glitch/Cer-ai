@@ -3,6 +3,8 @@
   const stored = (localStorage.getItem("cerai-language") || "en").toLowerCase();
   const locale = stored === "tr" ? "tr" : "en";
   const TR = {
+    "CER-AI sign-in required.":"CER-AI oturumu sona erdi. Lütfen yeniden giriş yapın.",
+    "Session service temporarily unavailable. Please retry.":"Oturum hizmetine geçici olarak ulaşılamıyor. Lütfen yeniden deneyin.",
     "Manage Doctors":"Doktor Yönetimi",
     "Upload images — both eyes: 5 / one eye: 3":"Görüntü yükleyin — iki göz: 5 / tek göz: 3",
     "For both eyes, upload 5 images together: OD Pentacam Cataract Pre-Op, OD Pentacam 4 Maps Refractive, OS Pentacam Cataract Pre-Op, OS Pentacam 4 Maps Refractive, and ONE IOLMaster 500 report containing both eyes. Each Pentacam image must clearly show OD or OS. For one eye only, upload its two Pentacam reports and one IOLMaster report (3 images). TCRP is not used.":"İki göz için toplam 5 görüntüyü birlikte yükleyin: sağ göz (OD) Pentacam Cataract Pre-Op ve 4 Maps Refractive, sol göz (OS) Pentacam Cataract Pre-Op ve 4 Maps Refractive, ayrıca her iki gözün ölçümlerini içeren TEK IOLMaster 500 raporu. Her Pentacam görüntüsünde OD veya OS açıkça görünmelidir. Yalnızca tek göz için o göze ait iki Pentacam raporu ve bir IOLMaster raporu yükleyin (3 görüntü). TCRP kullanılmaz.",

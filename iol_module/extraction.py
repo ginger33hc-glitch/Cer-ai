@@ -182,6 +182,7 @@ def extract_image(core: Any, raw: bytes, filename: str) -> dict[str, Any]:
     if not response.output_text or not response.output_text.strip():
         raise RuntimeError("IOL source extraction returned empty output")
     result = json.loads(response.output_text)
+    result = reread_internal_acd(core, raw, filename, result)
     result = reread_cornea_back(core, raw, filename, result)
     if result.get("document_type") == "PENTACAM_4_MAPS_REFRACTIVE" and result.get("eye") in {"OD", "OS"}:
         back = result.get("cornea_back") or {}
@@ -271,4 +272,44 @@ def reread_cornea_back(core: Any, raw: bytes, filename: str, result: dict[str, A
         # Keep successful primary transcription and the manual completion path.
         # No source image, patient name, measurements or API error payload in logs.
         logger.warning("IOL_CORNEA_BACK_REREAD failed error_type=%s", type(exc).__name__)
+    return result
+
+
+def reread_internal_acd(core: Any, raw: bytes, filename: str, result: dict[str, Any]) -> dict[str, Any]:
+    """One source-locked second reading for a missing Pentacam internal ACD."""
+    if result.get("document_type") != "PENTACAM_CATARACT_PREOP" or result.get("eye") not in {"OD", "OS"}:
+        return result
+    if (result.get("pentacam") or {}).get("acd_internal_mm") is not None:
+        return result
+    schema = {
+        "type": "object", "additionalProperties": False,
+        "required": ["eye", "printed_label", "acd_internal_mm"],
+        "properties": {
+            "eye": {"type": "string", "enum": ["OD", "OS", "UNKNOWN"]},
+            "printed_label": {"type": ["string", "null"]},
+            "acd_internal_mm": {"type": ["number", "null"]},
+        },
+    }
+    logger.info("IOL_INTERNAL_ACD_REREAD start eye=%s", result["eye"])
+    try:
+        response = core.openai_client().with_options(timeout=60, max_retries=0).responses.create(
+            model=core.MODEL, store=False, reasoning={"effort": "medium"},
+            input=[{"role": "user", "content": [
+                {"type": "input_text", "text": "Re-read only the explicitly printed ACD (Int.) in mm on this Pentacam Cataract Pre-Op report. Inspect the anterior chamber measurement panel and confirm OD/OS from the header. Return the exact printed label and value. Never use ACD (Ext.), IOLMaster ACD, chamber volume, or the fellow eye. Never subtract pachymetry, estimate, or infer a missing value. If the internal label or number is unreadable return null."},
+                {"type": "input_image", "image_url": core.data_url(raw, filename), "detail": "original"},
+            ]}],
+            text={"verbosity": "low", "format": {"type": "json_schema", "name": "cerai_iol_internal_acd_reread", "strict": True, "schema": schema}},
+        )
+        reread = json.loads(response.output_text)
+        label = "".join(str(reread.get("printed_label") or "").lower().split())
+        value = reread.get("acd_internal_mm")
+        if (reread.get("eye") != result["eye"] or label not in {"acd(int.)", "acd(int)"}
+                or isinstance(value, bool) or not isinstance(value, (int, float)) or not 0 < value <= 10):
+            logger.info("IOL_INTERNAL_ACD_REREAD unresolved")
+            return result
+        result.setdefault("pentacam", {})["acd_internal_mm"] = value
+        result["unreadable_fields"] = [key for key in result.get("unreadable_fields", []) if key != "pentacam.acd_internal_mm"]
+        logger.info("IOL_INTERNAL_ACD_REREAD recovered eye=%s", result["eye"])
+    except Exception as exc:
+        logger.warning("IOL_INTERNAL_ACD_REREAD failed error_type=%s", type(exc).__name__)
     return result
