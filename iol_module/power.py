@@ -9,7 +9,7 @@ from math import isfinite
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
-from .lens_catalog import get_lens
+from .lens_catalog import get_lens, MANUFACTURER_TORIC_REFERENCES
 from .models import (
     AstigmatismType,
     IOLPowerPlan,
@@ -194,7 +194,22 @@ def plan_iol_power(case: IOLPowerPlanInput) -> IOLPowerPlan:
         toric_status = "INPUTS_INCOMPLETE"
         if lens.id not in VERIFIED_LENS_STEPS:
             toric_status = "UNSUPPORTED"
-            explanation = "No verified cylinder model series exists for the selected lens family."
+            reference = MANUFACTURER_TORIC_REFERENCES.get(lens.id)
+            if reference:
+                models = reference.get("models") or ([reference["model"]] if reference.get("model") else [])
+                cylinders = reference.get("cylinder_iol_plane_d") or []
+                model_text = ", ".join(str(model) for model in models) or "manufacturer series"
+                cylinder_text = ", ".join(f"{float(value):.2f}" for value in cylinders)
+                explanation = (
+                    f"Manufacturer toric reference available ({model_text}; IOL-plane cylinder "
+                    f"{cylinder_text} D), but this family is not validated for CER-AI embedded "
+                    "axis/model calculation. Use the manufacturer calculator and ESCRS."
+                )
+            else:
+                explanation = (
+                    "No verified cylinder model series exists for this lens family in CER-AI. "
+                    "Use the manufacturer calculator and ESCRS."
+                )
         elif case.posterior_cornea is None or case.cct_um is None:
             explanation = "Same-eye Pentacam 4 Maps Cornea Back K1/K2, a principal axis and Pachy Vertex are required for the embedded toric calculation."
         else:
