@@ -22,6 +22,38 @@ LASIK_PLAN_SELECTION_RULE = "Select the first safe plan only: Plan A → Plan B 
 
 MYOPIC_ABLATION_UM_PER_D = {6.0: 12.0, 6.5: 15.0, 7.0: 16.33}
 
+SMILE_MIN_LENTICULE_EDGE_UM = 15.0
+SMILE_REFERENCE_OZ_MM = 6.0
+SMILE_MYOPIC_UM_PER_D_AT_6MM = 13.0
+
+
+def estimate_smile_max_lenticule_um(intended_mrse_d, optical_zone_mm):
+    """Return the approved CER-AI theoretical myopic SMILE LT fallback.
+
+    LT = 15 + 13 * |MRSE| * (OZ / 6)^2.
+    This is a planning estimate only. A measured/device treatment-plan maximum
+    lenticule thickness is authoritative whenever supplied.
+    """
+    if (
+        not isinstance(intended_mrse_d, (int, float))
+        or isinstance(intended_mrse_d, bool)
+        or not isfinite(float(intended_mrse_d))
+        or float(intended_mrse_d) > 0
+    ):
+        return None
+    try:
+        zone = float(optical_zone_mm)
+    except (TypeError, ValueError):
+        return None
+    if not isfinite(zone) or zone <= 0:
+        return None
+    return (
+        SMILE_MIN_LENTICULE_EDGE_UM
+        + SMILE_MYOPIC_UM_PER_D_AT_6MM
+        * abs(float(intended_mrse_d))
+        * (zone / SMILE_REFERENCE_OZ_MM) ** 2
+    )
+
 
 def estimate_myopic_ablation_um(intended_mrse_d, optical_zone_mm):
     """Return the approved CER-AI myopic EX500 linear estimate.
