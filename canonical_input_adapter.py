@@ -234,9 +234,15 @@ def resolve_eye_plan(
     """Resolve source precedence without mutating the caller's plan."""
     resolved = deepcopy(dict(plan or {}))
     procedure = str(resolved.get("procedure") or "").strip().upper()
-    if procedure in {"PRK", "SMILE"}:
+    if procedure == "PRK":
         resolved["flap_um"] = None
         resolved["flap_status"] = "NOT_APPLICABLE"
+    elif procedure == "SMILE":
+        resolved["flap_um"] = _first_number(resolved, "smile_cap_um", "cap_um")
+        resolved["ablation_um"] = _first_number(resolved, "max_lenticule_thickness_um", "lenticule_thickness_um")
+        resolved["max_ablation_um"] = resolved["ablation_um"]
+        resolved["ablation_source"] = "SMILE_MAXIMUM_LENTICULE_THICKNESS"
+        resolved["flap_status"] = "SMILE_CAP"
     elif procedure == "LASIK" and resolved.get("flap_status") == "NOT_APPLICABLE":
         resolved.pop("flap_status", None)
     correction = _card_correction(extracted, eye_name)
