@@ -156,7 +156,7 @@ async function ceraiFetch(url,options={}){
 window.ceraiFetch=ceraiFetch;
 const eyeTemplate = (eye) => `
   <div class="row"><label>Prior corneal refractive surgery?</label><select id="${eye}_prior"><option value="no" selected>No</option><option value="prk">Yes — PRK</option><option value="lasik">Yes — LASIK</option><option value="smile">Yes — SMILE</option><option value="unknown">Not documented</option></select></div>
-  <div class="row"><label>Procedure</label><select id="${eye}_procedure"><option value="">Select</option><option value="PRK">PRK</option><option value="LASIK">LASIK</option></select></div>
+  <div class="row"><label>Procedure</label><select id="${eye}_procedure"><option value="">Select</option><option value="PRK">PRK</option><option value="LASIK">LASIK</option><option value="SMILE">SMILE</option></select></div>
   <div class="row"><label>Preoperative manifest sphere (D)</label><div class="signed-number sphere"><input id="${eye}_manifest_sphere" type="text" inputmode="decimal" autocomplete="off" data-min="-30" data-max="20"><button type="button" class="sign-button" data-positive-target="${eye}_manifest_sphere" aria-label="Make manifest sphere positive">+</button><button type="button" class="sign-button" data-negative-target="${eye}_manifest_sphere" aria-label="Make manifest sphere negative">−</button></div></div>
   <div class="row"><label>Preoperative manifest cylinder (D; + or −)</label><div class="signed-number"><input id="${eye}_manifest_cylinder" type="text" inputmode="decimal" autocomplete="off" data-min="-15" data-max="15"><button type="button" class="sign-button" data-positive-target="${eye}_manifest_cylinder" aria-label="Make manifest cylinder positive">+</button><button type="button" class="sign-button" data-negative-target="${eye}_manifest_cylinder" aria-label="Make manifest cylinder negative">−</button></div></div>
   <div class="row"><label>Intended treatment sphere (D)</label><div class="signed-number sphere"><input id="${eye}_sphere" type="text" inputmode="decimal" autocomplete="off" data-min="-30" data-max="20"><button type="button" class="sign-button" data-positive-target="${eye}_sphere" aria-label="Make intended sphere positive">+</button><button type="button" class="sign-button" data-negative-target="${eye}_sphere" aria-label="Make intended sphere negative">−</button></div></div>
@@ -166,6 +166,9 @@ const eyeTemplate = (eye) => `
   <div class="row"><label>Actual maximum ablation (µm) <span id="${eye}_ablation_requirement" class="note">— optional except mixed astigmatism</span></label><input id="${eye}_ablation" type="number" step=".1" min="0"></div>
   <div class="row"><label>Laser platform</label><input id="${eye}_platform" type="text" value="Alcon EX500" readonly aria-readonly="true"></div>
   <div class="row"><label>Planned LASIK flap (µm)</label><select id="${eye}_flap"><option value="">Select</option><option value="90">90 µm</option><option value="100" selected>100 µm</option><option value="110">110 µm</option><option value="120">120 µm</option></select></div>
+  <div class="row"><label>SMILE platform</label><select id="${eye}_smile_platform"><option value="ZEISS_VISUMAX_500">ZEISS VisuMax 500</option><option value="ZEISS_VISUMAX_800">ZEISS VisuMax 800</option></select></div>
+  <div class="row"><label>SMILE cap thickness (µm)</label><select id="${eye}_smile_cap"><option value="100">100 µm</option><option value="110">110 µm</option><option value="120" selected>120 µm</option><option value="130">130 µm</option><option value="140">140 µm</option></select></div>
+  <div class="row"><label>SMILE maximum lenticule thickness (µm)</label><input id="${eye}_lenticule" type="number" step=".1" min="0"><p class="note">Use the actual device treatment-plan maximum lenticule thickness when available.</p></div>
   <div class="row"><label>PRK epithelial thickness (µm)</label><input id="${eye}_epithelium" type="text" value="50" readonly aria-readonly="true"></div>
   <div class="row"><label>Optical zone (mm)</label><select id="${eye}_optical"><option value="">Select</option><option value="6.0">6.0 mm</option><option value="6.5" selected>6.5 mm</option><option value="7.0">7.0 mm</option></select></div>
   <div class="row"><label>Transition zone (mm)</label><select id="${eye}_transition"><option value="">Select</option><option value="8.0">8.0 mm</option><option value="8.5">8.5 mm</option><option value="9.0" selected>9.0 mm</option></select></div>
@@ -620,9 +623,12 @@ function plan(prefix){
   manifest_entered_sphere_D:numberOrNull(`${prefix}_manifest_sphere`), manifest_cylinder_signed_D:numberOrNull(`${prefix}_manifest_cylinder`),
   intended_entered_sphere_D:numberOrNull(`${prefix}_sphere`), intended_cylinder_signed_D:numberOrNull(`${prefix}_cylinder`),
   entered_axis_deg:numberOrNull(`${prefix}_axis`),
-  ablation_um:numberOrNull(`${prefix}_ablation`), flap_um:procedure==="PRK"?null:numberOrNull(`${prefix}_flap`),
+  ablation_um:procedure==="SMILE"?numberOrNull(`${prefix}_lenticule`):numberOrNull(`${prefix}_ablation`),
+  flap_um:procedure==="PRK"?null:(procedure==="SMILE"?numberOrNull(`${prefix}_smile_cap`):numberOrNull(`${prefix}_flap`)),
+  smile_cap_um:procedure==="SMILE"?numberOrNull(`${prefix}_smile_cap`):null,
+  max_lenticule_thickness_um:procedure==="SMILE"?numberOrNull(`${prefix}_lenticule`):null,
   epithelium_um:50,
-  laser_platform:"Alcon EX500", optical_zone_mm:numberOrNull(`${prefix}_optical`),
+  laser_platform:procedure==="SMILE"?value(`${prefix}_smile_platform`):"Alcon EX500", optical_zone_mm:numberOrNull(`${prefix}_optical`),
   transition_zone_mm:numberOrNull(`${prefix}_transition`), transition_zone_not_applicable:"no",
   surgeon_I_S_D:numberOrNull(`${prefix}_surgeon_i_s`),
   stable:value(`${prefix}_stable`), progression:value(`${prefix}_progression`),
