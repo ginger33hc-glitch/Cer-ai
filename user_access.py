@@ -277,6 +277,12 @@ def set_dynamic_account_lookup(
     _dynamic_account_lookup = lookup
 
 
+def configured_accounts() -> list[UserAccount]:
+    """Return deployment-defined accounts without password material."""
+    with _lock:
+        return list(_users_by_username.values())
+
+
 def configured_username_exists(username: Any) -> bool:
     """Check both deployment-defined and owner-approved persistent accounts."""
     normalized = normalize_username(username)
