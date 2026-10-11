@@ -7,6 +7,7 @@
   const incisionOverrides = {OD:null, OS:null};
   const posteriorFields = ["k1_d","k2_d","k1_axis_deg","k2_axis_deg"];
   const controllers = new Map();
+  const powerPlans = {OD:null, OS:null};
   let loadedEyes = [];
   let caseVersion = 0;
   let lensCatalog = [];
@@ -159,14 +160,24 @@
     $("selectedLens").innerHTML = `<option value="">Select an eligible lens</option>` + options.map(lens => `<option value="${lens.id}">${lens.name} — ${lens.category} — A ${lens.a_constant.toFixed(1)}</option>`).join("");
   }
 
-  function escrsTransferPayload(data) {
+  function escrsEyePayload(data) {
     const inputs = data.inputs;
     return {
-      biological_sex: inputs.biological_sex, eye: inputs.eye,
       axial_length_mm: inputs.axial_length_mm, acd_internal_mm: inputs.acd_internal_mm,
       k1_d: inputs.k1_d, k2_d: inputs.k2_d,
       cct_um: inputs.cct_um ?? null, lens_thickness_mm: inputs.lens_thickness_mm ?? null,
       wtw_mm: inputs.wtw_mm ?? null
+    };
+  }
+
+  function escrsTransferPayload(data) {
+    if (loadedEyes.length === 2 && (!powerPlans.OD || !powerPlans.OS)) {
+      throw new Error("Calculate both eyes before transferring a bilateral case to ESCRS.");
+    }
+    return {
+      biological_sex: data.inputs.biological_sex,
+      right_eye: powerPlans.OD ? escrsEyePayload(powerPlans.OD) : null,
+      left_eye: powerPlans.OS ? escrsEyePayload(powerPlans.OS) : null
     };
   }
 
@@ -236,6 +247,7 @@
     $("powerButton").disabled=true; status.textContent="Determining the canonical calculation route…";
     try {
       const response=await fetch("/iol/power/plan",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)}); const data=await response.json(); if(!response.ok) throw new Error(errorMessage(data)); if (requestVersion !== version) return false;
+      powerPlans[eye] = data;
       let html=`<div class="warning"><strong>${tr(data.calculator_name)}</strong><br>${tr(data.message)}</div>`;
       html+=`<p><span>ACD target</span>: ${Number(data.target_refraction_d).toFixed(2)} D (<span>locked</span>)</p>`;
       if(data.second_formula_required) html+=`<div class="warning"><span>Second modern formula verification required</span> (AL ${Number(data.inputs.axial_length_mm).toFixed(2)} mm). <span>Use ESCRS where available and verify all values manually.</span></div>`;
@@ -277,6 +289,7 @@
 
     function invalidate(category = true) {
       version++;
+      powerPlans[eye] = null;
       $("powerResult").replaceChildren();
       $("powerStatus").textContent = "";
       if (category) {
@@ -313,7 +326,7 @@
     caseVersion++;
     loadedEyes = [];
     for (const eye of ["OD", "OS"]) {
-      originals[eye] = null; pentacamByEye[eye] = null; corneaBackByEye[eye] = null; incisionOverrides[eye] = null;
+      originals[eye] = null; pentacamByEye[eye] = null; corneaBackByEye[eye] = null; incisionOverrides[eye] = null; powerPlans[eye] = null;
       controllers.get(eye)?.reset();
     }
     $("evaluateAll").disabled = true; $("calculateAll").disabled = true;
