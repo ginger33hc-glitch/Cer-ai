@@ -239,9 +239,13 @@ def resolve_eye_plan(
         resolved["flap_status"] = "NOT_APPLICABLE"
     elif procedure == "SMILE":
         resolved["flap_um"] = _first_number(resolved, "smile_cap_um", "cap_um")
-        resolved["ablation_um"] = _first_number(resolved, "max_lenticule_thickness_um", "lenticule_thickness_um")
-        resolved["max_ablation_um"] = resolved["ablation_um"]
-        resolved["ablation_source"] = "SMILE_MAXIMUM_LENTICULE_THICKNESS"
+        smile_lt = _first_number(resolved, "max_lenticule_thickness_um", "lenticule_thickness_um")
+        if smile_lt is not None:
+            resolved["ablation_um"] = smile_lt
+            resolved["max_ablation_um"] = smile_lt
+            resolved["ablation_source"] = str(
+                resolved.get("lenticule_source") or "SMILE_MAXIMUM_LENTICULE_THICKNESS"
+            )
         resolved["flap_status"] = "SMILE_CAP"
     elif procedure == "LASIK" and resolved.get("flap_status") == "NOT_APPLICABLE":
         resolved.pop("flap_status", None)
