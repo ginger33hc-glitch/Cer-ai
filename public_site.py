@@ -139,9 +139,9 @@ _PUBLIC_PAGE_METADATA = {
         "schema_type": "MedicalWebPage",
         "title": "IOL Calculation and Selection Software | CER-AI",
         "description": (
-            "Which IOL category is eligible? CER-AI supports lens selection, "
-            "Cooke K6 spherical IOL calculation and test-only toric planning "
-            "for surgeon review."
+            "Cataract and refractive lens surgery IOL selection software supporting "
+            "monofocal, EDOF and multifocal suitability assessment, spherical IOL "
+            "calculation and toric planning for surgeon review."
         ),
         "about": "Intraocular lens calculation and lens-category decision support",
         "keywords": [
