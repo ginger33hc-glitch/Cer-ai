@@ -236,7 +236,7 @@ class EscrsEyeInput(StrictModel):
     """One eye's de-identified biometry for the ESCRS BiomPIN handoff."""
 
     axial_length_mm: float = Field(ge=12, le=38)
-    acd_internal_mm: float = Field(gt=0, le=10)
+    acd_mm: float = Field(gt=0, le=10)
     k1_d: float = Field(ge=30, le=60)
     k2_d: float = Field(ge=30, le=60)
     cct_um: float | None = Field(default=None, ge=300, le=900)

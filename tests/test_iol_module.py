@@ -356,7 +356,7 @@ def test_mobile_ui_contains_both_sources_and_no_browser_credential_storage():
     html = Path("static/iol.html").read_text(encoding="utf-8")
     script = Path("static/iol.js").read_text(encoding="utf-8")
     assert 'name="viewport"' in html and "IOLMaster 500" in html and "Pentacam Cataract Pre-Op" in html
-    assert "ACD (Int.)" in html and "TCRP is not used" in html
+    assert "IOLMaster ACD, mm" in html and "TCRP is not used" in html
     assert "localStorage" not in script and "sessionStorage" not in script
     assert "Final responsibility rests with the surgeon at all times and under all circumstances." in html
 
@@ -401,10 +401,10 @@ def test_escrs_transfer_is_deidentified_and_kane_is_removed():
 def test_escrs_biompin_handoff_uses_deidentified_biomdirect_and_query_parameter():
     case = EscrsTransferInput.model_validate({
         "biological_sex": "Female",
-        "right_eye": {"axial_length_mm": 23.5, "acd_internal_mm": 2.21,
+        "right_eye": {"axial_length_mm": 23.5, "acd_mm": 2.21,
                       "k1_d": 42.6, "k2_d": 42.8, "cct_um": 573,
                       "lens_thickness_mm": 4.5, "wtw_mm": 11.7},
-        "left_eye": {"axial_length_mm": 24.1, "acd_internal_mm": 2.35,
+        "left_eye": {"axial_length_mm": 24.1, "acd_mm": 2.35,
                      "k1_d": 43.1, "k2_d": 43.7, "cct_um": 568,
                      "lens_thickness_mm": 4.4, "wtw_mm": 11.8},
     })

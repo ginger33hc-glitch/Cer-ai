@@ -1,8 +1,9 @@
 """Named-user authentication and role identity for CER-AI.
 
 This module contains no clinical rules. Accounts are supplied as a Railway secret containing only
-password hashes; raw passwords are never stored. Sessions are opaque, bounded, in-memory tokens in a
-Secure/HttpOnly/SameSite=Strict cookie. A process restart intentionally requires users to sign in again.
+password hashes; raw passwords are never stored. Sessions use opaque tokens in a
+Secure/HttpOnly/SameSite=Strict cookie. The configured encrypted archive preserves
+sessions across deployments; installations without it retain in-memory sessions.
 """
 
 from __future__ import annotations
@@ -87,6 +88,8 @@ _current_principal: ContextVar[Optional[Principal]] = ContextVar(
     "cer_ai_current_principal",
     default=None,
 )
+_persistent_sessions = None
+
 _dynamic_account_lookup: Optional[Callable[[str], Optional[UserAccount]]] = None
 
 
@@ -315,7 +318,34 @@ def authenticate_trial_name(value: Any) -> Principal:
     )
 
 
+def set_session_archive(archive) -> None:
+    """Use the existing private encrypted archive; never create a public store."""
+    global _persistent_sessions
+    from persistent_sessions import PersistentSessions
+    _persistent_sessions = PersistentSessions(archive) if archive is not None else None
+
+
+def _session_account(username):
+    account = _users_by_username.get(normalize_username(username))
+    if account is None and _dynamic_account_lookup is not None:
+        account = _dynamic_account_lookup(normalize_username(username))
+    return account
+
+
+def _credential_fingerprint(account):
+    material = account.principal.user_id + "|" + account.password_hash
+    return hashlib.sha256(material.encode()).hexdigest()
+
+
 def create_session(principal: Principal) -> str:
+    if _persistent_sessions is not None:
+        account = _session_account(principal.username)
+        if not account or not account.enabled or account.principal != principal:
+            raise HTTPException(401, "CER-AI sign-in required.")
+        try:
+            return _persistent_sessions.create(principal.username, _credential_fingerprint(account), SESSION_TTL_SECONDS)
+        except Exception as exc:
+            raise HTTPException(503, "Session service temporarily unavailable. Please retry.") from exc
     token = secrets.token_urlsafe(32)
     with _lock:
         _prune_sessions()
@@ -326,11 +356,29 @@ def create_session(principal: Principal) -> str:
 
 
 def remove_session(token: str) -> None:
+    if _persistent_sessions is not None:
+        try:
+            _persistent_sessions.revoke(token)
+        except Exception as exc:
+            raise HTTPException(503, "Session service temporarily unavailable. Please retry.") from exc
     with _lock:
         _sessions.pop(str(token or ""), None)
 
 
 def principal_for_token(token: str) -> Optional[Principal]:
+    if _persistent_sessions is not None:
+        try:
+            record = _persistent_sessions.read(token)
+            if record is None:
+                return None
+            account = _session_account(record["username"])
+            if not account or not account.enabled:
+                return None
+            if not secrets.compare_digest(record["credential_fingerprint"], _credential_fingerprint(account)):
+                return None
+            return account.principal
+        except Exception as exc:
+            raise HTTPException(503, "Session service temporarily unavailable. Please retry.") from exc
     with _lock:
         _prune_sessions()
         record = _sessions.get(str(token or ""))
@@ -450,6 +498,7 @@ def _configure_for_tests(
 def _reset_for_tests() -> None:
     global _users_by_username, NAMED_USERS_ENABLED, TRIAL_NAME_LOGIN_ENABLED
     global _dynamic_account_lookup
+    set_session_archive(None)
     with _lock:
         _users_by_username = {}
         _sessions.clear()

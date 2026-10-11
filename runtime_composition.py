@@ -75,6 +75,7 @@ def compose(version: str):
             core, runtime=case_archive.CaseArchiveRuntime(None, required=False)
         )
 
+    user_access.set_session_archive(archive_runtime.archive if archive_runtime.enabled else None)
     audit_log.install(core, archive_runtime)
     case_catalog.install(core, archive_runtime)
     historical_report.install(core, archive_runtime)

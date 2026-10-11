@@ -3,6 +3,8 @@
   const stored = (localStorage.getItem("cerai-language") || "en").toLowerCase();
   const locale = stored === "tr" ? "tr" : "en";
   const TR = {
+    "CER-AI sign-in required.":"CER-AI oturumu sona erdi. Lütfen yeniden giriş yapın.",
+    "Session service temporarily unavailable. Please retry.":"Oturum hizmetine geçici olarak ulaşılamıyor. Lütfen yeniden deneyin.",
     "Manage Doctors":"Doktor Yönetimi",
     "Upload images — both eyes: 5 / one eye: 3":"Görüntü yükleyin — iki göz: 5 / tek göz: 3",
     "For both eyes, upload 5 images together: OD Pentacam Cataract Pre-Op, OD Pentacam 4 Maps Refractive, OS Pentacam Cataract Pre-Op, OS Pentacam 4 Maps Refractive, and ONE IOLMaster 500 report containing both eyes. Each Pentacam image must clearly show OD or OS. For one eye only, upload its two Pentacam reports and one IOLMaster report (3 images). TCRP is not used.":"İki göz için toplam 5 görüntüyü birlikte yükleyin: sağ göz (OD) Pentacam Cataract Pre-Op ve 4 Maps Refractive, sol göz (OS) Pentacam Cataract Pre-Op ve 4 Maps Refractive, ayrıca her iki gözün ölçümlerini içeren TEK IOLMaster 500 raporu. Her Pentacam görüntüsünde OD veya OS açıkça görünmelidir. Yalnızca tek göz için o göze ait iki Pentacam raporu ve bir IOLMaster raporu yükleyin (3 görüntü). TCRP kullanılmaz.",
@@ -232,6 +234,8 @@
     "3. Pentacam optical and complementary values":"3. Pentacam optik ve tamamlayıcı değerleri",
     "Total Corneal HOA (4 mm), µm":"Total Korneal HOA (4 mm), µm","Chord µ / kappa, mm":"Chord µ / kappa, mm","Chord α, mm":"Chord α, mm",
     "Pupil Dia (3D), mm":"Pupil Dia (3D), mm","Pachy Vertex / CCT, µm":"Pachy Vertex / CCT, µm","HWTW, mm":"HWTW, mm","ACD (Int.), mm":"ACD (Int.), mm",
+    "IOLMaster ACD, mm":"IOLMaster ön kamara derinliği (ACD), mm",
+    "ACD from the same-eye IOLMaster measurement. If unreadable, enter the printed value manually.":"Aynı gözün IOLMaster ölçümündeki ACD değeri kullanılır. Okunamazsa raporda yazan değeri elle girin.",
     "Internal ACD excludes corneal thickness; ACD (Ext.) is never substituted.":"İnternal ACD kornea kalınlığını içermez; ACD (Ext.) hiçbir zaman yerine kullanılmaz.",
     "4. IOLMaster 500 biometry":"4. IOLMaster 500 biyometrisi","Axial length, mm":"Aksiyel uzunluk, mm","K1, D":"K1, D","K1 axis, degrees":"K1 aksı, derece","K2, D":"K2, D","K2 axis, degrees":"K2 aksı, derece",
     "Surgeon-editable; extracted original retained.":"Cerrah tarafından düzenlenebilir; çıkarılan özgün değer korunur.",
