@@ -60,6 +60,11 @@ LENSES = (
 
 # Manufacturer-documented cylinder ranges are reference data only. They do NOT
 # authorize use by the unvalidated embedded toric optical prototype.
+# Canonical toric routing policy:
+# - VERIFIED_LENS_STEPS is the only source that may drive the embedded TEST-ONLY
+#   model/axis prototype.
+# - MANUFACTURER_TORIC_REFERENCES is display/audit evidence only and must never
+#   silently become an embedded calculation table.
 MANUFACTURER_TORIC_REFERENCES = {
     "rayone-emv-toric": {
         "model": "RAO210T", "cylinder_iol_plane_d": [0.75, 1.50, 2.25, 3.00, 3.75, 4.50],
