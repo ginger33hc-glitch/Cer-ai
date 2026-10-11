@@ -243,7 +243,7 @@ def test_production_canonical_and_real_software_identity_remain_intact(public_ap
         (
             "/iol-calculation-software",
             "MedicalWebPage",
-            "IOL Calculation and Selection Software | CER-AI",
+            "Cataract IOL Selection Software | Multifocal EDOF Toric – CER-AI",
         ),
         (
             "/toric-iol-calculator",
@@ -294,7 +294,7 @@ def test_static_public_pages_have_page_specific_discovery_identity(
     assert schema["name"] == title
     expected_date = {
         "/corneal-ectasia-risk-assessment": "2026-10-11",
-        "/iol-calculation-software": "2026-10-04",
+        "/iol-calculation-software": "2026-10-11",
         "/toric-iol-calculator": "2026-09-30",
         "/clinical-evidence": "2026-09-12",
         "/references": "2026-09-12",
