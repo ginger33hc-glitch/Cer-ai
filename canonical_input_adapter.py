@@ -265,7 +265,7 @@ def resolve_eye_plan(
 
     warnings = list(resolved.get("correction_warnings") or [])
     surgeon_ablation = _first_number(resolved, "max_ablation_um", "ablation_um")
-    if surgeon_ablation is None:
+    if surgeon_ablation is None and procedure != "SMILE":
         ex500_value, ex500_warnings = _ex500_ablation(extracted, eye_name)
         warnings.extend(ex500_warnings)
         if ex500_value is not None:
