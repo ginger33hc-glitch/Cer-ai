@@ -400,14 +400,20 @@ def test_escrs_transfer_is_deidentified_and_kane_is_removed():
 
 def test_escrs_biompin_handoff_uses_deidentified_biomdirect_and_query_parameter():
     case = EscrsTransferInput.model_validate({
-        "biological_sex": "Female", "eye": "OD", "axial_length_mm": 23.5,
-        "acd_internal_mm": 2.21, "k1_d": 42.6, "k2_d": 42.8,
-        "cct_um": 573, "lens_thickness_mm": 4.5, "wtw_mm": 11.7,
+        "biological_sex": "Female",
+        "right_eye": {"axial_length_mm": 23.5, "acd_internal_mm": 2.21,
+                      "k1_d": 42.6, "k2_d": 42.8, "cct_um": 573,
+                      "lens_thickness_mm": 4.5, "wtw_mm": 11.7},
+        "left_eye": {"axial_length_mm": 24.1, "acd_internal_mm": 2.35,
+                     "k1_d": 43.1, "k2_d": 43.7, "cct_um": 568,
+                     "lens_thickness_mm": 4.4, "wtw_mm": 11.8},
     })
     document = build_biomdirect(case)
     assert document["data"]["patient"] == {"gender": "Female"}
     assert document["data"]["right_eye"]["ACD"] == 2.21
-    assert document["data"]["left_eye"] == {}
+    assert document["data"]["left_eye"]["ACD"] == 2.35
+    assert document["data"]["right_eye"]["AL"] == 23.5
+    assert document["data"]["left_eye"]["AL"] == 24.1
     assert "name" not in document["data"]["patient"] and "id" not in document["data"]["patient"]
 
     response = BytesIO(b'{"biompin":{"pin":"lunar-rocket-731904","expires_at":"2026-10-24T00:00:00Z"}}')
@@ -418,8 +424,15 @@ def test_escrs_biompin_handoff_uses_deidentified_biomdirect_and_query_parameter(
     request = mocked.call_args.args[0]
     assert b'name="biompin"\r\n\r\ntrue' in request.data
     assert b'"patient":{"gender":"Female"}' in request.data
+    assert b'"right_eye":{"lens_status":"Phakic","AL":23.5' in request.data
+    assert b'"left_eye":{"lens_status":"Phakic","AL":24.1' in request.data
     assert b"Test Patient" not in request.data
     assert result["escrs_url"] == "https://iolcalculator.escrs.org/?biompin=lunar-rocket-731904"
+
+
+def test_escrs_transfer_requires_at_least_one_eye():
+    with pytest.raises(ValidationError, match="At least one eye"):
+        EscrsTransferInput.model_validate({"biological_sex": "Male"})
 
 
 def test_pentacam_is_the_only_operative_eye_source():
