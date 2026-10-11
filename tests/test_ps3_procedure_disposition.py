@@ -31,7 +31,7 @@ def _case(procedure="LASIK", ps3_eye=None, **overrides):
         derived_srax_deg=10.0, srax_gt20_confirmed=False,
         manifest_mrse_d=-2.0, intended_sphere_d=-2.0,
         intended_cylinder_d=0.0, intended_axis_deg=0.0,
-        flap_um=90.0 if procedure == "LASIK" else None, ablation_um=30.0,
+        flap_um=90.0 if procedure == "LASIK" else (120.0 if procedure == "SMILE" else None), ablation_um=30.0,
         preop_kmean_d=43.0, intended_mrse_d=-2.0, final_bad_d=1.0,
         nice_k2_d=44.0, nice_central_pachy_um=525.0, nice_b_ele_th_um=10.0,
         ps3_eye=ps3_eye or _ps3_eye(), ps3_inter_eye=_inter_eye(),
