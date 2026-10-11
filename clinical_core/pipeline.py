@@ -231,6 +231,8 @@ def _safety_status(
         "sphere_magnitude": sphere_magnitude_hard_stop(inp.intended_sphere_d),
         "lasik_rsb": procedure == "LASIK" and lasik_rsb_hard_stop(rsb),
         "lasik_pta": procedure == "LASIK" and pta_hard_stop(pta),
+        "smile_rsb": procedure == "SMILE" and lasik_rsb_hard_stop(rsb),
+        "smile_pta": procedure == "SMILE" and pta_hard_stop(pta),
         "prk_rst": procedure == "PRK" and prk_rst_hard_stop(rst),
         "prk_pta": procedure == "PRK" and pta_hard_stop(pta),
         "final_kmean": final_kmean_hard_stop(final_k, intended_group),
@@ -252,9 +254,14 @@ def _safety_status(
         missing.append("intended_axis_deg")
     if procedure == "LASIK" and not _finite(inp.flap_um):
         missing.append("flap_um")
+    if procedure == "SMILE" and not _finite(inp.flap_um):
+        missing.append("smile_cap_um")
     if (procedure == "LASIK" and rsb is None
             and "flap_um" not in missing and "ablation_um" not in missing):
         missing.append("LASIK_RSB_um")
+    if (procedure == "SMILE" and rsb is None
+            and "smile_cap_um" not in missing and "ablation_um" not in missing):
+        missing.append("SMILE_RSB_um")
     if procedure == "PRK" and rst is None and "ablation_um" not in missing:
         missing.append("PRK_RST_um")
     if intended_group is None:
@@ -290,10 +297,10 @@ def evaluate_normalized_case(
     intended_refraction = _intended_refraction(inp)
     intended_group = refractive_group(intended_refraction) if intended_refraction is not None else None
 
-    rsb = lasik_rsb_um(inp.thinnest_um, inp.flap_um, inp.ablation_um) if procedure == "LASIK" else None
+    rsb = lasik_rsb_um(inp.thinnest_um, inp.flap_um, inp.ablation_um) if procedure in {"LASIK", "SMILE"} else None
     rst = prk_rst_um(inp.thinnest_um, inp.ablation_um) if procedure == "PRK" else None
-    anterior_tissue = inp.flap_um if procedure == "LASIK" else PRK_EPITHELIUM_UM
-    pta = pta_percent(inp.thinnest_um, anterior_tissue, inp.ablation_um) if procedure in {"LASIK", "PRK"} else None
+    anterior_tissue = inp.flap_um if procedure in {"LASIK", "SMILE"} else PRK_EPITHELIUM_UM
+    pta = pta_percent(inp.thinnest_um, anterior_tissue, inp.ablation_um) if procedure in {"LASIK", "PRK", "SMILE"} else None
 
     scalar_final_k_valid = intended_refraction is not None and scalar_final_k_is_valid(intended_refraction)
     final_k = (
@@ -407,9 +414,11 @@ def evaluate_normalized_case(
         "ps3_status": ps3_status,
         "ps3_decision": ps3_decision,
         "procedural_safety": {
-            "LASIK_RSB_um": rsb,
+            "LASIK_RSB_um": rsb if procedure == "LASIK" else None,
+            "SMILE_RSB_um": rsb if procedure == "SMILE" else None,
             "PRK_RST_um": rst,
             "LASIK_PTA_percent": pta if procedure == "LASIK" else None,
+            "SMILE_PTA_percent": pta if procedure == "SMILE" else None,
             "PRK_PTA_percent": pta if procedure == "PRK" else None,
             "estimated_final_Kmean_D": final_k,
             "scalar_final_Kmean_model_valid": scalar_final_k_valid,
