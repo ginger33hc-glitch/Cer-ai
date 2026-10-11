@@ -35,6 +35,7 @@ from clinical_core.planning import (
     LASIK_PLAN_SELECTION_RULE,
     PlanEvaluation,
     estimate_myopic_ablation_um,
+    estimate_smile_max_lenticule_um,
     mmc_guidance,
     lasik_plan_definition,
     select_first_safe_lasik_plan,
@@ -662,6 +663,26 @@ def evaluate_case(
                 normalized = build_clinical_core_input(
                     eye, plan, age_years=age_years, extracted=extracted, plan_already_resolved=True,
                 )
+        if procedure == "SMILE" and _plan_number(plan, "max_lenticule_thickness_um", "lenticule_thickness_um") is None:
+            if intended is not None and refractive_group(intended) == MYOPIC:
+                estimated_lt = estimate_smile_max_lenticule_um(
+                    normalized.intended_mrse_d, _plan_number(plan, "optical_zone_mm"),
+                )
+                if estimated_lt is not None:
+                    plan = dict(
+                        plan,
+                        max_lenticule_thickness_um=float(estimated_lt),
+                        lenticule_thickness_um=float(estimated_lt),
+                        ablation_um=float(estimated_lt),
+                        max_ablation_um=float(estimated_lt),
+                        lenticule_source="CERAI_THEORETICAL_MYOPIC_SMILE_ESTIMATE",
+                        ablation_source="CERAI_THEORETICAL_MYOPIC_SMILE_ESTIMATE",
+                    )
+                    effective_plans[eye_name] = plan
+                    normalized = build_clinical_core_input(
+                        eye, plan, age_years=age_years, extracted=extracted, plan_already_resolved=True,
+                    )
+
         if procedure == "LASIK":
             core_result, effective_plan, planning = _evaluate_lasik_planning(
                 eye,
