@@ -47,7 +47,7 @@ _SAFE_TRACE_KEYS = frozenset({
     *SELECT_FIELDS,
     EXAM_DATE_CONFIRMATION_KEY,
     "age", "patient_name", "contact_lens_type", "contact_lens_discontinuation_days",
-    "prior", "procedure", "ablation_um", "flap_um",
+    "prior", "procedure", "ablation_um", "flap_um", "max_lenticule_thickness_um", "smile_cap_um",
     "manifest_entered_sphere_D", "manifest_cylinder_signed_D", "manifest_axis_deg",
     "intended_sphere_D", "intended_cylinder_signed_D", "intended_axis_deg",
     "stable", "progression", "cdva_below_20_20",
@@ -408,6 +408,31 @@ def _request(eye, message, extracted):
         key = exact_source_fields[lower]
         return _source_number_request(eye, key, NUMERIC_FIELDS[key], extracted, required_for=_required_system(text))
 
+    effective_plans = extracted.get("_effective_eye_plans") if isinstance(extracted, dict) else None
+    procedure = ""
+    if isinstance(effective_plans, dict):
+        procedure = str((effective_plans.get(eye) or {}).get("procedure") or "").upper()
+    if lower == "safety: ablation_um" and procedure == "SMILE":
+        return {
+            "eye": eye, "label": "Maximum lenticule thickness", "kind": "form",
+            "key": "max_lenticule_thickness_um", "destination": "source",
+            "form_id": f"{prefix}_lenticule",
+            "help": "Enter the SMILE maximum lenticule thickness from the treatment plan.",
+            "required_for": ["Safety"],
+            "source_screen": "SMILE treatment plan",
+            "source_box": "Maximum lenticule thickness",
+        }
+    if lower == "safety: smile_cap_um":
+        return {
+            "eye": eye, "label": "SMILE cap thickness", "kind": "form",
+            "key": "smile_cap_um", "destination": "source",
+            "form_id": f"{prefix}_smile_cap",
+            "help": "Enter the planned SMILE cap thickness.",
+            "required_for": ["Safety"],
+            "source_screen": "SMILE treatment plan",
+            "source_box": "Cap thickness",
+        }
+
     plan_missing = {
         "safety: intended_sphere_d": ("intended_sphere_D", "Intended sphere", f"{prefix}_sphere"),
         "safety: intended_cylinder_d": ("intended_cylinder_signed_D", "Intended cylinder", f"{prefix}_cylinder"),
@@ -745,8 +770,10 @@ def _respond(core, token, session, age, plans, modifiers, metadata, overrides, s
     missing = missing_items(decision, extracted)
     missing.extend(planning_missing_items(decision, extracted))
     missing = list(dict.fromkeys(missing))
+    request_context = deepcopy(extracted)
+    request_context["_effective_eye_plans"] = effective
     requests = _dedupe_requests([
-        _request(eye, message, extracted) for eye, message in missing
+        _request(eye, message, request_context) for eye, message in missing
     ])
 
     response = {
