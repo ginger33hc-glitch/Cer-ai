@@ -18,28 +18,33 @@ BIOMAPI_PROCESS_URL = os.getenv(
 ESCRS_IOL_CALCULATOR_URL = "https://iolcalculator.escrs.org/"
 
 
-def build_biomdirect(case: EscrsTransferInput) -> dict[str, object]:
-    eye_data: dict[str, object] = {
+def _eye_data(eye) -> dict[str, object]:
+    if eye is None:
+        return {}
+    data: dict[str, object] = {
         "lens_status": "Phakic",
-        "AL": case.axial_length_mm,
-        "ACD": case.acd_internal_mm,
-        "K1_magnitude": case.k1_d,
-        "K2_magnitude": case.k2_d,
+        "AL": eye.axial_length_mm,
+        "ACD": eye.acd_internal_mm,
+        "K1_magnitude": eye.k1_d,
+        "K2_magnitude": eye.k2_d,
         "keratometric_index": 1.3375,
     }
-    if case.lens_thickness_mm is not None:
-        eye_data["LT"] = case.lens_thickness_mm
-    if case.cct_um is not None:
-        eye_data["CCT"] = case.cct_um
-    if case.wtw_mm is not None:
-        eye_data["WTW"] = case.wtw_mm
+    if eye.lens_thickness_mm is not None:
+        data["LT"] = eye.lens_thickness_mm
+    if eye.cct_um is not None:
+        data["CCT"] = eye.cct_um
+    if eye.wtw_mm is not None:
+        data["WTW"] = eye.wtw_mm
+    return data
 
+
+def build_biomdirect(case: EscrsTransferInput) -> dict[str, object]:
     return {
         "data": {
             "biometer": {"device_name": "Other", "manufacturer": "Other"},
             "patient": {"gender": case.biological_sex},
-            "right_eye": eye_data if case.eye == "OD" else {},
-            "left_eye": eye_data if case.eye == "OS" else {},
+            "right_eye": _eye_data(case.right_eye),
+            "left_eye": _eye_data(case.left_eye),
         },
         "extra_data": {
             "notes": (
