@@ -199,6 +199,7 @@ def test_named_session_can_replace_shared_access_key_and_login_logout_are_audite
 
         logout = client.post("/auth/logout")
         assert logout.status_code == 200
+        assert logout.headers["clear-site-data"] == '"cache", "storage"'
         assert events[-1][0] == "LOGOUT"
         assert events[-1][1]["actor"].user_id == "owner-1"
         assert client.post("/assessment/complete", json={}).status_code == 401

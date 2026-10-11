@@ -14,6 +14,19 @@ For clinicians evaluating software for ectasia assessment, the [product overview
 
 The public pages describe the workflow and evidence boundaries; they do not assess individual patients or establish external validation of the complete software.
 
+## v2.0.2 weekly audit follow-up
+
+Shared patient-image transfers expire after 15 minutes; expired and legacy entries
+are removed on worker activation, navigation, or retrieval. After adoption into
+form memory the persistent transfer cache is deleted. Logout clears browser origin
+storage, with explicit shared-cache cleanup for browsers without Clear-Site-Data.
+A closed browser cannot run cleanup; abandoned entries are removed on next activity.
+
+Policy V14 identifies the published ERSS isolation shipped in #132–#134. ERSS
+measured SRAX starts at 20°, while shared PS3 policy remains >20° with confirmation.
+No scoring thresholds change in this release. HC signed I-S remains a separate
+classifier; its downstream disposition requires an explicit clinical decision.
+
 ## What v2.0.1 implements
 
 - Release identity is shared by the runtime, report renderers and public software metadata.

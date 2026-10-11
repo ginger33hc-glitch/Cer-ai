@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>CER-AI — Corneal Ectasia Risk Assessment Intelligence v2.0.1</title>
+  <title>CER-AI — Corneal Ectasia Risk Assessment Intelligence v2.0.2</title>
   <link rel="manifest" href="/static/manifest.webmanifest?v=15">
   <meta name="apple-mobile-web-app-title" content="CER-AI">
   <link rel="icon" type="image/png" sizes="32x32" href="/static/icons/favicon-32.png?v=8">
@@ -42,7 +42,7 @@
   <style>@media print{.report-card[hidden]{display:none!important}}</style>
 </head>
 <body>
-<header class="app-header"><div class="brand-lockup"><div class="brand-logo-frame" aria-label="CER-AI"><img class="brand-logo" src="/static/branding/cer-ai-logo-final.png?v=5" alt="CER-AI"></div><div class="brand-subtitle">Corneal Ectasia Risk <span class="brand-initial">A</span>ssessment <span class="brand-initial">I</span>ntelligence</div><span class="brand-version">v2.0.1</span></div><div class="language-switch no-print" role="group" aria-label="Language"><span>Language</span><button type="button" data-language="en">English</button><button type="button" data-language="tr">Türkçe</button></div><h1 class="sr-only">CER-AI — Corneal Ectasia Risk Assessment Intelligence v2.0.1</h1></header>
+<header class="app-header"><div class="brand-lockup"><div class="brand-logo-frame" aria-label="CER-AI"><img class="brand-logo" src="/static/branding/cer-ai-logo-final.png?v=5" alt="CER-AI"></div><div class="brand-subtitle">Corneal Ectasia Risk <span class="brand-initial">A</span>ssessment <span class="brand-initial">I</span>ntelligence</div><span class="brand-version">v2.0.2</span></div><div class="language-switch no-print" role="group" aria-label="Language"><span>Language</span><button type="button" data-language="en">English</button><button type="button" data-language="tr">Türkçe</button></div><h1 class="sr-only">CER-AI — Corneal Ectasia Risk Assessment Intelligence v2.0.2</h1></header>
 <main>
   <div class="card">
     <h2>Case inputs</h2>
@@ -108,7 +108,7 @@
     <article id="reportSheet" class="report-sheet">
       <div class="report-masthead">
         <div><div class="report-kicker">CER-AI Clinical Decision Support</div><div class="note">Corneal Ectasia Risk Assessment Intelligence</div><h2>PREOPERATIVE ECTASIA RISK ASSESSMENT</h2><div class="note">Corneal refractive surgery assessment report</div></div>
-        <div class="report-version"><strong>Software v2.0.1</strong><br>Eye-specific assessment<br><span id="generatedAt"></span></div>
+        <div class="report-version"><strong>Software v2.0.2</strong><br>Eye-specific assessment<br><span id="generatedAt"></span></div>
       </div>
       <p class="report-liability-notice">The final surgical decision and all associated responsibility and liability rest with the surgeon. This application is a clinical decision-support aid only.</p>
       <table class="meta-table"><tbody>
@@ -510,6 +510,10 @@ async function loadSharedImages(){
     const metaResponse=await cache.match(metaUrl);
     if(!metaResponse)throw new Error("The shared images could not be found. Please share them again.");
     const meta=await metaResponse.json(), loaded=[], files=[];
+    if(!Number.isFinite(meta.expiresAt)||meta.expiresAt<=Date.now()){
+      await caches.delete(SHARED_IMAGE_CACHE);
+      throw new Error("The shared images have expired. Please share them again.");
+    }
     for(const item of meta.files||[]){
       const response=await cache.match(item.url);
       if(!response)continue;
@@ -521,6 +525,7 @@ async function loadSharedImages(){
     const retention=window.CER_AI_SourceImageRetention;
     if(files.length===loaded.length&&typeof retention?.adopt==="function"){
       retention.adopt(files);sharedImages=[];renderSelectedFiles(imageInput.files);imageInput.required=true;
+      await caches.delete(SHARED_IMAGE_CACHE);
     }else{
       sharedImages=loaded;renderSelectedFiles(loaded);imageInput.required=false;
     }
@@ -538,13 +543,12 @@ async function loadSharedImages(){
 }
 
 async function appendSharedImages(fd,images){
-  const cache=await caches.open(SHARED_IMAGE_CACHE);
   for(let index=0;index<images.length;index+=1){
     const item=images[index];
     showFormMessage(`Preparing shared Pentacam image ${index+1} of ${images.length}...`);
     await allowLoadingStateToPaint();
-    const response=await cache.match(item.url);
-    if(!response)throw new Error(`Shared image ${index+1} is no longer available. Share the five Pentacam images again.`);
+    const response=await fetch(item.url,{cache:"no-store"});
+    if(!response.ok)throw new Error(`Shared image ${index+1} is no longer available. Share the five Pentacam images again.`);
     const blob=await response.blob();
     fd.append("images",blob,item.name||`shared-image-${index+1}.jpg`);
   }

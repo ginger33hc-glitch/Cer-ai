@@ -414,6 +414,8 @@ def install(core: Any) -> None:
             if principal is not None:
                 audit("LOGOUT", actor=principal)
             response = JSONResponse({"status": "SIGNED_OUT"})
+            # Remove persistent shared patient images and other origin storage.
+            response.headers["Clear-Site-Data"] = '"cache", "storage"'
             response.delete_cookie(SESSION_COOKIE, path="/")
             return response
 

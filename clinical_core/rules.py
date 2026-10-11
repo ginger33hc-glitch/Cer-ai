@@ -102,8 +102,8 @@ def erss_topography_category(
     steepening (3 points) or abnormal/ectatic topography (4 points), SRAX is not
     needed and is not consulted. A negative I-S represents superior rather
     than inferior asymmetry, so SRAX cannot relabel it as inferior steepening;
-    its signed I-S category is final. For I-S from 0.00 through +1.00 D, SRAX
-    must be known because a value >20.0° escalates the same single topography
+    its published ERSS I-S category is final. For I-S from 0.00 to <+1.00 D, SRAX
+    must be known because a measured value >=20.0° escalates the same single topography
     row to the inferior-steepening/SRA category.
 
     SRAX evidence has two non-interchangeable canonical channels:
@@ -112,7 +112,8 @@ def erss_topography_category(
 
     A binary confirmation is never converted into an invented numeric degree.
     Missing SRAX is UNCERTAIN, not silently equivalent to a negative finding.
-    Exact measured 20.0° is negative. Above 20° requires surgeon confirmation.
+    Exact measured 20.0° is positive for ERSS only. Above 20° requires
+    surgeon confirmation under the separate shared SRAX policy.
     I-S and SRAX are never added.
     """
     i_s_category = erss_i_s_category(i_s_d)

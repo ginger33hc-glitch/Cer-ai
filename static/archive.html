@@ -241,7 +241,7 @@
   $("sourceModal").addEventListener("click", event => { if(event.target===$("sourceModal")) closeSources(); });
   $("caseClose").addEventListener("click", closeCase);
   $("caseModal").addEventListener("click", event => { if(event.target===$("caseModal")) closeCase(); });
-  $("logoutButton").addEventListener("click", async () => { try { await fetch("/auth/logout", {method:"POST",credentials:"same-origin",cache:"no-store"}); } finally { window.location.replace("/auth/login-page"); } });
+  $("logoutButton").addEventListener("click", async () => { try { await fetch("/auth/logout", {method:"POST",credentials:"same-origin",cache:"no-store"}); } finally { if(window.caches)await caches.delete("hc-ectasia-shared-images-v1"); window.location.replace("/auth/login-page"); } });
   $("researchLatest").addEventListener("click", () => downloadResearch(true));
   $("researchAll").addEventListener("click", () => downloadResearch(false));
   $("auditButton").addEventListener("click", loadAudit);
