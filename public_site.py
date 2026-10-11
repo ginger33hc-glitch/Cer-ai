@@ -53,9 +53,9 @@ _PUBLIC_CONTENT_LASTMOD = "2026-09-11"
 _INDEXNOW_KEY = "731d2001b05e7e15840a00e98f53447d"
 _PUBLIC_PAGE_LASTMOD = {
     "/about/huseyin-cengiz": "2026-10-02",
-    "/tr/korneal-ektazi-risk-degerlendirmesi": "2026-10-04",
+    "/tr/korneal-ektazi-risk-degerlendirmesi": "2026-10-11",
     "/": "2026-10-06",
-    "/corneal-ectasia-risk-assessment": "2026-10-04",
+    "/corneal-ectasia-risk-assessment": "2026-10-11",
     "/iol-calculation-software": "2026-10-04",
     "/tr/akilli-mercek-iol-hesaplama": "2026-10-04",
     "/toric-iol-calculator": "2026-09-30",
