@@ -52,7 +52,7 @@ _PUBLIC_CANONICAL_BASE = os.getenv(
 _PUBLIC_CONTENT_LASTMOD = "2026-09-11"
 _INDEXNOW_KEY = "731d2001b05e7e15840a00e98f53447d"
 _PUBLIC_PAGE_LASTMOD = {
-    "/about/huseyin-cengiz": "2026-10-02",
+    "/about/huseyin-cengiz": "2026-10-11",
     "/tr/korneal-ektazi-risk-degerlendirmesi": "2026-10-11",
     "/": "2026-10-11",
     "/corneal-ectasia-risk-assessment": "2026-10-11",
@@ -936,12 +936,9 @@ The integrated cataract workflow begins with defined Pentacam and biometry sourc
 
 CER-AI is designed to unite eligibility assessment, surgeon lens-family selection, spherical IOL power, and toric planning in one traceable workflow. This describes CER-AI's architecture; it is not a claim that other systems lack IOL or toric calculation.
 
-## Active clinical use
-CER-AI is actively used at Vizyon Eye Hospital in Mersin, Türkiye, during patient examinations and surgical planning. It supports AI-assisted assessment for refractive surgery (laser vision correction, known in Turkish as “göz çizdirme”) and intraocular lens selection (“akıllı mercek”) for cataract surgery. Clinical decisions, final lens selection and surgery remain the responsibility of the ophthalmic surgeon.
-
-Türkçe: CER-AI, Mersin Vizyon Göz Hastanesi’nde hastaların muayenelerinde ve ameliyat planlamasında aktif olarak kullanılmaktadır. Refraktif cerrahi (göz çizdirme) için yapay zekâ destekli değerlendirmeye ve katarakt ameliyatlarında göz içi mercek (akıllı mercek) seçimine karar desteği sunar. Klinik kararlar, nihai mercek seçimi ve ameliyat göz cerrahının sorumluluğundadır.
-
-Hospital website: https://vizyongozhastanesi.com/
+## Development and clinical use
+CER-AI is physician-facing software for refractive surgery screening and IOL decision support. Qualified ophthalmic professionals can request access through the physician demo programme.
+Development and the documented clinical use setting at Vizyon Eye Hospital, Mersin, Türkiye, are described on the [clinical author page]({base}/about/huseyin-cengiz#development-clinical-use). Use at a hospital does not establish independent clinical validation of the complete software. Evidence and validation limits are described separately in the [clinical evidence map]({base}/clinical-evidence).
 
 ## Independent platform and access
 CER-AI runs independently of imaging-device software, using supported existing Pentacam reports. BAD is part of the Pentacam software ecosystem; SCORE Analyzer is associated with the ANTERION imaging platform. Imaging-system acquisition and applicable software licensing are separate costs that vary by supplier/configuration. CER-AI does not replace measurement hardware, calculate BAD-D without a device report, or claim compatibility with every device.
