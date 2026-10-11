@@ -56,7 +56,7 @@ def _authenticated_module_html(html: str, display_name: str, role: str = "") -> 
         .replace(">", "\\u003e")
         .replace("&", "\\u0026")
     )
-    owner_link = '<a href="/demo-admin" style="font-weight:bold;color:#1f5e8c;margin-right:8px">Manage Doctors</a>' if role == "OWNER" else ""
+    owner_link = '<a href="/demo-admin" style="font-weight:bold;color:#1f5e8c;margin-right:8px">Manage Doctors / Kayıtlı Doktorlar</a>' if role == "OWNER" else ""
     injection = f"""
 <div id="cerAiAccountBar" style="position:fixed;right:12px;bottom:12px;z-index:9999;background:#fff;border:1px solid #bcc8d1;border-radius:9px;padding:8px 10px;box-shadow:0 4px 18px rgba(0,0,0,.14);font:12px Arial,sans-serif;color:#173b57">
   <span style="margin-right:8px">{label}</span>
