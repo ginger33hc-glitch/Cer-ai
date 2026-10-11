@@ -160,6 +160,8 @@ const contactLensDays=document.getElementById("contact_lens_days");
 function syncContactLensDays(){
   const used=contactLensType.value==="SOFT"||contactLensType.value==="RIGID";
   contactLensDaysRow.hidden=!used;
+  contactLensDaysRow.style.display=used ? "" : "none";
+  contactLensDays.disabled=!used;
   contactLensDays.required=used;
   if(!used)contactLensDays.value="";
 }
