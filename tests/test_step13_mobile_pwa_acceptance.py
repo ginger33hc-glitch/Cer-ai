@@ -109,7 +109,7 @@ const fs=require('fs'),vm=require('vm'),assert=require('assert');
 const listeners={};
 class SharedFile extends Blob{constructor(parts,name,options={}){super(parts,options);this.name=name;this.lastModified=1;}}
 const entries=new Map();
-const cache={keys:async()=>[],delete:async()=>true,put:async(key,value)=>entries.set(String(key),value),match:async key=>entries.get(String(key))};
+const cache={keys:async()=>[...entries.keys()],delete:async key=>entries.delete(String(key)),put:async(key,value)=>entries.set(String(key),value),match:async key=>entries.get(String(key))};
 const context={self:{location:{origin:'https://cer-ai.test'},crypto:{randomUUID:()=> 'share-uuid'},addEventListener:(name,fn)=>listeners[name]=fn,skipWaiting(){},clients:{claim(){}}},File:SharedFile,Blob,Response,Request,URL,Date,Math,caches:{open:async()=>cache},console};
 vm.createContext(context);vm.runInContext(fs.readFileSync('static/sw.js','utf8'),context);
 (async()=>{
@@ -119,6 +119,20 @@ vm.createContext(context);vm.runInContext(fs.readFileSync('static/sw.js','utf8')
   const success=await vm.runInContext('receiveSharedImages',context)({formData:async()=>({getAll:()=>[file]})});
   assert.equal(success.status,303);assert.equal(success.headers.get('location'),'https://cer-ai.test/app?share_token=share-uuid');
   assert(entries.has('/__hc_share__/share-uuid/meta'));
+  const read=vm.runInContext('readSharedImage',context);
+  assert.equal((await read('/__hc_share__/share-uuid/0')).status,200);
+  const meta=await entries.get('/__hc_share__/share-uuid/meta').clone().json();
+  assert(meta.expiresAt>Date.now());
+  await cache.put('/__hc_share__/expired/0',new Response('private',{headers:{'X-Share-Expires':String(Date.now()-1)}}));
+  await cache.put('/__hc_share__/legacy/0',new Response('private'));
+  assert.equal((await read('/__hc_share__/expired/0')).status,404);
+  assert.equal((await read('/__hc_share__/legacy/0')).status,404);
+  assert(!entries.has('/__hc_share__/expired/0'));
+  assert(!entries.has('/__hc_share__/legacy/0'));
+  // TTL expiry is enforced even while a worker stays alive.
+  context.Date={now:()=>meta.expiresAt};
+  assert.equal((await read('/__hc_share__/share-uuid/0')).status,404);
+  assert.equal(entries.size,0);
 })().catch(error=>{console.error(error);process.exit(1)});
 '''
     subprocess.run(["node", "-e", script], cwd=ROOT, check=True, capture_output=True, text=True)

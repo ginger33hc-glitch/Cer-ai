@@ -47,11 +47,10 @@
       .map(link=>({url:link.getAttribute('href')||'',name:(link.textContent||'shared-image.jpg').trim()}))
       .filter(item=>item.url.includes('/__hc_share__/'));
     if(!links.length)return [];
-    const cache=await caches.open('hc-ectasia-shared-images-v1');
     const files=[];
     for(const item of links){
-      const response=await cache.match(item.url);
-      if(!response)continue;
+      const response=await fetch(item.url,{cache:"no-store"});
+      if(!response.ok)continue;
       const blob=await response.blob();
       files.push(new File([blob],item.name,{type:blob.type||'image/jpeg',lastModified:Date.now()}));
     }

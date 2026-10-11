@@ -73,6 +73,7 @@ if (cerAiLogoutButton) {{
     try {{
       const response = await fetch("/auth/logout", {{method: "POST"}});
       if (!response.ok) throw new Error("Logout failed");
+      if (window.caches) await caches.delete("hc-ectasia-shared-images-v1");
       window.location.replace("/clinical-modules");
     }} catch (_error) {{
       cerAiLogoutButton.disabled = false;
