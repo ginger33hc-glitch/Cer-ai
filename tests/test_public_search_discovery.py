@@ -298,7 +298,7 @@ def test_static_public_pages_have_page_specific_discovery_identity(
         "/toric-iol-calculator": "2026-09-30",
         "/clinical-evidence": "2026-09-12",
         "/references": "2026-09-12",
-        "/about/huseyin-cengiz": "2026-10-02T00:00:00Z",
+        "/about/huseyin-cengiz": "2026-10-11T00:00:00Z",
         "/editorial-policy": "2026-09-11",
     }[path]
     assert schema["dateModified"] == expected_date
