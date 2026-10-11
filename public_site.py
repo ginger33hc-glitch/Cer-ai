@@ -57,7 +57,7 @@ _PUBLIC_PAGE_LASTMOD = {
     "/": "2026-10-11",
     "/corneal-ectasia-risk-assessment": "2026-10-11",
     "/iol-calculation-software": "2026-10-11",
-    "/tr/akilli-mercek-iol-hesaplama": "2026-10-04",
+    "/tr/akilli-mercek-iol-hesaplama": "2026-10-11",
     "/toric-iol-calculator": "2026-09-30",
     "/clinical-evidence": "2026-09-12",
     "/references": "2026-09-12",
