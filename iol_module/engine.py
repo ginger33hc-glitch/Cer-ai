@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from .models import (
+    requires_astigmatism_classification,
     AstigmatismType,
     Demand,
     GlaucomaStatus,
@@ -12,7 +13,7 @@ from .models import (
     RetinaStatus,
 )
 
-ENGINE_VERSION = "IOL_CANONICAL_3.6"
+ENGINE_VERSION = "IOL_CANONICAL_3.7"
 LEGAL_NOTICE = (
     "This application provides clinical decision support only. "
     "Final responsibility rests with the surgeon at all times and under all circumstances."
@@ -134,7 +135,7 @@ def evaluate_case(case: IOLCaseInput) -> IOLRecommendation:
 
     toric = (
         "TORIC"
-        if case.active_astigmatism_d >= 1.0
+        if requires_astigmatism_classification(case.active_astigmatism_d)
         and case.astigmatism_type == AstigmatismType.REGULAR
         else "NON_TORIC"
     )
@@ -164,11 +165,15 @@ def evaluate_case(case: IOLCaseInput) -> IOLRecommendation:
     explanation.append(
         f"Ocular-surface status is {case.ocular_surface_status.value.lower().replace('_', ' ')}."
     )
-    astig_type = case.astigmatism_type.value.lower() if case.astigmatism_type else "not required below threshold"
+    astig_type = case.astigmatism_type.value.lower() if case.astigmatism_type else "not required at or below threshold"
     explanation.append(
         f"Active IOLMaster 500 K difference is {case.active_astigmatism_d:.2f} D "
-        f"({astig_type}); the toric-evaluation threshold is 1.00 D inclusive."
+        f"({astig_type}); toric evaluation requires more than 1.00 D."
     )
+
+    if not requires_astigmatism_classification(case.active_astigmatism_d):
+        information.append("INFO_INCISION_ASTIGMATISM_MANAGEMENT")
+        explanation.append("Incision adjustment is recommended for astigmatism management.")
 
     return IOLRecommendation(
         engine_version=ENGINE_VERSION,
@@ -189,7 +194,7 @@ def evaluate_case(case: IOLCaseInput) -> IOLRecommendation:
         k2_axis_deg=case.iolm500_k2_axis_deg,
         active_astigmatism_d=case.active_astigmatism_d,
         toric_evaluation_required=(
-            case.active_astigmatism_d >= 1.0
+            requires_astigmatism_classification(case.active_astigmatism_d)
             and case.astigmatism_type == AstigmatismType.REGULAR
         ),
         clinical_explanation=explanation,

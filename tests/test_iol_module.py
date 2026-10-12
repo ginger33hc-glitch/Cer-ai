@@ -87,8 +87,8 @@ def test_high_alpha_or_kappa_alone_warns_but_does_not_exclude_multifocal():
 
 def test_toric_threshold_uses_active_iolmaster_k_difference_and_regularity():
     non_toric = result({"iolm500_k2_d": 42.999})
-    toric = result({"iolm500_k2_d": 43.0, "astigmatism_type": "REGULAR"})
-    irregular = result({"iolm500_k2_d": 43.0, "astigmatism_type": "IRREGULAR"})
+    toric = result({"iolm500_k2_d": 43.25, "astigmatism_type": "REGULAR"})
+    irregular = result({"iolm500_k2_d": 43.25, "astigmatism_type": "IRREGULAR"})
     assert non_toric.toric_modifier == "NON_TORIC"
     assert toric.formatted_recommendation == "Toric Multifocal"
     assert toric.toric_evaluation_required is True
@@ -177,8 +177,8 @@ def test_surgeon_k_power_override_retains_locked_iolmaster_axes():
     assert recommendation.k2_axis_deg == 102
 
 
-def test_missing_regularity_at_inclusive_threshold_fails_closed():
-    payload = deepcopy(base_payload()); payload["iolm500_k2_d"] = 43.0
+def test_missing_regularity_above_threshold_fails_closed():
+    payload = deepcopy(base_payload()); payload["iolm500_k2_d"] = 43.01
     with pytest.raises(ValidationError):
         IOLCaseInput.model_validate(payload)
 
@@ -194,7 +194,7 @@ def test_catalog_includes_surgeon_supplied_toric_models():
 
 
 def test_embedded_toric_calculation_precedes_optional_manufacturer_comparison():
-    case = power_payload(selected_lens_id="clareon-panoptix-toric-cnwtt3", k2_d=43.0,
+    case = power_payload(selected_lens_id="clareon-panoptix-toric-cnwtt3", k2_d=43.25,
                          astigmatism_type="REGULAR", incision_axis_deg=110, sia_axis_deg=110, sia_d=0.25,
                          posterior_cornea={"eye":"OD", "source":"PENTACAM_4_MAPS_REFRACTIVE_CORNEA_BACK",
                                             "k1_d":-5.8, "k2_d":-6.1, "k1_axis_deg":20,
@@ -218,7 +218,7 @@ def test_embedded_toric_calculation_precedes_optional_manufacturer_comparison():
 
 
 def test_toric_missing_same_eye_posterior_preserves_sphere_but_has_no_axis():
-    case = power_payload(selected_lens_id="clareon-panoptix-toric-cnwtt3", k2_d=43.0,
+    case = power_payload(selected_lens_id="clareon-panoptix-toric-cnwtt3", k2_d=43.25,
                          astigmatism_type="REGULAR", incision_axis_deg=110, sia_d=0.25)
     response = [{"IOLs": [{"Predictions": [{"IOL": 21.0, "Rx": 0.01, "IsBestOption": True}]}]}]
     fake = BytesIO(__import__("json").dumps(response).encode())
@@ -231,7 +231,7 @@ def test_toric_missing_same_eye_posterior_preserves_sphere_but_has_no_axis():
 
 
 def test_toric_fixed_incision_and_sia_reject_inconsistent_user_inputs():
-    inputs = dict(selected_lens_id="clareon-panoptix-toric-cnwtt3", k2_d=43.0,
+    inputs = dict(selected_lens_id="clareon-panoptix-toric-cnwtt3", k2_d=43.25,
                   astigmatism_type="REGULAR", incision_axis_deg=110, sia_d=0.25)
     assert power_payload(**{**inputs, "incision_axis_deg":120}).incision_axis_deg == 120
     with pytest.raises(ValidationError):
@@ -239,7 +239,7 @@ def test_toric_fixed_incision_and_sia_reject_inconsistent_user_inputs():
 
 
 def test_unverified_manufacturer_toric_route_fails_closed():
-    case = power_payload(selected_lens_id="enova-adc-advance", k2_d=43.0, astigmatism_type="REGULAR", incision_axis_deg=110, sia_d=0.25)
+    case = power_payload(selected_lens_id="enova-adc-advance", k2_d=43.25, astigmatism_type="REGULAR", incision_axis_deg=110, sia_d=0.25)
     response = [{"IOLs": [{"Predictions": [{"IOL": 20.5, "Rx": -0.1}]}]}]
     fake = BytesIO(__import__("json").dumps(response).encode()); fake.__enter__ = lambda value: value; fake.__exit__ = lambda *args: None
     with patch("iol_module.power.urlopen", return_value=fake):
@@ -502,7 +502,7 @@ def test_k6_http_failure_reports_status_without_response_body():
 def test_toric_without_unused_radii_matches_legacy_posterior_input():
     posterior = {"eye": "OD", "source": "PENTACAM_4_MAPS_REFRACTIVE_CORNEA_BACK",
                  "k1_d": -5.8, "k2_d": -6.1, "k2_axis_deg": 110}
-    options = dict(selected_lens_id="clareon-panoptix-toric-cnwtt3", k2_d=43,
+    options = dict(selected_lens_id="clareon-panoptix-toric-cnwtt3", k2_d=43.25,
                    astigmatism_type="REGULAR", incision_axis_deg=110, sia_d=0.25, sia_axis_deg=110)
     with patch("iol_module.power._call_k6", return_value=[{"IOL":21.0, "Rx":0.01, "IsBestOption":True}]):
         corrected = plan_iol_power(power_payload(**options, posterior_cornea=posterior))
@@ -552,7 +552,7 @@ def test_bilateral_upload_uses_one_shared_iolmaster(monkeypatch):
 
 
 def test_unsupported_toric_lens_still_offers_escrs():
-    case = power_payload(selected_lens_id="tecnis-puresee-toric-det150", k2_d=43.0,
+    case = power_payload(selected_lens_id="tecnis-puresee-toric-det150", k2_d=43.25,
                          astigmatism_type="REGULAR", incision_axis_deg=110, sia_d=0.25)
     predictions = [{"IOL": 21.0, "Rx": 0.01, "IsBestOption": True}]
     with patch("iol_module.power._call_k6", return_value=predictions):
@@ -579,7 +579,7 @@ def test_short_eye_toric_reaches_spherical_service_without_lt_or_wtw():
     with patch("iol_module.power.urlopen", return_value=BytesIO(response)) as mocked:
         plan = plan_iol_power(power_payload(axial_length_mm=21.5,
             lens_thickness_mm=None, wtw_mm=None,
-            selected_lens_id="clareon-panoptix-toric-cnwtt3", k2_d=43,
+            selected_lens_id="clareon-panoptix-toric-cnwtt3", k2_d=43.25,
             astigmatism_type="REGULAR", incision_axis_deg=110, sia_d=0.25,
             posterior_cornea=posterior))
     mocked.assert_called_once()
@@ -587,3 +587,20 @@ def test_short_eye_toric_reaches_spherical_service_without_lt_or_wtw():
     assert plan.toric_status == "TEST_ONLY"
     assert plan.toric_candidates
     assert plan.second_formula_required
+
+
+@pytest.mark.parametrize("difference", [0, 0.75, 1.0])
+def test_low_astigmatism_skips_regularity_and_recommends_incision_management(difference):
+    recommendation = result({"iolm500_k2_d": 42 + difference})
+    assert not recommendation.toric_evaluation_required
+    assert "INFO_INCISION_ASTIGMATISM_MANAGEMENT" in recommendation.information_codes
+    assert "Incision adjustment is recommended for astigmatism management." in recommendation.clinical_explanation
+    case = power_payload(k2_d=42 + difference)
+    with patch("iol_module.power._call_k6", return_value=[{"IOL":21, "Rx":0}]):
+        plan = plan_iol_power(case)
+    assert plan.toric_candidates == []
+
+
+def test_above_one_diopter_requires_regularity_for_power_plan():
+    with pytest.raises(ValidationError, match="regularity"):
+        power_payload(k2_d=43.01)

@@ -1,6 +1,8 @@
 (() => {
   "use strict";
   const $ = id => document.getElementById(id);
+  const astigmatismThreshold = Number(document.querySelector("[data-astigmatism-threshold]").dataset.astigmatismThreshold);
+  const requiresRegularity = difference => difference > astigmatismThreshold;
   const originals = {OD:null, OS:null};
   const pentacamByEye = {OD:null, OS:null};
   const corneaBackByEye = {OD:null, OS:null};
@@ -13,9 +15,13 @@
   let workflowBusy = false;
   function syncWorkflow() {
     const eyes = loadedEyes.map(eye => controllers.get(eye));
-    $("evaluateAll").disabled = workflowBusy || !eyes.length;
-    $("recommendAll").disabled = workflowBusy || !eyes.length || !eyes.every(controller => controller.evaluated());
-    $("calculateAll").disabled = workflowBusy || !eyes.length || !eyes.every(controller => controller.readyToCalculate());
+    $("reviewStage").hidden = !eyes.length;
+    $("recommendAll").disabled = workflowBusy || !eyes.length || !eyes.every(controller => controller.readyToRecommend());
+    const recommended = eyes.length && eyes.every(controller => controller.recommendationShown());
+    $("calculationActions").hidden = !recommended;
+    $("calculateAll").disabled = workflowBusy || !recommended || !eyes.every(controller => controller.readyToCalculate());
+    $("extractButton").disabled = workflowBusy;
+    $("sourceImages").disabled = workflowBusy;
   }
   let lensCatalog = [];
   let iolAssessmentRequestId = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
@@ -91,12 +97,37 @@
     $("eyeHeading").textContent = tr(eye === "OD" ? "OD — Right eye" : "OS — Left eye");
     root.hidden = true;
     document.getElementById("eyePanels").appendChild(fragment);
+    const recommendationRoot = document.createElement("section");
+    recommendationRoot.hidden = true;
+    const recommendationHeading = $("eyeHeading").cloneNode(true);
+    recommendationHeading.removeAttribute("id");
+    recommendationRoot.append(recommendationHeading, $("result"), $("powerSection"));
+    document.getElementById("recommendationPanels").appendChild(recommendationRoot);
+    const calculationRoot = document.createElement("section");
+    calculationRoot.hidden = true;
+    const calculationHeading = recommendationHeading.cloneNode(true);
+    const retryPowerButton = document.createElement("button");
+    retryPowerButton.type = "button"; retryPowerButton.hidden = true;
+    retryPowerButton.textContent = tr("Recalculate");
+    retryPowerButton.addEventListener("click", async () => {
+      if (workflowBusy) return;
+      workflowBusy = true; syncWorkflow(); retryPowerButton.disabled = true;
+      try { await calculate(); }
+      finally { workflowBusy = false; syncWorkflow(); retryPowerButton.disabled = false; }
+    });
+    calculationRoot.append(calculationHeading, $("lensThicknessField"), retryPowerButton, $("powerStatus"), $("powerResult"));
+    document.getElementById("calculationPanels").appendChild(calculationRoot);
+    // Posterior completion precedes lens selection and calculation.
+    $("iolForm").appendChild($("backCompletion"));
   const kDifference = () => $("k1").value === "" || $("k2").value === "" ? NaN : Math.abs(Number($("k2").value) - Number($("k1").value));
 
   function updateAstigmatism() {
     const difference = kDifference();
     $("kDifference").value = Number.isFinite(difference) ? `${difference.toFixed(2)} D` : "";
-    const required = difference >= 1;
+    const required = requiresRegularity(difference);
+    $("astigTypeField").hidden = !required;
+    $("incisionAdvice").hidden = !Number.isFinite(difference) || required;
+    if (!required && $("astigType").value !== "IRREGULAR") $("astigType").value = "";
     $("astigType").required = required;
     $("incisionField").hidden = !required;
     $("siaField").hidden = !required;
@@ -163,7 +194,7 @@
   function populateLenses() {
     const eligible = new Set(recommendation.eligible_categories || []);
     const toric = recommendation.toric_evaluation_required;
-    const options = lensCatalog.filter(lens => eligible.has(lens.category) && (!toric || lens.subtype?.toLowerCase().includes("toric")));
+    const options = lensCatalog.filter(lens => eligible.has(lens.category) && (toric ? lens.subtype?.toLowerCase().includes("toric") : !lens.subtype?.toLowerCase().includes("toric")));
     $("selectedLens").innerHTML = `<option value="">Select an eligible lens</option>` + options.map(lens => {
       const route = toric ? (lens.embedded_toric_supported ? " — embedded prototype (TEST ONLY)" : " — external toric verification required") : "";
       return `<option value="${lens.id}">${lens.name} — ${lens.category} — A ${lens.a_constant.toFixed(1)}${route}</option>`;
@@ -228,7 +259,7 @@
       $("recommendation").textContent = tr(`Recommended IOL: ${data.formatted_recommendation}`);
       $("eligible").innerHTML = (data.eligible_categories || []).map(v => `<span class="pill">${tr(`Eligible: ${v}`)}</span>`).join("");
       if (!lensCatalog.length) { const lenses = await fetch("/iol/lenses", {credentials:"same-origin"}); const body = await lenses.json(); if (!lenses.ok) throw new Error(errorMessage(body)); lensCatalog = body.lenses || []; }
-      if (requestVersion !== version) return false; recommendationShown = true; populateLenses(); $("powerSection").hidden = false; updateAstigmatism(); status.textContent = "Recommendation generated. Select the lens for Stage 2."; return true;
+      if (requestVersion !== version) return false; recommendationShown = true; recommendationRoot.hidden = false; populateLenses(); $("powerSection").hidden = false; updateAstigmatism(); status.textContent = "Recommendation generated. Select the lens for Stage 2."; return true;
     } catch (error) {
       if (requestVersion !== version) return false;
       status.textContent = error.message || tr("Recommendation could not be generated.");
@@ -237,6 +268,7 @@
   }
   async function calculate() {
     const requestVersion = version;
+    calculationRoot.hidden = false;
     if (!recommendation || !recommendationShown) { $("powerStatus").textContent = tr("Evaluate this eye before calculating its lens power."); return false; }
     if (!document.getElementById("patientForm").reportValidity() || !$("iolForm").reportValidity()) return false;
     const status = $("powerStatus"); status.className="status"; const difference = kDifference();
@@ -254,7 +286,7 @@
     } : null;
     const payload = {patient_name:$("patientName").value, biological_sex:$("biologicalSex").value, eye:$("eye").value, selected_lens_id:$("selectedLens").value,
       axial_length_mm:Number($("al").value), acd_mm:Number($("acd").value), k1_d:Number($("k1").value), k1_axis_deg:Number($("k1Axis").value), k2_d:Number($("k2").value), k2_axis_deg:Number($("k2Axis").value), astigmatism_type:$("astigType").value || null,
-      prior_corneal_surgery:$("priorSurgery").value, historical_data_available:$("historicalData").value === "true", incision_axis_deg:difference>=1?numberOrNull("incisionAxis"):null, sia_d:difference>=1?numberOrNull("sia"):null, sia_axis_deg:difference>=1?numberOrNull("siaAxis"):null,
+      prior_corneal_surgery:$("priorSurgery").value, historical_data_available:$("historicalData").value === "true", incision_axis_deg:requiresRegularity(difference)?numberOrNull("incisionAxis"):null, sia_d:requiresRegularity(difference)?numberOrNull("sia"):null, sia_axis_deg:requiresRegularity(difference)?numberOrNull("siaAxis"):null,
       cct_um:numberOrNull("cct"), lens_thickness_mm:numberOrNull("lensThickness"), wtw_mm:numberOrNull("wtw"), posterior_cornea:posteriorInput};
     if (!payload.selected_lens_id) { status.textContent="Select a clinic lens."; status.classList.add("error"); return; }
     $("powerButton").disabled=true; status.textContent="Determining the canonical calculation route…";
@@ -263,6 +295,7 @@
       powerPlans[eye] = data;
       let html=`<div class="warning"><strong>${tr(data.calculator_name)}</strong><br>${tr(data.predictions?.length ? "Cooke K6 calculation completed." : data.message)}</div>`;
       $("lensThicknessField").hidden = !data.required_inputs?.includes("lens_thickness_mm");
+      retryPowerButton.hidden = $("lensThicknessField").hidden;
       if (data.required_inputs?.includes("lens_thickness_mm")) {
         html += `<div class="warning">${tr("Cooke K6 requires measured lens thickness for this calculation. Enter LT or continue at ESCRS if unavailable.")}</div>`;
         $("lensThickness").focus();
@@ -309,28 +342,36 @@
     function invalidate(category = true) {
       version++;
       powerPlans[eye] = null;
+      if ($("lensThicknessField").hidden) calculationRoot.hidden = true;
       $("powerResult").replaceChildren();
       $("powerStatus").textContent = "";
       if (category) {
+        calculationRoot.hidden = true; retryPowerButton.hidden = true; $("lensThicknessField").hidden = true;
         recommendation = null;
         recommendationShown = false;
+        recommendationRoot.hidden = true;
         $("result").hidden = true;
         $("powerSection").hidden = true;
         $("evaluationStatus").textContent = "";
       }
       syncWorkflow();
     }
-    root.addEventListener("input", event => invalidate(!$("powerSection").contains(event.target) && !$("backCompletion").contains(event.target) && !$("lensThicknessField").contains(event.target)));
-    root.addEventListener("change", event => invalidate(!$("powerSection").contains(event.target) && !$("backCompletion").contains(event.target) && !$("lensThicknessField").contains(event.target)));
-    $("iolForm").addEventListener("submit", event => { event.preventDefault(); runLoadedEyes("evaluate"); });
+    const invalidateFromEvent = event => invalidate(!$("powerSection").contains(event.target) && !$("backCompletion").contains(event.target) && !$("lensThicknessField").contains(event.target));
+    [root, recommendationRoot, calculationRoot].forEach(panel => {
+      panel.addEventListener("input", invalidateFromEvent);
+      panel.addEventListener("change", invalidateFromEvent);
+    });
+    $("iolForm").addEventListener("submit", event => { event.preventDefault(); runLoadedEyes("recommend"); });
     $("powerButton").addEventListener("click", calculate);
     return {
       evaluate, recommend, calculate, invalidate,
       evaluated: () => recommendation !== null,
+      recommendationShown: () => recommendationShown,
+      readyToRecommend: () => $("iolForm").checkValidity(),
       readyToCalculate: () => recommendationShown && Boolean($("selectedLens").value),
       reset() {
         invalidate();
-        root.hidden = true;
+        root.hidden = true; recommendationRoot.hidden = true; calculationRoot.hidden = true;
         $("iolForm").reset();
         root.querySelectorAll("input").forEach(node => { node.readOnly = false; });
         $("eye").value = eye;
@@ -339,7 +380,7 @@
         $("priorSurgery").value = "NONE"; $("historicalData").value = "false";
         $("stableField").hidden = true; $("historyField").hidden = true;
         $("backCompletion").hidden = true;
-        $("lensThicknessField").hidden = true;
+        $("lensThicknessField").hidden = true; $("lensThickness").value = "";
         $("alMarker").textContent = "";
       },
       populate() { root.hidden = false; populateEye(); }
@@ -378,7 +419,9 @@
     if (!surgeonPatientName) { status.textContent = tr("Enter the patient name before extracting source images."); return; }
     if (files.length !== 3 && files.length !== 5) { status.textContent = tr("Upload 3 images for one eye or 5 for both eyes: Cataract Pre-Op and 4 Maps Refractive for each eye, plus one shared IOLMaster 500 report."); return; }
     const form = new FormData(); files.forEach(file => form.append("images", file)); form.append("patient_name", surgeonPatientName); form.append("assessment_request_id", iolAssessmentRequestId);
+    if (workflowBusy) return;
     clearSourceCase();
+    workflowBusy = true; syncWorkflow();
     $("extractButton").disabled = true; $("sourceImages").disabled = true; $("patientName").readOnly = true;
     status.textContent = tr("Transcribing source-locked fields…");
     try {
@@ -399,29 +442,36 @@
       $("patientName").value = surgeonPatientName;
       loadedEyes = ["OD","OS"].filter(eye => eyes.includes(eye));
       loadedEyes.forEach(eye => controllers.get(eye).populate());
+      // Evaluate complete eyes immediately; missing regularity stays with the surgeon.
+      if (document.getElementById("patientForm").checkValidity()) {
+        await Promise.allSettled(loadedEyes.filter(eye => controllers.get(eye).readyToRecommend()).map(eye => controllers.get(eye).evaluate()));
+      }
       syncWorkflow();
       const nameReview = data.identity.source_name_review_required ? tr(" The surgeon-entered patient name was retained. Check the patient names printed on the source reports.") : "";
-      status.textContent = tr("Reports extracted. Review each eye separately before evaluation.") + nameReview + (unreadable.length ? " " + unreadable.join(", ") : "");
+      status.textContent = tr("Images read. Complete any missing fields, then continue to lens recommendation.") + nameReview + (unreadable.length ? " " + unreadable.join(", ") : "");
     } catch (error) { clearSourceCase(); status.textContent = error.message || tr("Image transcription failed."); status.classList.add("error"); }
-    finally { $("extractButton").disabled = false; $("sourceImages").disabled = false; $("patientName").readOnly = false; }
+    finally { workflowBusy = false; syncWorkflow(); $("patientName").readOnly = false; }
   });
   async function runLoadedEyes(method) {
     const requestCaseVersion = caseVersion;
     if (workflowBusy || !loadedEyes.length || !$("patientForm").reportValidity()) return;
-    if (method === "recommend" && !loadedEyes.every(eye => controllers.get(eye).evaluated())) return;
+    if (method === "recommend" && !loadedEyes.every(eye => controllers.get(eye).readyToRecommend())) return;
     if (method === "calculate" && !loadedEyes.every(eye => controllers.get(eye).readyToCalculate())) return;
     if (method === "evaluate") controllers.forEach(controller => controller.invalidate());
     workflowBusy = true; syncWorkflow();
     $("bothStatus").textContent = tr("Processing loaded eyes…");
     try {
-      const results = await Promise.allSettled(loadedEyes.map(eye => controllers.get(eye)[method]()));
+      const results = await Promise.allSettled(loadedEyes.map(async eye => {
+        const controller = controllers.get(eye);
+        if (method === "recommend" && !controller.evaluated() && !await controller.evaluate()) return false;
+        return controller[method]();
+      }));
       if (requestCaseVersion !== caseVersion) return;
       $("bothStatus").textContent = tr(results.every(result => result.status === "fulfilled" && result.value === true)
         ? "Completed. Review the separate OD and OS results below."
         : "Review each eye's status and complete any missing fields.");
     } finally { workflowBusy = false; syncWorkflow(); }
   }
-  $("evaluateAll").addEventListener("click", () => runLoadedEyes("evaluate"));
   $("recommendAll").addEventListener("click", () => runLoadedEyes("recommend"));
   $("calculateAll").addEventListener("click", () => runLoadedEyes("calculate"));
 })();

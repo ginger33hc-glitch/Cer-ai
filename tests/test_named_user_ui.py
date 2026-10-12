@@ -117,7 +117,7 @@ def test_unauthenticated_iol_redirects_to_login_and_authenticated_iol_is_separat
     assert "IOL Decision Assistant" in allowed.text
     assert "IOL Calculation Surgery" in allowed.text
     assert "Doctor &lt;One&gt;" in allowed.text
-    assert "/static/iol.js?v=27" in allowed.text
+    assert "/static/iol.js?v=28" in allowed.text
     assert 'href="/clinical-modules"' in allowed.text
 
 
@@ -126,7 +126,7 @@ def test_toric_test_outputs_available_to_authenticated_doctors_and_owner():
         "patient_name":"Synthetic", "biological_sex":"Female", "eye":"OD",
         "selected_lens_id":"clareon-panoptix-toric-cnwtt3", "axial_length_mm":24.2,
         "acd_mm":2.21, "k1_d":42.0, "k1_axis_deg":20,
-        "k2_d":43.0, "k2_axis_deg":110, "astigmatism_type":"REGULAR",
+        "k2_d":43.25, "k2_axis_deg":110, "astigmatism_type":"REGULAR",
         "incision_axis_deg":110, "sia_d":0.25, "sia_axis_deg":110, "cct_um":573,
         "posterior_cornea":{
             "eye":"OD", "source":"PENTACAM_4_MAPS_REFRACTIVE_CORNEA_BACK",

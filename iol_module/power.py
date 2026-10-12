@@ -13,6 +13,7 @@ from urllib.request import Request, urlopen
 
 from .lens_catalog import get_lens, MANUFACTURER_TORIC_REFERENCES
 from .models import (
+    requires_astigmatism_classification,
     AstigmatismType,
     IOLPowerPlan,
     IOLPowerPlanInput,
@@ -183,7 +184,7 @@ def plan_iol_power(case: IOLPowerPlanInput) -> IOLPowerPlan:
     if lens is None:
         raise ValueError("Selected lens is not in the clinic-approved catalog.")
 
-    toric = case.astigmatism_d >= 1.0 and case.astigmatism_type == AstigmatismType.REGULAR
+    toric = requires_astigmatism_classification(case.astigmatism_d) and case.astigmatism_type == AstigmatismType.REGULAR
     if case.prior_corneal_surgery in {
         PriorCornealSurgery.MYOPIC_LASIK_PRK,
         PriorCornealSurgery.HYPEROPIC_LASIK_PRK,

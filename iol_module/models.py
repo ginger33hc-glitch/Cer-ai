@@ -9,6 +9,14 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
+ASTIGMATISM_QUESTION_THRESHOLD_D = 1.0
+
+
+def requires_astigmatism_classification(astigmatism_d: float) -> bool:
+    """Clinic workflow: up to and including 1 D uses incision-management advice."""
+    return astigmatism_d > ASTIGMATISM_QUESTION_THRESHOLD_D
+
+
 class StrictModel(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
@@ -93,9 +101,9 @@ class IOLCaseInput(StrictModel):
 
     @model_validator(mode="after")
     def validate_conditional_fields(self):
-        if self.active_astigmatism_d >= 1.0 and self.astigmatism_type is None:
+        if requires_astigmatism_classification(self.active_astigmatism_d) and self.astigmatism_type is None:
             raise ValueError(
-                "Surgeon-classified regularity is required when the active IOLMaster K difference is 1.00 D or more."
+                "Surgeon-classified regularity is required when the active IOLMaster K difference is greater than 1.00 D."
             )
         if (
             self.ocular_surface_status
@@ -217,9 +225,9 @@ class IOLPowerPlanInput(StrictModel):
     def validate_power_route(self):
         if self.posterior_cornea is not None and self.posterior_cornea.eye != self.eye:
             raise ValueError("Cornea Back laterality must match the operative eye.")
-        if self.astigmatism_d >= 1.0 and self.astigmatism_type is None:
+        if requires_astigmatism_classification(self.astigmatism_d) and self.astigmatism_type is None:
             raise ValueError("Astigmatism regularity is required for toric routing.")
-        toric = self.astigmatism_d >= 1.0 and self.astigmatism_type == AstigmatismType.REGULAR
+        toric = requires_astigmatism_classification(self.astigmatism_d) and self.astigmatism_type == AstigmatismType.REGULAR
         if toric and (self.incision_axis_deg is None or self.sia_d is None):
             raise ValueError("Incision axis and surgeon-specific SIA are required for toric routing.")
         if toric:
