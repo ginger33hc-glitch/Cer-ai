@@ -41,7 +41,7 @@ def test_signed_i_s_monday_boundaries():
         -2.49: "NORMAL_SYMMETRIC",
         -0.51: "NORMAL_SYMMETRIC",
         -0.50: "NORMAL_SYMMETRIC",
-        0.50: "NORMAL_SYMMETRIC",
+        0.50: "ASYMMETRIC_BOWTIE",
         0.51: "ASYMMETRIC_BOWTIE",
         1.00: "ASYMMETRIC_BOWTIE",
         1.01: "INFERIOR_STEEPENING_SRA",

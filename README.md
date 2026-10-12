@@ -14,6 +14,22 @@ For clinicians evaluating software for ectasia assessment, the [product overview
 
 The public pages describe the workflow and evidence boundaries; they do not assess individual patients or establish external validation of the complete software.
 
+## v2.0.4 inclusive signed I-S boundary and production CI gate
+
+CER-AI owner-defined morphology classifies I-S <= -2.50 D or >= +0.50 D
+as asymmetric bow-tie until the positive inferior-steepening/ectatic bands apply.
+Exact +0.50 D is an explicit CER-AI policy extension, not a claim about the
+published Randleman numeric cutoff. The existing ERSS morphology row records
+one point for ABT; no additional automatic STOP or duplicate score is introduced.
+
+Production pre-deploy command: `python scripts/verify_ci_before_deploy.py`.
+It requires successful main push checks for the exact Railway source SHA:
+Canonical Runtime Safety (including full regression and both dependency audits)
+and Deep Import Isolation. Missing, failed, cancelled, skipped, timed-out or
+unverifiable checks block the new deployment. The previous live release remains
+available. GitHub branch protection and Railway's native Wait for CI setting
+remain separate administrative controls.
+
 ## v2.0.3 negative asymmetric bow-tie scoring
 
 Owner-confirmed 2026-10-11: negative I-S at or below -2.50 D maps to
