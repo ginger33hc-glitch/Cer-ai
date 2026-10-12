@@ -274,23 +274,12 @@ def test_short_eye_ui_allows_optional_biometry_and_keeps_escrs():
     script = Path("static/iol.js").read_text(encoding="utf-8")
     assert 'al < 22' not in script
     assert 'Cooke K6 and the embedded toric calculation require' not in script
-    assert 'Optional for standard IOLMaster cases' in Path("static/iol.html").read_text()
-    from html.parser import HTMLParser
-
-    class LinkParser(HTMLParser):
-        links = []
-
-        def handle_starttag(self, tag, attrs):
-            attributes = dict(attrs)
-            if tag == "a" and attributes.get("id") == "missingBiometryEscrs":
-                self.links.append(attributes)
-
-    parser = LinkParser()
-    parser.feed(Path("static/iol.html").read_text(encoding="utf-8"))
-    assert len(parser.links) == 1
-    assert parser.links[0]["href"] == "https://iolcalculator.escrs.org/"
-    assert parser.links[0]["target"] == "_blank"
-    assert "noopener" in parser.links[0]["rel"]
+    html = Path("static/iol.html").read_text()
+    assert 'id="lensThicknessField" hidden' in html
+    assert 'missingBiometryEscrs' not in html
+    assert 'Go to ESCRS Calculator' not in script
+    assert 'Transfer values to ESCRS' in script
+    assert 'Calculate loaded eyes' in html
 
 
 @pytest.mark.parametrize("al", [21.0, 21.99, 22.0, 24.0])

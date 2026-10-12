@@ -240,13 +240,14 @@
       const response=await fetch("/iol/power/plan",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)}); const data=await response.json(); if(!response.ok) throw new Error(errorMessage(data)); if (requestVersion !== version) return false;
       powerPlans[eye] = data;
       let html=`<div class="warning"><strong>${tr(data.calculator_name)}</strong><br>${tr(data.predictions?.length ? "Cooke K6 calculation completed." : data.message)}</div>`;
+      $("lensThicknessField").hidden = !data.required_inputs?.includes("lens_thickness_mm");
       if (data.required_inputs?.includes("lens_thickness_mm")) {
         html += `<div class="warning">${tr("Cooke K6 requires measured lens thickness for this calculation. Enter LT or continue at ESCRS if unavailable.")}</div>`;
         $("lensThickness").focus();
       }
       html+=`<p><span>ACD target</span>: ${Number(data.target_refraction_d).toFixed(2)} D (<span>locked</span>)</p>`;
       if(data.second_formula_required) html+=`<div class="warning"><span>Second modern formula verification required</span> (AL ${Number(data.inputs.axial_length_mm).toFixed(2)} mm). <span>Use ESCRS where available and verify all values manually.</span></div>`;
-      if(data.escrs_url) html+=`<a class="external" target="_blank" rel="noopener noreferrer" href="${data.escrs_url}">Go to ESCRS Calculator</a><button id="${eye}-escrsTransfer" class="external" type="button">Transfer values to ESCRS</button>`;
+      if(data.escrs_url) html+=`<button id="${eye}-escrsTransfer" class="external" type="button">Transfer values to ESCRS</button>`;
       const toricRoute = data.route === "MANUFACTURER_TORIC";
       if(toricRoute && data.predictions?.length) html += `<div class="warning">${tr(data.message)}</div>`;
       if(toricRoute && data.toric_candidates?.length) {
@@ -295,8 +296,8 @@
         $("evaluationStatus").textContent = "";
       }
     }
-    root.addEventListener("input", event => invalidate(!$("powerSection").contains(event.target) && !$("backCompletion").contains(event.target)));
-    root.addEventListener("change", event => invalidate(!$("powerSection").contains(event.target) && !$("backCompletion").contains(event.target)));
+    root.addEventListener("input", event => invalidate(!$("powerSection").contains(event.target) && !$("backCompletion").contains(event.target) && !$("lensThicknessField").contains(event.target)));
+    root.addEventListener("change", event => invalidate(!$("powerSection").contains(event.target) && !$("backCompletion").contains(event.target) && !$("lensThicknessField").contains(event.target)));
     $("iolForm").addEventListener("submit", event => { event.preventDefault(); evaluate(); });
     $("powerButton").addEventListener("click", calculate);
     return {
@@ -312,6 +313,7 @@
         $("priorSurgery").value = "NONE"; $("historicalData").value = "false";
         $("stableField").hidden = true; $("historyField").hidden = true;
         $("backCompletion").hidden = true;
+        $("lensThicknessField").hidden = true;
         $("alMarker").textContent = "";
       },
       populate() { root.hidden = false; populateEye(); }

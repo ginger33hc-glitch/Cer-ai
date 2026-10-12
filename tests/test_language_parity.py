@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def test_all_secure_interfaces_load_the_canonical_language_controller():
     for filename in ("index.html", "iol.html", "login.html", "module-select.html", "archive.html", "trial-login.html"):
         html = (ROOT / "static" / filename).read_text(encoding="utf-8")
-        version = 31 if filename == 'iol.html' else 25
+        version = 32 if filename == 'iol.html' else 25
         assert html.count(f'/static/i18n.js?v={version}') == 1, filename
 
 
