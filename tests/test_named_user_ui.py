@@ -117,7 +117,7 @@ def test_unauthenticated_iol_redirects_to_login_and_authenticated_iol_is_separat
     assert "IOL Decision Assistant" in allowed.text
     assert "IOL Calculation Surgery" in allowed.text
     assert "Doctor &lt;One&gt;" in allowed.text
-    assert "/static/iol.js?v=28" in allowed.text
+    assert "/static/iol.js?v=29" in allowed.text
     assert 'href="/clinical-modules"' in allowed.text
 
 
@@ -308,3 +308,18 @@ def test_archive_page_hides_archive_until_retrospective_capability_is_confirmed(
     assert 'request("/archive/operational-canary",{method:"POST"})' in text
     assert '$("operationalControls").hidden=false' in text
     assert "No patient data was used." in text
+
+
+def test_authenticated_and_public_iol_share_canonical_astigmatism_threshold():
+    from iol_module.models import ASTIGMATISM_QUESTION_THRESHOLD_D
+
+    client, core = make_client()
+    client.cookies.set("cer_ai_session", "valid")
+    authenticated = client.get("/iol")
+    public_app = FastAPI()
+    iol_web.install(SimpleNamespace(app=public_app))
+    public = TestClient(public_app).get("/iol")
+    for response in (authenticated, public):
+        assert response.status_code == 200
+        assert "__ASTIGMATISM_THRESHOLD_D__" not in response.text
+        assert f'data-astigmatism-threshold="{ASTIGMATISM_QUESTION_THRESHOLD_D}"' in response.text

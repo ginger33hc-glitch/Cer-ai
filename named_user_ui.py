@@ -16,11 +16,11 @@ from urllib.parse import quote
 from typing import Any
 
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
+from iol_module.ui import render_iol_html
 from release_identity import deployment_sha as release_deployment_sha
 
 
 ROOT_HTML = Path("static/index.html")
-IOL_HTML = Path("static/iol.html")
 LOGIN_HTML = Path("static/login.html")
 TRIAL_LOGIN_HTML = Path("static/trial-login.html")
 ARCHIVE_HTML = Path("static/archive.html")
@@ -113,7 +113,7 @@ def _authenticated_root_html(display_name: str, role: str = "") -> str:
 
 
 def _authenticated_iol_html(display_name: str, role: str = "") -> str:
-    return _authenticated_module_html(IOL_HTML.read_text(encoding="utf-8"), display_name, role)
+    return _authenticated_module_html(render_iol_html(), display_name, role)
 
 
 def install(core: Any) -> None:

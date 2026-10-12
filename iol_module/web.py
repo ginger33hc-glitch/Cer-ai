@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-from pathlib import Path
 from typing import Any
 
 from fastapi import Body, File, Form, HTTPException, UploadFile
@@ -17,10 +16,9 @@ from .engine import evaluate_case
 from .extraction import extract_image, validate_source_bundle
 from .lens_catalog import public_catalog
 from .escrs_transfer import create_escrs_transfer
-from .models import ASTIGMATISM_QUESTION_THRESHOLD_D, EscrsTransferInput, IOLCaseInput, IOLPowerPlanInput
+from .models import EscrsTransferInput, IOLCaseInput, IOLPowerPlanInput
 from .power import plan_iol_power
-
-IOL_HTML = Path("static/iol.html")
+from .ui import render_iol_html
 
 
 def install(core: Any) -> None:
@@ -30,7 +28,7 @@ def install(core: Any) -> None:
     @core.app.get("/iol", include_in_schema=False)
     def iol_page():
         return HTMLResponse(
-            IOL_HTML.read_text(encoding="utf-8").replace("__ASTIGMATISM_THRESHOLD_D__", str(ASTIGMATISM_QUESTION_THRESHOLD_D)),
+            render_iol_html(),
             headers={"Cache-Control": "no-store"},
         )
 

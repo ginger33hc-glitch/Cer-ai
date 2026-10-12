@@ -2,6 +2,11 @@
   "use strict";
   const $ = id => document.getElementById(id);
   const astigmatismThreshold = Number(document.querySelector("[data-astigmatism-threshold]").dataset.astigmatismThreshold);
+  if (!Number.isFinite(astigmatismThreshold) || astigmatismThreshold <= 0) {
+    $("extractButton").disabled = true;
+    $("extractStatus").textContent = window.CERAI_I18N?.translate("Page configuration could not be loaded. Please reload the page.") || "Page configuration could not be loaded. Please reload the page.";
+    return;
+  }
   const requiresRegularity = difference => difference > astigmatismThreshold;
   const originals = {OD:null, OS:null};
   const pentacamByEye = {OD:null, OS:null};

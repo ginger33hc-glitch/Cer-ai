@@ -3,6 +3,8 @@
   const stored = (localStorage.getItem("cerai-language") || "en").toLowerCase();
   const locale = stored === "tr" ? "tr" : "en";
   const TR = {
+    "Page configuration could not be loaded. Please reload the page.":"Sayfa yapılandırması yüklenemedi. Lütfen sayfayı yenileyin.",
+    "Surgeon-classified regularity is required when the active IOLMaster K difference is greater than 1.00 D.":"Aktif IOLMaster K farkı 1,00 D üzerinde olduğunda cerrah astigmatizmayı düzenli veya düzensiz olarak belirtmelidir.",
     "CER-AI sign-in required.":"CER-AI oturumu sona erdi. Lütfen yeniden giriş yapın.",
     "Session service temporarily unavailable. Please retry.":"Oturum hizmetine geçici olarak ulaşılamıyor. Lütfen yeniden deneyin.",
     "Manage Doctors":"Doktor Yönetimi",
