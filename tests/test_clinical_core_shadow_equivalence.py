@@ -49,7 +49,7 @@ def _base(**overrides):
         procedure="LASIK",
         age_years=35,
         thinnest_um=540.0,
-        i_s_d=0.5,
+        i_s_d=0.49,
         derived_srax_deg=0.0,
         manifest_mrse_d=-3.0,
         intended_sphere_d=-3.0,

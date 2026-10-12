@@ -62,7 +62,7 @@ def erss_pachymetry_points(thinnest_um) -> Optional[int]:
 def signed_i_s_category(i_s_d) -> str:
     """CER-AI signed I-S bands; negative ABT begins at -2.50 D inclusive.
 
-    Values >-2.50 through +0.50 D are normal on this numeric criterion.
+    Values >-2.50 and <+0.50 D are normal on this numeric criterion.
     Positive inferior-steepening and ectatic boundaries remain independent.
     """
     if not _finite(i_s_d):
@@ -72,22 +72,22 @@ def signed_i_s_category(i_s_d) -> str:
         return ABNORMAL_ECTATIC
     if value > 1.00:
         return INFERIOR_STEEPENING_SRA
-    if value > 0.50 or value <= -2.50:
+    if value >= 0.50 or value <= -2.50:
         return ASYMMETRIC_BOWTIE
     return NORMAL_SYMMETRIC
 
 
 def erss_i_s_category(i_s_d) -> str:
-    """ERSS categories with the owner-defined negative I-S morphology mapping.
+    """ERSS categories with owner-defined signed I-S morphology boundaries.
 
-    The negative numeric cutoff is CER-AI policy, not a published Randleman
-    cutoff. Once classified, asymmetric bow-tie uses the existing ERSS 1 point.
-    Published positive I-S boundaries remain unchanged.
+    The negative cutoff and inclusive +0.50 D boundary are CER-AI policy,
+    not published Randleman cutoffs. Asymmetric bow-tie uses the existing
+    ERSS 1 point; the positive inferior-steepening/ectatic bands are unchanged.
     """
     if not _finite(i_s_d):
         return UNCERTAIN
     value = float(i_s_d)
-    if value < 0.0:
+    if value < 0.0 or value == 0.50:
         return signed_i_s_category(value)
     if value >= 1.40:
         return ABNORMAL_ECTATIC

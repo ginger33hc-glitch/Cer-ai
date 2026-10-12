@@ -3,12 +3,12 @@ import pytest
 from clinical_core.rules import signed_i_s_category
 
 
-@pytest.mark.parametrize("value", [-2.4999, -2.49, -1.14, -0.98, -0.90, -0.5001, -0.50, 0, 0.50])
+@pytest.mark.parametrize("value", [-2.4999, -2.49, -1.14, -0.98, -0.90, -0.5001, -0.50, 0, 0.4999])
 def test_signed_normal_interval(value):
     assert signed_i_s_category(value) == "NORMAL_SYMMETRIC"
 
 
-@pytest.mark.parametrize("value", [-2.50, -2.5001, -3.0, -5.0, 0.5001, 1.0])
+@pytest.mark.parametrize("value", [-2.50, -2.5001, -3.0, -5.0, 0.50, 0.5001, 1.0])
 def test_signed_asymmetric_bowtie_intervals(value):
     assert signed_i_s_category(value) == "ASYMMETRIC_BOWTIE"
 

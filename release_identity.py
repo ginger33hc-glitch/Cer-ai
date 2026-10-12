@@ -4,7 +4,7 @@ from __future__ import annotations
 import os
 import re
 
-SOFTWARE_VERSION = "2.0.3"
+SOFTWARE_VERSION = "2.0.4"
 
 
 def deployment_sha() -> str | None:

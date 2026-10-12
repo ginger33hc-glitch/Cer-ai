@@ -132,3 +132,15 @@ def test_negative_abt_reaches_runtime_topography_score():
         assert od["score"]["category"] == category
         assert od["score"]["rows"]["topography"] == points
         assert "Randleman: SRAX" not in od["missing"]
+
+
+def test_inclusive_positive_abt_boundary_reaches_runtime_report():
+    for value, category, points in [
+        (0.4999, "NORMAL_SYMMETRIC", 0),
+        (0.50, "ASYMMETRIC_BOWTIE", 1),
+        (0.5001, "ASYMMETRIC_BOWTIE", 1),
+    ]:
+        od = _evaluate(value, 10.0)
+        assert od["score"]["category"] == category
+        assert od["score"]["rows"]["topography"] == points
+        assert od["report_payload"]["randleman"]["rows"]["topography"] == points
