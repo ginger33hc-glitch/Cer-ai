@@ -20,7 +20,7 @@ from .models import (
 )
 from .toric_formula import ToricBiometry, VERIFIED_LENS_STEPS, research_toric_candidates
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("uvicorn.error.iol.power")
 
 
 class LensThicknessRequired(ValueError):
