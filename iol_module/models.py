@@ -280,5 +280,6 @@ class IOLPowerPlan(StrictModel):
     inputs: dict[str, object]
     predictions: list[dict[str, object]]
     message: str
+    required_inputs: list[Literal["lens_thickness_mm"]] = Field(default_factory=list)
     toric_candidates: list[dict[str, object]] = Field(default_factory=list)
     toric_status: Literal["NOT_APPLICABLE", "TEST_ONLY", "INPUTS_INCOMPLETE", "UNSUPPORTED", "CALCULATION_UNAVAILABLE"] = "NOT_APPLICABLE"

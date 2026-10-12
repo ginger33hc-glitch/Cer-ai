@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import logging
+import re
 import os
 from dataclasses import asdict
 from math import isfinite
@@ -17,6 +19,13 @@ from .models import (
     PriorCornealSurgery,
 )
 from .toric_formula import ToricBiometry, VERIFIED_LENS_STEPS, research_toric_candidates
+
+logger = logging.getLogger(__name__)
+
+
+class LensThicknessRequired(ValueError):
+    """Upstream explicitly requested a measured LT."""
+
 
 COOKE_K6_URL = os.getenv(
     "COOKE_K6_API_URL", "https://cookeformula.com/api/v1/k6/v2024.01/preop"
@@ -112,7 +121,11 @@ def _k6_payload(case: IOLPowerPlanInput, a_constant: float) -> dict[str, object]
 
 
 def _k6_failure_reason(exc: Exception) -> str:
+    if isinstance(exc, LensThicknessRequired):
+        return "Cooke K6 requires measured lens thickness for this calculation. Enter LT or continue at ESCRS if unavailable."
     if isinstance(exc, HTTPError):
+        if exc.code == 429:
+            return "Cooke K6 request limit reached (HTTP 429). Wait before retrying or continue at ESCRS. This is not a missing LT error."
         return f"Cooke K6 service returned HTTP {exc.code}."
     if isinstance(exc, TimeoutError) or isinstance(exc, URLError) and isinstance(exc.reason, TimeoutError):
         return "Cooke K6 service timed out."
@@ -138,8 +151,19 @@ def _call_k6(case: IOLPowerPlanInput, a_constant: float) -> list[dict[str, objec
         },
         method="POST",
     )
-    with urlopen(request, timeout=20) as response:
-        payload = json.loads(response.read().decode("utf-8"))
+    logger.info("k6_request eye=%s lt_present=%s", case.eye, case.lens_thickness_mm is not None)
+    try:
+        with urlopen(request, timeout=20) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except HTTPError as exc:
+        logger.warning("k6_failure eye=%s http_status=%s lt_present=%s", case.eye, exc.code, case.lens_thickness_mm is not None)
+        # Only an explicit validation rejection may request LT. Never infer it
+        # from rate limits, short axial length, or a generic service failure.
+        if exc.code in (400, 422) and case.lens_thickness_mm is None:
+            detail = exc.read(16384).decode("utf-8", errors="replace")
+            if re.search(r'(?i)(?:\bLT\b|lens[ _-]*thickness)[\s\"\':=]*(?:is\s+)?(?:required|mandatory|missing)\b', detail):
+                raise LensThicknessRequired() from exc
+        raise
     eyes = payload.get("Eyes") if isinstance(payload, dict) else payload
     if not isinstance(eyes, list) or not eyes:
         raise ValueError("Cooke K6 returned no eye result.")
@@ -150,6 +174,7 @@ def _call_k6(case: IOLPowerPlanInput, a_constant: float) -> list[dict[str, objec
     if any(not isinstance(p, dict) or any(type(p.get(key)) not in (int, float)
            or not isfinite(p[key]) for key in ("IOL", "Rx")) for p in predictions):
         raise ValueError("Cooke K6 returned invalid power predictions.")
+    logger.info("k6_success eye=%s predictions=%s lt_present=%s", case.eye, len(predictions), case.lens_thickness_mm is not None)
     return predictions
 
 
@@ -189,7 +214,8 @@ def plan_iol_power(case: IOLPowerPlanInput) -> IOLPowerPlan:
                 calculator_name="Cooke K6 spherical power", calculator_url=lens.toric_calculator_url,
                 escrs_url=ESCRS_URL, inputs=inputs, predictions=[],
                 toric_status="CALCULATION_UNAVAILABLE",
-                message=_k6_failure_reason(exc),
+                required_inputs=["lens_thickness_mm"] if isinstance(exc, LensThicknessRequired) else [],
+            message=_k6_failure_reason(exc),
             )
         candidates: list[dict[str, object]] = []
         toric_status = "INPUTS_INCOMPLETE"
@@ -245,6 +271,7 @@ def plan_iol_power(case: IOLPowerPlanInput) -> IOLPowerPlan:
                     candidates = [asdict(candidate) for candidate in optical]
                     toric_status = "TEST_ONLY"
                     explanation = "Embedded toric model, marker axis and predicted residual are shown for surgeon testing. This hybrid optical model is not clinically validated."
+        logger.info("toric_result eye=%s lens=%s status=%s spherical_predictions=%s", case.eye, lens.id, toric_status, len(spherical_predictions))
         return IOLPowerPlan(
             route="MANUFACTURER_TORIC",
             calculation_status="TEST_ONLY" if candidates else "CALCULATION_UNAVAILABLE",
@@ -269,6 +296,7 @@ def plan_iol_power(case: IOLPowerPlanInput) -> IOLPowerPlan:
             target_refraction_d=_target_from_acd(case.acd_mm), target_locked=True,
             target_warning=None, second_formula_required=_second_formula_required(case.axial_length_mm), calculator_name="Cooke K6", calculator_url=None,
             escrs_url=ESCRS_URL, inputs=inputs, predictions=[],
+            required_inputs=["lens_thickness_mm"] if isinstance(exc, LensThicknessRequired) else [],
             message=_k6_failure_reason(exc),
         )
     return IOLPowerPlan(
