@@ -270,12 +270,11 @@ def test_non_toric_success_keeps_escrs_for_independent_review():
     assert plan.inputs["biological_sex"] == "Female"
 
 
-def test_short_eye_ui_blocks_before_losing_embedded_toric_route():
+def test_short_eye_ui_allows_optional_biometry_and_keeps_escrs():
     script = Path("static/iol.js").read_text(encoding="utf-8")
-    assert 'al < 22' in script
-    assert 'numberOrNull("lensThickness") === null || numberOrNull("wtw") === null' in script
-    assert "Cooke K6 and the embedded toric calculation require" in script
-    assert '$("missingBiometryEscrs").focus()' in script
+    assert 'al < 22' not in script
+    assert 'Cooke K6 and the embedded toric calculation require' not in script
+    assert 'Optional for standard IOLMaster cases' in Path("static/iol.html").read_text()
     from html.parser import HTMLParser
 
     class LinkParser(HTMLParser):
@@ -294,12 +293,20 @@ def test_short_eye_ui_blocks_before_losing_embedded_toric_route():
     assert "noopener" in parser.links[0]["rel"]
 
 
-def test_short_eye_requires_real_lens_thickness_and_wtw():
-    with patch("iol_module.power.urlopen") as mocked:
-        plan = plan_iol_power(power_payload(axial_length_mm=21.9, lens_thickness_mm=None))
-    mocked.assert_not_called()
-    assert plan.calculation_status == "CALCULATION_UNAVAILABLE"
-    assert "lens thickness and WTW" in plan.message
+@pytest.mark.parametrize("al", [21.0, 21.99, 22.0, 24.0])
+@pytest.mark.parametrize("lt,wtw", [(None, None), (None, 11.7), (4.5, None), (4.5, 11.7)])
+def test_standard_k6_accepts_optional_biometry_without_estimation(al, lt, wtw):
+    response = b'[{"IOLs":[{"Predictions":[{"IOL":28.0,"Rx":0.01,"IsBestOption":true}]}]}]'
+    with patch("iol_module.power.urlopen", return_value=BytesIO(response)) as mocked:
+        plan = plan_iol_power(power_payload(axial_length_mm=al, lens_thickness_mm=lt, wtw_mm=wtw))
+    assert plan.calculation_status == "COMPLETED"
+    eye = __import__("json").loads(mocked.call_args.args[0].data)["Eyes"][0]
+    assert eye["Biometer"] == "Other" and eye["SpecialSituation"] == "None"
+    for key, value in (("LT", lt), ("WTW", wtw)):
+        assert (key in eye) == (value is not None)
+        if value is not None:
+            assert eye[key] == value
+    assert plan.second_formula_required is (al < 22)
     assert plan.escrs_url == "https://iolcalculator.escrs.org/"
 
 
@@ -564,3 +571,30 @@ def test_unsupported_toric_lens_still_offers_escrs():
     assert plan.toric_status == "UNSUPPORTED"
     assert plan.escrs_url == "https://iolcalculator.escrs.org/"
     assert plan.predictions == predictions
+
+
+@pytest.mark.parametrize("surgery", ["MYOPIC_LASIK_PRK", "HYPEROPIC_LASIK_PRK", "RK"])
+def test_missing_lt_does_not_bypass_post_refractive_route(surgery):
+    with patch("iol_module.power.urlopen") as mocked:
+        plan = plan_iol_power(power_payload(axial_length_mm=21.5,
+            lens_thickness_mm=None, wtw_mm=None, prior_corneal_surgery=surgery))
+    mocked.assert_not_called()
+    assert plan.calculation_status == "EXTERNAL_REQUIRED"
+    assert plan.predictions == []
+
+
+def test_short_eye_toric_reaches_spherical_service_without_lt_or_wtw():
+    response = b'[{"IOLs":[{"Predictions":[{"IOL":28.0,"Rx":0.01,"IsBestOption":true}]}]}]'
+    posterior = {"eye": "OD", "source": "PENTACAM_4_MAPS_REFRACTIVE_CORNEA_BACK",
+                 "k1_d": -5.8, "k2_d": -6.1, "k2_axis_deg": 110}
+    with patch("iol_module.power.urlopen", return_value=BytesIO(response)) as mocked:
+        plan = plan_iol_power(power_payload(axial_length_mm=21.5,
+            lens_thickness_mm=None, wtw_mm=None,
+            selected_lens_id="clareon-panoptix-toric-cnwtt3", k2_d=43,
+            astigmatism_type="REGULAR", incision_axis_deg=110, sia_d=0.25,
+            posterior_cornea=posterior))
+    mocked.assert_called_once()
+    assert plan.predictions[0]["IOL"] == 28
+    assert plan.toric_status == "TEST_ONLY"
+    assert plan.toric_candidates
+    assert plan.second_formula_required

@@ -124,8 +124,9 @@ def _k6_failure_reason(exc: Exception) -> str:
 
 
 def _call_k6(case: IOLPowerPlanInput, a_constant: float) -> list[dict[str, object]]:
-    if case.axial_length_mm < 22.0 and (case.lens_thickness_mm is None or case.wtw_mm is None):
-        raise ValueError("Cooke K6 requires lens thickness and WTW when axial length is below 22.00 mm.")
+    # K6 v2024.01 accepts missing LT/WTW for this standard-eye, Other-biometer
+    # route (requested powers are <=30 D). AL <22 mm is not an LT requirement.
+    # Prior corneal surgery is routed externally by plan_iol_power.
     raw = json.dumps(_k6_payload(case, a_constant)).encode("utf-8")
     request = Request(
         COOKE_K6_URL,
