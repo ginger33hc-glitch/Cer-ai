@@ -219,6 +219,7 @@
     finally { $("evaluateButton").disabled = false; }
   }
   async function recommend() {
+    invalidate(false);
     const requestVersion = version;
     const status = $("evaluationStatus");
     if (!recommendation) return false;
