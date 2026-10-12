@@ -275,7 +275,23 @@ def test_short_eye_ui_blocks_before_losing_embedded_toric_route():
     assert 'al < 22' in script
     assert 'numberOrNull("lensThickness") === null || numberOrNull("wtw") === null' in script
     assert "Cooke K6 and the embedded toric calculation require" in script
-    assert 'firstMissing.focus()' in script
+    assert '$("missingBiometryEscrs").focus()' in script
+    from html.parser import HTMLParser
+
+    class LinkParser(HTMLParser):
+        links = []
+
+        def handle_starttag(self, tag, attrs):
+            attributes = dict(attrs)
+            if tag == "a" and attributes.get("id") == "missingBiometryEscrs":
+                self.links.append(attributes)
+
+    parser = LinkParser()
+    parser.feed(Path("static/iol.html").read_text(encoding="utf-8"))
+    assert len(parser.links) == 1
+    assert parser.links[0]["href"] == "https://iolcalculator.escrs.org/"
+    assert parser.links[0]["target"] == "_blank"
+    assert "noopener" in parser.links[0]["rel"]
 
 
 def test_short_eye_requires_real_lens_thickness_and_wtw():
