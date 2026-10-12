@@ -279,7 +279,7 @@ def test_short_eye_ui_allows_optional_biometry_and_keeps_escrs():
     assert 'missingBiometryEscrs' not in html
     assert 'Go to ESCRS Calculator' not in script
     assert 'Transfer values to ESCRS' in script
-    assert 'Calculate loaded eyes' in html
+    assert 'id="calculateAll" type="button" disabled>Calculate</button>' in html
 
 
 @pytest.mark.parametrize("al", [21.0, 21.99, 22.0, 24.0])
