@@ -10,6 +10,13 @@
   const powerPlans = {OD:null, OS:null};
   let loadedEyes = [];
   let caseVersion = 0;
+  let workflowBusy = false;
+  function syncWorkflow() {
+    const eyes = loadedEyes.map(eye => controllers.get(eye));
+    $("evaluateAll").disabled = workflowBusy || !eyes.length;
+    $("recommendAll").disabled = workflowBusy || !eyes.length || !eyes.every(controller => controller.evaluated());
+    $("calculateAll").disabled = workflowBusy || !eyes.length || !eyes.every(controller => controller.readyToCalculate());
+  }
   let lensCatalog = [];
   let iolAssessmentRequestId = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
   const tr = value => window.CERAI_I18N?.translate(value) ?? String(value ?? "");
@@ -78,6 +85,7 @@
     const numberOrNull = id => $(id).value === "" ? null : Number($(id).value);
     const setIfPresent = (id, value) => { if (value !== null && value !== undefined) $(id).value = value; };
     let recommendation = null;
+    let recommendationShown = false;
     let version = 0;
     $("eye").value = eye;
     $("eyeHeading").textContent = tr(eye === "OD" ? "OD — Right eye" : "OS — Left eye");
@@ -203,19 +211,32 @@
     try {
       const response = await fetch("/iol/evaluate", {method:"POST", credentials:"same-origin", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload)});
       const data = await response.json(); if (!response.ok) throw new Error(errorMessage(data)); if (requestVersion !== version) return false; recommendation = data;
-      $("recommendation").textContent = tr(`Recommended IOL: ${data.formatted_recommendation}`);
-      $("eligible").innerHTML = (data.eligible_categories || []).map(v => `<span class="pill">${tr(`Eligible: ${v}`)}</span>`).join("");
       $("warnings").innerHTML = (data.warning_codes || []).map(v => `<div class="warning">${tr(warningLabel(v))}</div>`).join("");
       $("reasons").replaceChildren(...(data.clinical_explanation || []).map(value => { const p=document.createElement("p"); p.className="reason"; p.textContent=tr(value); return p; }));
-      $("legal").textContent = tr(data.legal_notice); $("result").hidden = false;
-      if (!lensCatalog.length) { const lenses = await fetch("/iol/lenses", {credentials:"same-origin"}); const body = await lenses.json(); if (!lenses.ok) throw new Error(errorMessage(body)); lensCatalog = body.lenses || []; }
-      if (requestVersion !== version) return false; populateLenses(); $("powerSection").hidden = false; updateAstigmatism(); status.textContent = "Recommendation generated. Select the lens for Stage 2."; return true;
+      $("legal").textContent = tr(data.legal_notice); $("result").hidden = false; $("recommendation").textContent = ""; $("eligible").replaceChildren();
+      status.textContent = tr("Images evaluated. Continue to lens recommendation."); return true;
     } catch (error) { if (requestVersion !== version) return false; status.textContent = error.message || "Recommendation could not be generated."; status.classList.add("error"); return false; }
     finally { $("evaluateButton").disabled = false; }
   }
+  async function recommend() {
+    const requestVersion = version;
+    const status = $("evaluationStatus");
+    if (!recommendation) return false;
+    const data = recommendation;
+    try {
+      $("recommendation").textContent = tr(`Recommended IOL: ${data.formatted_recommendation}`);
+      $("eligible").innerHTML = (data.eligible_categories || []).map(v => `<span class="pill">${tr(`Eligible: ${v}`)}</span>`).join("");
+      if (!lensCatalog.length) { const lenses = await fetch("/iol/lenses", {credentials:"same-origin"}); const body = await lenses.json(); if (!lenses.ok) throw new Error(errorMessage(body)); lensCatalog = body.lenses || []; }
+      if (requestVersion !== version) return false; recommendationShown = true; populateLenses(); $("powerSection").hidden = false; updateAstigmatism(); status.textContent = "Recommendation generated. Select the lens for Stage 2."; return true;
+    } catch (error) {
+      if (requestVersion !== version) return false;
+      status.textContent = error.message || tr("Recommendation could not be generated.");
+      status.classList.add("error"); return false;
+    }
+  }
   async function calculate() {
     const requestVersion = version;
-    if (!recommendation) { $("powerStatus").textContent = tr("Evaluate this eye before calculating its lens power."); return false; }
+    if (!recommendation || !recommendationShown) { $("powerStatus").textContent = tr("Evaluate this eye before calculating its lens power."); return false; }
     if (!document.getElementById("patientForm").reportValidity() || !$("iolForm").reportValidity()) return false;
     const status = $("powerStatus"); status.className="status"; const difference = kDifference();
     const corneaBack = corneaBackByEye[$("eye").value];
@@ -291,17 +312,21 @@
       $("powerStatus").textContent = "";
       if (category) {
         recommendation = null;
+        recommendationShown = false;
         $("result").hidden = true;
         $("powerSection").hidden = true;
         $("evaluationStatus").textContent = "";
       }
+      syncWorkflow();
     }
     root.addEventListener("input", event => invalidate(!$("powerSection").contains(event.target) && !$("backCompletion").contains(event.target) && !$("lensThicknessField").contains(event.target)));
     root.addEventListener("change", event => invalidate(!$("powerSection").contains(event.target) && !$("backCompletion").contains(event.target) && !$("lensThicknessField").contains(event.target)));
-    $("iolForm").addEventListener("submit", event => { event.preventDefault(); evaluate(); });
+    $("iolForm").addEventListener("submit", event => { event.preventDefault(); runLoadedEyes("evaluate"); });
     $("powerButton").addEventListener("click", calculate);
     return {
-      evaluate, calculate, invalidate,
+      evaluate, recommend, calculate, invalidate,
+      evaluated: () => recommendation !== null,
+      readyToCalculate: () => recommendationShown && Boolean($("selectedLens").value),
       reset() {
         invalidate();
         root.hidden = true;
@@ -327,7 +352,7 @@
       originals[eye] = null; pentacamByEye[eye] = null; corneaBackByEye[eye] = null; incisionOverrides[eye] = null; powerPlans[eye] = null;
       controllers.get(eye)?.reset();
     }
-    $("evaluateAll").disabled = true; $("calculateAll").disabled = true;
+    syncWorkflow();
     $("bothStatus").textContent = "";
   }
   ["OD", "OS"].forEach(eye => controllers.set(eye, createEyeController(eye)));
@@ -373,7 +398,7 @@
       $("patientName").value = surgeonPatientName;
       loadedEyes = ["OD","OS"].filter(eye => eyes.includes(eye));
       loadedEyes.forEach(eye => controllers.get(eye).populate());
-      $("evaluateAll").disabled = false; $("calculateAll").disabled = false;
+      syncWorkflow();
       const nameReview = data.identity.source_name_review_required ? tr(" The surgeon-entered patient name was retained. Check the patient names printed on the source reports.") : "";
       status.textContent = tr("Reports extracted. Review each eye separately before evaluation.") + nameReview + (unreadable.length ? " " + unreadable.join(", ") : "");
     } catch (error) { clearSourceCase(); status.textContent = error.message || tr("Image transcription failed."); status.classList.add("error"); }
@@ -381,8 +406,11 @@
   });
   async function runLoadedEyes(method) {
     const requestCaseVersion = caseVersion;
-    if (!loadedEyes.length || !$("patientForm").reportValidity()) return;
-    $("evaluateAll").disabled = true; $("calculateAll").disabled = true;
+    if (workflowBusy || !loadedEyes.length || !$("patientForm").reportValidity()) return;
+    if (method === "recommend" && !loadedEyes.every(eye => controllers.get(eye).evaluated())) return;
+    if (method === "calculate" && !loadedEyes.every(eye => controllers.get(eye).readyToCalculate())) return;
+    if (method === "evaluate") controllers.forEach(controller => controller.invalidate());
+    workflowBusy = true; syncWorkflow();
     $("bothStatus").textContent = tr("Processing loaded eyes…");
     try {
       const results = await Promise.allSettled(loadedEyes.map(eye => controllers.get(eye)[method]()));
@@ -390,8 +418,9 @@
       $("bothStatus").textContent = tr(results.every(result => result.status === "fulfilled" && result.value === true)
         ? "Completed. Review the separate OD and OS results below."
         : "Review each eye's status and complete any missing fields.");
-    } finally { if (requestCaseVersion === caseVersion) { $("evaluateAll").disabled = !loadedEyes.length; $("calculateAll").disabled = !loadedEyes.length; } }
+    } finally { workflowBusy = false; syncWorkflow(); }
   }
   $("evaluateAll").addEventListener("click", () => runLoadedEyes("evaluate"));
+  $("recommendAll").addEventListener("click", () => runLoadedEyes("recommend"));
   $("calculateAll").addEventListener("click", () => runLoadedEyes("calculate"));
 })();

@@ -228,7 +228,7 @@
     "Pentacam laterality was not read. Upload a readable Pentacam Cataract Pre-Op report showing OD or OS.":"Pentacam lateralitesi okunamadı. OD veya OS bilgisini gösteren okunabilir bir Pentacam Cataract Pre-Op raporu yükleyin.",
     "Conflicting Pentacam laterality was detected. Upload the Cataract Pre-Op report for one operative eye only.":"Çelişkili Pentacam lateralitesi saptandı. Yalnızca ameliyat edilecek tek göze ait Cataract Pre-Op raporunu yükleyin.",
     "The operative eye must come from a readable Pentacam Cataract Pre-Op report.":"Ameliyat edilecek göz bilgisi okunabilir bir Pentacam Cataract Pre-Op raporundan alınmalıdır.",
-    "Extract approved fields":"Onaylı alanları çıkar","2. Lifestyle and visual goals":"2. Yaşam tarzı ve görsel hedefler",
+    "Image evaluation and lens recommendation":"Görüntü değerlendirmesi ve lens önerisi","Read images":"Görüntüleri oku","Evaluate uploaded images":"Yüklenen görüntüleri değerlendir","Recommend a lens":"Lens önerisi ver","Calculate":"Hesapla","Images evaluated. Continue to lens recommendation.":"Görüntüler değerlendirildi. Lens önerisi adımına geçin.","2. Lifestyle and visual goals":"2. Yaşam tarzı ve görsel hedefler",
     "Near-vision demand":"Yakın görme gereksinimi","Night driving":"Gece araç kullanımı","Halo/glare tolerance":"Halo/kamaşma toleransı",
     "Low":"Düşük","Moderate":"Orta","High":"Yüksek","Occasional":"Ara sıra","Frequent":"Sık",
     "3. Pentacam optical and complementary values":"3. Pentacam optik ve tamamlayıcı değerleri",
