@@ -295,7 +295,7 @@ def test_static_public_pages_have_page_specific_discovery_identity(
     expected_date = {
         "/corneal-ectasia-risk-assessment": "2026-10-11",
         "/iol-calculation-software": "2026-10-11",
-        "/toric-iol-calculator": "2026-09-30",
+        "/toric-iol-calculator": "2026-10-12",
         "/clinical-evidence": "2026-09-12",
         "/references": "2026-09-12",
         "/about/huseyin-cengiz": "2026-10-11T00:00:00Z",
@@ -437,10 +437,11 @@ def test_iol_locales_have_consistent_metadata_and_crawlable_links(public_app, pa
     descriptions = [a['content'] for a in page.attributes('meta') if a.get('name') == 'description']
     assert descriptions == [schema['description']]
     assert title == schema['name']
-    assert f'<loc>https://cer-ai.com{path}</loc><lastmod>2026-10-11</lastmod>' in sitemap.text
+    lastmod = '2026-10-12' if language == 'tr' else '2026-10-11'
+    assert f'<loc>https://cer-ai.com{path}</loc><lastmod>{lastmod}</lastmod>' in sitemap.text
     if language == 'tr':
-        for phrase in ('akıllı mercek', 'akıllı lens', 'Mersin'):
-            assert phrase.casefold() in title.casefold()
+        for phrase in ('göz içi mercek', 'akıllı mercek'):
+            assert phrase.casefold() in title.replace("İ", "i").casefold()
             assert phrase in descriptions[0]
             assert phrase in html
         assert 'Mersin Vizyon Göz Hastanesi' in html
@@ -456,3 +457,32 @@ def test_turkish_iol_is_not_indexable_on_staging(public_app):
         assert response.status_code == 200
         assert response.headers['x-robots-tag'] == 'noindex,nofollow'
         assert '<loc>' not in client.get('/sitemap.xml').text
+
+
+def test_turkish_toric_route_is_indexable_and_has_reciprocal_language_links(public_app):
+    path = '/tr/torik-mercek-hesaplayici'
+    with TestClient(public_app, base_url='https://cer-ai.com') as client:
+        response = client.get(path)
+        english = client.get('/toric-iol-calculator')
+        home = client.get('/')
+        sitemap = client.get('/sitemap.xml')
+    assert response.status_code == 200
+    assert response.headers['x-robots-tag'].startswith('index,follow')
+    page = PageStructure(response.text)
+    assert page.attributes('html')[0]['lang'] == 'tr'
+    assert len(page.attributes('h1')) == 1
+    assert 'public-i18n.js' not in response.text
+    assert 'KLİNİK OLARAK DOĞRULANMAMIŞTIR' in response.text
+    schema = json.loads(re.search(r'<script id="cerai-page-discovery" type="application/ld\+json">(.*?)</script>', response.text, re.S)[1])
+    assert schema['inLanguage'] == 'tr'
+    assert schema['name'] == re.search(r'<title>(.*?)</title>', response.text)[1]
+    assert [m['content'] for m in page.attributes('meta') if m.get('name') == 'description'] == [schema['description']]
+    assert [a['href'] for a in page.attributes('link') if a.get('rel') == 'canonical'] == ['https://cer-ai.com'+path]
+    expected = {('tr', 'https://cer-ai.com'+path), ('en', 'https://cer-ai.com/toric-iol-calculator')}
+    for html in (response.text, english.text):
+        assert {(a['hreflang'], a['href']) for a in PageStructure(html).attributes('link') if a.get('rel') == 'alternate'} == expected
+    assert f'<loc>https://cer-ai.com{path}</loc>' in sitemap.text
+    for route in (path, '/tr/korneal-ektazi-risk-degerlendirmesi', '/tr/akilli-mercek-iol-hesaplama'):
+        assert any(a.get('href') == 'https://cer-ai.com'+route and a.get('hreflang') == 'tr' for a in PageStructure(home.text).attributes('a'))
+    with TestClient(public_app, base_url='https://cer-ai-staging.up.railway.app') as client:
+        assert client.get(path).headers['x-robots-tag'] == 'noindex,nofollow'
