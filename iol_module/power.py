@@ -11,6 +11,7 @@ from math import isfinite
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
+from .t2 import predictions as t2_predictions
 from .lens_catalog import get_lens, MANUFACTURER_TORIC_REFERENCES
 from .models import (
     requires_astigmatism_classification,
@@ -179,6 +180,25 @@ def _call_k6(case: IOLPowerPlanInput, a_constant: float) -> list[dict[str, objec
     return predictions
 
 
+def _spherical_predictions(case: IOLPowerPlanInput, a_constant: float):
+    """K6 first; local T2 only for service/response failures, not validation errors."""
+    try:
+        return _call_k6(case, a_constant), "Cooke K6", None
+    except (HTTPError, URLError, TimeoutError, ValueError, UnicodeDecodeError) as exc:
+        if isinstance(exc, LensThicknessRequired):
+            raise
+        if isinstance(exc, HTTPError) and exc.code in (400, 422):
+            raise
+        reason = _k6_failure_reason(exc)
+        try:
+            rows = t2_predictions(case.axial_length_mm, case.k1_d, case.k2_d,
+                                  a_constant, _target_from_acd(case.acd_mm))
+        except ValueError as t2_error:
+            raise ValueError(f"{reason} T2 unavailable: {t2_error}") from t2_error
+        logger.info("t2_fallback eye=%s predictions=%s", case.eye, len(rows))
+        return rows, "T2", reason
+
+
 def plan_iol_power(case: IOLPowerPlanInput) -> IOLPowerPlan:
     lens = get_lens(case.selected_lens_id)
     if lens is None:
@@ -204,7 +224,7 @@ def plan_iol_power(case: IOLPowerPlanInput) -> IOLPowerPlan:
     if toric:
         inputs = _base_inputs(case)
         try:
-            spherical_predictions = _call_k6(case, lens.a_constant)
+            spherical_predictions, formula, fallback_reason = _spherical_predictions(case, lens.a_constant)
         except (HTTPError, URLError, TimeoutError, ValueError, UnicodeDecodeError) as exc:
             return IOLPowerPlan(
                 route="MANUFACTURER_TORIC", calculation_status="CALCULATION_UNAVAILABLE",
@@ -245,7 +265,7 @@ def plan_iol_power(case: IOLPowerPlanInput) -> IOLPowerPlan:
             if len(best) != 1 or any(type(best[0].get(key)) not in (int, float)
                                      or not isfinite(best[0][key]) for key in ("IOL", "Rx")):
                 toric_status = "CALCULATION_UNAVAILABLE"
-                explanation = "Cooke K6 did not identify one finite best spherical-equivalent power and predicted refraction."
+                explanation = f"{formula} did not identify one finite best spherical-equivalent power and predicted refraction."
             else:
                 posterior = case.posterior_cornea
                 try:
@@ -262,8 +282,8 @@ def plan_iol_power(case: IOLPowerPlanInput) -> IOLPowerPlan:
                             sia_d=case.sia_d,
                             incision_axis_deg=case.incision_axis_deg,
                         ), lens.id,
-                        k6_spherical_equivalent_iol_d=best[0]["IOL"],
-                        k6_predicted_refraction_d=best[0]["Rx"],
+                        spherical_equivalent_iol_d=best[0]["IOL"],
+                        spherical_predicted_refraction_d=best[0]["Rx"],
                     )
                 except (ValueError, ZeroDivisionError, OverflowError) as exc:
                     toric_status = "CALCULATION_UNAVAILABLE"
@@ -280,7 +300,8 @@ def plan_iol_power(case: IOLPowerPlanInput) -> IOLPowerPlan:
             lens_category=lens.category, a_constant=lens.a_constant,
             target_refraction_d=_target_from_acd(case.acd_mm), target_locked=True,
             target_warning=None, second_formula_required=_second_formula_required(case.axial_length_mm),
-            calculator_name="Cooke K6 spherical power", calculator_url=lens.toric_calculator_url,
+            calculator_name=f"{formula} spherical power", calculator_url=lens.toric_calculator_url,
+            spherical_formula=formula, fallback_reason=fallback_reason,
             escrs_url=ESCRS_URL, inputs=inputs, predictions=spherical_predictions,
             toric_candidates=candidates, toric_status=toric_status,
             message=explanation,
@@ -288,7 +309,7 @@ def plan_iol_power(case: IOLPowerPlanInput) -> IOLPowerPlan:
 
     inputs = _base_inputs(case)
     try:
-        predictions = _call_k6(case, lens.a_constant)
+        predictions, formula, fallback_reason = _spherical_predictions(case, lens.a_constant)
     except (HTTPError, URLError, TimeoutError, ValueError, UnicodeDecodeError) as exc:
         return IOLPowerPlan(
             route="COOKE_K6", calculation_status="CALCULATION_UNAVAILABLE",
@@ -301,11 +322,12 @@ def plan_iol_power(case: IOLPowerPlanInput) -> IOLPowerPlan:
             message=_k6_failure_reason(exc),
         )
     return IOLPowerPlan(
-        route="COOKE_K6", calculation_status="COMPLETED",
+        route="T2" if formula == "T2" else "COOKE_K6", calculation_status="COMPLETED",
         selected_lens_id=lens.id, selected_lens_name=lens.name,
         lens_category=lens.category, a_constant=lens.a_constant,
         target_refraction_d=_target_from_acd(case.acd_mm), target_locked=True,
-        target_warning=None, second_formula_required=_second_formula_required(case.axial_length_mm), calculator_name="Cooke K6", calculator_url=None,
+        target_warning=None, second_formula_required=_second_formula_required(case.axial_length_mm), calculator_name=formula, calculator_url=None,
+        spherical_formula=formula, fallback_reason=fallback_reason,
         escrs_url=ESCRS_URL, inputs=inputs, predictions=predictions,
-        message="Cooke K6 calculation completed.",
+        message=f"{formula} calculation completed.",
     )

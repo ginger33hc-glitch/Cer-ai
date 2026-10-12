@@ -53,14 +53,14 @@ def test_research_planner_ranks_discrete_panoptix_steps_and_respects_axes():
     eye = ToricBiometry(24, 42, 43.5, 90, -5.8, -6.1, 0, 550, 119.1)
     values = research_toric_candidates(
         eye, "clareon-panoptix-toric-cnwtt3",
-        k6_spherical_equivalent_iol_d=20, k6_predicted_refraction_d=-0.25)
+        spherical_equivalent_iol_d=20, spherical_predicted_refraction_d=-0.25)
     assert [v.model for v in values] == ["CNWTT4", "CNWTT5", "CNWTT3", "CNWTT6", "CNWTT2"]
     assert values[0].marker_axis_deg == 0
     assert 0.15 < values[0].residual_spectacle_cylinder_d < 0.25
     rotated = ToricBiometry(24, 42, 43.5, 120, -5.8, -6.1, 30, 550, 119.1)
     rotated_values = research_toric_candidates(
         rotated, "clareon-panoptix-toric-cnwtt3",
-        k6_spherical_equivalent_iol_d=20, k6_predicted_refraction_d=-0.25)
+        spherical_equivalent_iol_d=20, spherical_predicted_refraction_d=-0.25)
     assert rotated_values[0].model == values[0].model
     assert abs(rotated_values[0].marker_axis_deg - 30) < 0.2
     assert abs(rotated_values[0].residual_spectacle_cylinder_d - values[0].residual_spectacle_cylinder_d) < 1e-8
@@ -70,7 +70,7 @@ def test_average_eye_corneal_conversion_is_close_to_fda_reference_not_fixed_rati
     eye = ToricBiometry(24, 43, 43, 0, -5.8, -5.8, 0, 550, 119.1, sia_d=0)
     values = research_toric_candidates(
         eye, "clareon-toric-cnw0t8",
-        k6_spherical_equivalent_iol_d=20, k6_predicted_refraction_d=0)
+        spherical_equivalent_iol_d=20, spherical_predicted_refraction_d=0)
     t3 = next(value for value in values if value.model == "CNW0T3")
     # FDA P190018B lists 0.98 D in its average pseudophakic model eye.
     # This synthetic eye is not that FDA eye and agreement is not clinical validation.
@@ -82,18 +82,18 @@ def test_research_planner_rejects_missing_catalog_or_nonfinite_sources():
     eye = ToricBiometry(24, 42, 43.5, 90, -5.8, -6.1, 0, 550, 119.1)
     with pytest.raises(ValueError):
         research_toric_candidates(eye, "enova-advance-toric",
-                                  k6_spherical_equivalent_iol_d=20,
-                                  k6_predicted_refraction_d=-0.25)
+                                  spherical_equivalent_iol_d=20,
+                                  spherical_predicted_refraction_d=-0.25)
     with pytest.raises(ValueError):
         research_toric_candidates(eye, "clareon-panoptix-toric-cnwtt3",
-                                  k6_spherical_equivalent_iol_d=float("nan"),
-                                  k6_predicted_refraction_d=-0.25)
+                                  spherical_equivalent_iol_d=float("nan"),
+                                  spherical_predicted_refraction_d=-0.25)
 
 
 def test_surgeon_incision_axis_changes_toric_optical_result():
     from dataclasses import replace
     eye = ToricBiometry(24, 42, 43.5, 90, -5.8, -6.1, 0, 550, 119.1)
-    args = dict(k6_spherical_equivalent_iol_d=20, k6_predicted_refraction_d=0)
+    args = dict(spherical_equivalent_iol_d=20, spherical_predicted_refraction_d=0)
     default = research_toric_candidates(eye, "clareon-panoptix-toric-cnwtt3", **args)
     explicit = research_toric_candidates(replace(eye, incision_axis_deg=0), "clareon-panoptix-toric-cnwtt3", **args)
     changed = research_toric_candidates(replace(eye, incision_axis_deg=90), "clareon-panoptix-toric-cnwtt3", **args)

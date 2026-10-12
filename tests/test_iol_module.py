@@ -464,14 +464,15 @@ def test_pentacam_is_the_only_operative_eye_source():
     (TimeoutError(), "timed out"),
     (ValueError("Cooke K6 returned no power predictions."), "no power predictions"),
 ])
-def test_k6_failure_exposes_reason_and_escrs_without_predictions(toric, failure, reason):
+def test_k6_failure_uses_t2_and_keeps_escrs(toric, failure, reason):
     changes = dict(k2_d=44, astigmatism_type="REGULAR", incision_axis_deg=110, sia_d=0.25) if toric else {}
     with patch("iol_module.power._call_k6", side_effect=failure):
         plan = plan_iol_power(power_payload(**changes))
-    assert plan.calculation_status == "CALCULATION_UNAVAILABLE"
-    assert reason in plan.message
+    assert plan.calculation_status == ("CALCULATION_UNAVAILABLE" if toric else "COMPLETED")
+    assert reason in plan.fallback_reason
     assert plan.escrs_url == "https://iolcalculator.escrs.org/"
-    assert plan.predictions == []
+    assert plan.spherical_formula == "T2"
+    assert len(plan.predictions) == 7
     assert plan.toric_candidates == []
 
 
@@ -484,9 +485,9 @@ def test_k6_failure_exposes_reason_and_escrs_without_predictions(toric, failure,
 def test_k6_malformed_service_results_offer_escrs(body, reason):
     with patch("iol_module.power.urlopen", return_value=BytesIO(body)):
         plan = plan_iol_power(power_payload())
-    assert plan.calculation_status == "CALCULATION_UNAVAILABLE"
-    assert reason in plan.message
-    assert plan.predictions == []
+    assert plan.calculation_status == "COMPLETED"
+    assert reason in plan.fallback_reason
+    assert len(plan.predictions) == 7
     assert plan.escrs_url
 
 

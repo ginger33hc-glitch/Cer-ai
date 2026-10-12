@@ -33,8 +33,8 @@ def test_only_explicit_k6_validation_requests_lt(status, body, required):
         plan = plan_iol_power(power_payload(lens_thickness_mm=None))
     assert plan.required_inputs == (['lens_thickness_mm'] if required else [])
     if status == 429:
-        assert 'request limit' in plan.message
-    assert plan.predictions == []
+        assert 'request limit' in plan.fallback_reason
+    assert bool(plan.predictions) == (status == 429)
 
 
 @pytest.mark.parametrize('lt', [None, 4.5])

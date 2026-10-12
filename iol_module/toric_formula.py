@@ -220,13 +220,13 @@ class ToricResearchResult:
 
 def research_toric_candidates(
     eye: ToricBiometry, selected_lens_id: str,
-    *, k6_spherical_equivalent_iol_d: float,
-    k6_predicted_refraction_d: float,
+    *, spherical_equivalent_iol_d: float,
+    spherical_predicted_refraction_d: float,
 ) -> list[ToricResearchResult]:
-    """K6-anchored thick-cornea/Holladay-ELP optical prototype.
+    """Spherical-formula-anchored thick-cornea/Holladay-ELP optical prototype.
 
     NOT a published unified formula or clinically validated calculator.
-    K6's spherical predicted refraction anchors the retinal scalar vergence;
+    The spherical formula's predicted refraction anchors the retinal scalar vergence;
     measured anterior and posterior meridians drive toricity. Each discrete
     model's marker axis is optimized for the lowest spectacle-plane cylinder.
     External paired-case validation is mandatory before patient routing.
@@ -239,7 +239,7 @@ def research_toric_candidates(
                eye.anterior_k1_axis_deg, eye.posterior_k1_d, eye.posterior_k2_d,
                eye.posterior_k1_axis_deg, eye.corneal_thickness_um,
                eye.optical_a_constant, eye.sia_d,
-               k6_spherical_equivalent_iol_d, k6_predicted_refraction_d)
+               spherical_equivalent_iol_d, spherical_predicted_refraction_d)
     if not all(isfinite(v) for v in numbers):
         raise ValueError("Toric source values must be finite.")
     if not (30 <= eye.anterior_k1_d <= eye.anterior_k2_d <= 60
@@ -280,15 +280,15 @@ def research_toric_candidates(
         front = back.propagate(-cct_mm / 1000, nc) + (-anterior) + (-sia)
         return front.propagate(-0.012, 1.0)
 
-    target = Vergence(k6_predicted_refraction_d, 0, 0)
+    target = Vergence(spherical_predicted_refraction_d, 0, 0)
     incoming = propagate_to_iol(target)
-    retinal_scalar = incoming.equivalent_d + k6_spherical_equivalent_iol_d
+    retinal_scalar = incoming.equivalent_d + spherical_equivalent_iol_d
     results = []
     for model, cylinder in steps.items():
         def spectacle_residual(axis_deg: float) -> Vergence:
             lens = Vergence.from_meridians(
-                k6_spherical_equivalent_iol_d - cylinder / 2,
-                k6_spherical_equivalent_iol_d + cylinder / 2,
+                spherical_equivalent_iol_d - cylinder / 2,
+                spherical_equivalent_iol_d + cylinder / 2,
                 axis_deg)
             return back_to_spectacle(Vergence(retinal_scalar, 0, 0) + (-lens))
 
@@ -297,7 +297,7 @@ def research_toric_candidates(
                         key=lambda axis: spectacle_residual(axis).cylinder_d)
         refraction = spectacle_residual(best_axis)
         results.append(ToricResearchResult(
-            model, k6_spherical_equivalent_iol_d, cylinder, best_axis,
+            model, spherical_equivalent_iol_d, cylinder, best_axis,
             refraction.cylinder_d, refraction.axis_deg, elp_mm))
     return sorted(results, key=lambda result: (result.residual_spectacle_cylinder_d,
                                                 result.cylinder_iol_d))

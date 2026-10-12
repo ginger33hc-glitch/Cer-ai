@@ -269,6 +269,7 @@ class EscrsTransferInput(StrictModel):
 class IOLPowerPlan(StrictModel):
     route: Literal[
         "COOKE_K6",
+        "T2",
         "MANUFACTURER_TORIC",
         "BARRETT_TRUE_K_EXTERNAL",
         "POST_RK_EXTERNAL",
@@ -282,6 +283,8 @@ class IOLPowerPlan(StrictModel):
     target_locked: bool
     target_warning: str | None
     second_formula_required: bool
+    spherical_formula: Literal["Cooke K6", "T2"] | None = None
+    fallback_reason: str | None = None
     calculator_name: str
     calculator_url: str | None
     escrs_url: str | None
