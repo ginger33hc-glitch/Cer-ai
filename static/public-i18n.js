@@ -6,6 +6,9 @@
   let locale = SUPPORTED.has(requested) ? requested : "en";
 
   const TR = {
+    "Korneal ektazi tarama programı":"Korneal ektazi tarama programı",
+    "Göz içi mercek seçim programı":"Göz içi mercek seçim programı",
+    "Torik mercek hesaplayıcı":"Torik mercek hesaplayıcı",
     "About CER-AI: development and clinical use":"CER-AI hakkında: geliştirme ve klinik kullanım",
     "Refractive Surgery Screening & IOL Selection Software | CER-AI":"Refraktif Cerrahi Tarama ve IOL Seçim Yazılımı | CER-AI",
     "For corneal refractive surgery, CER-AI supports preoperative screening, corneal ectasia risk assessment and separate tissue-safety analysis before LASIK, PRK or SMILE. For refractive lens surgery and cataract surgery, it supports IOL category suitability assessment for monofocal, EDOF and multifocal pathways, lens selection, spherical IOL calculation and toric planning.":"Kornea refraktif cerrahisinde CER-AI, LASIK, PRK veya SMILE öncesinde ameliyat öncesi taramayı, korneal ektazi risk değerlendirmesini ve ayrı doku güvenliği analizini destekler. Refraktif lens cerrahisi ve katarakt cerrahisinde monofokal, EDOF ve multifokal yollar için IOL kategori uygunluğunu, lens seçimini, sferik IOL hesabını ve torik planlamayı destekler.",
