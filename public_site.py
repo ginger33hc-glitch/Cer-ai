@@ -53,7 +53,7 @@ _PUBLIC_CONTENT_LASTMOD = "2026-09-11"
 _INDEXNOW_KEY = "731d2001b05e7e15840a00e98f53447d"
 _PUBLIC_PAGE_LASTMOD = {
     "/about/huseyin-cengiz": "2026-10-11",
-    "/tr/korneal-ektazi-risk-degerlendirmesi": "2026-10-11",
+    "/tr/korneal-ektazi-risk-degerlendirmesi": "2026-10-12",
     "/": "2026-10-11",
     "/corneal-ectasia-risk-assessment": "2026-10-11",
     "/iol-calculation-software": "2026-10-11",
@@ -63,8 +63,8 @@ _PUBLIC_PAGE_LASTMOD = {
     "/references": "2026-09-12",
     "/what-is-recommended-for-corneal-ectasia-screening": "2026-09-30",
     "/corneal-ectasia-screening-systems": "2026-09-30",
-    "/tr/korneal-ektazi-taramasi-onerileri": "2026-09-30",
-    "/tr/korneal-ektazi-tarama-sistemleri": "2026-09-30",
+    "/tr/korneal-ektazi-taramasi-onerileri": "2026-10-12",
+    "/tr/korneal-ektazi-tarama-sistemleri": "2026-10-12",
 }
 _PUBLIC_PAGE_LAST_REVIEWED = {
     "/tr/korneal-ektazi-risk-degerlendirmesi": "2026-09-29",
@@ -76,12 +76,12 @@ _PUBLIC_PAGE_LAST_REVIEWED = {
 _PUBLIC_PAGE_METADATA = {
     "/tr/korneal-ektazi-risk-degerlendirmesi": {
         "schema_type": "MedicalWebPage",
-        "title": "Yapay Zekâ Destekli Korneal Ektazi Taraması | CER-AI",
-        "description": "LASIK ve PRK öncesi korneal ektazi ve gizli keratokonus değerlendirmesine yardımcı yapay zekâ destekli yazılım. Pentacam okuma ve hekime karar desteği.",
+        "title": "Korneal Ektazi Tarama Programı | LASIK ve PRK – CER-AI",
+        "description": "CER-AI korneal ektazi tarama programı: LASIK ve PRK öncesi Pentacam raporları, ayrı risk değerlendirmeleri ve kornea doku güvenliği hesaplarıyla hekime karar desteği.",
         "about": "Refraktif cerrahi öncesi korneal ektazi risk değerlendirmesi",
         "in_language": "tr",
         "keywords": [
-            "refraktif cerrahi tarama programı", "LASIK tarama programı",
+            "korneal ektazi tarama programı", "refraktif cerrahi tarama programı", "LASIK tarama programı",
             "lazik tarama programı", "PRK tarama programı",
             "göz çizdirme öncesi değerlendirme", "gizli keratokonus", "subklinik keratokonus", "keratokonus teşhisine yardımcı yazılım",
         ],
