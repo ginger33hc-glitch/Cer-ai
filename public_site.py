@@ -33,6 +33,7 @@ _AI_LANDING_TR = Path("static/tr-korneal-ektazi-risk-degerlendirmesi.html")
 _IOL_LANDING = Path("static/iol-calculation-software.html")
 _IOL_LANDING_TR = Path("static/tr-akilli-mercek-iol-hesaplama.html")
 _TORIC_LANDING = Path("static/toric-iol-calculator.html")
+_TORIC_LANDING_TR = Path("static/tr-torik-mercek-hesaplayici.html")
 _EVIDENCE_PAGE = Path("static/clinical-evidence.html")
 _REFERENCES_PAGE = Path("static/references.html")
 _CLINICAL_AUTHOR_PAGE = Path("static/huseyin-cengiz.html")
@@ -54,11 +55,12 @@ _INDEXNOW_KEY = "731d2001b05e7e15840a00e98f53447d"
 _PUBLIC_PAGE_LASTMOD = {
     "/about/huseyin-cengiz": "2026-10-11",
     "/tr/korneal-ektazi-risk-degerlendirmesi": "2026-10-12",
-    "/": "2026-10-11",
+    "/": "2026-10-12",
     "/corneal-ectasia-risk-assessment": "2026-10-11",
     "/iol-calculation-software": "2026-10-11",
-    "/tr/akilli-mercek-iol-hesaplama": "2026-10-11",
-    "/toric-iol-calculator": "2026-09-30",
+    "/tr/akilli-mercek-iol-hesaplama": "2026-10-12",
+    "/toric-iol-calculator": "2026-10-12",
+    "/tr/torik-mercek-hesaplayici": "2026-10-12",
     "/clinical-evidence": "2026-09-12",
     "/references": "2026-09-12",
     "/what-is-recommended-for-corneal-ectasia-screening": "2026-09-30",
@@ -121,8 +123,8 @@ _PUBLIC_PAGE_METADATA = {
     },
     "/tr/akilli-mercek-iol-hesaplama": {
         "schema_type": "MedicalWebPage",
-        "title": "Mersin Akıllı Mercek ve Akıllı Lens Planlaması | CER-AI",
-        "description": "Mersin Vizyon Göz Hastanesi’nde CER-AI ile akıllı mercek ve akıllı lens seçimine karar desteği, IOL gücü hesabı ve torik planlama. Nihai karar cerrahındır.",
+        "title": "Göz İçi Mercek Seçim Programı | Akıllı Mercek – CER-AI",
+        "description": "CER-AI göz içi mercek seçim programı: monofokal, EDOF ve multifokal akıllı mercek seçimi, IOL gücü ve torik planlama için göz hekimlerine karar desteği.",
         "about": "Katarakt cerrahisinde göz içi mercek seçimi ve IOL hesaplama desteği",
         "in_language": "tr",
         "alternate_path": "/iol-calculation-software",
@@ -164,6 +166,7 @@ _PUBLIC_PAGE_METADATA = {
         "main_entity": {"@id": "{base}/#iol-calculation-software"},
     },
     "/toric-iol-calculator": {
+        "alternate_path": "/tr/torik-mercek-hesaplayici",
         "schema_type": "MedicalWebPage",
         "title": "Toric IOL Calculator and Astigmatism Planning Software | CER-AI",
         "description": (
@@ -182,6 +185,16 @@ _PUBLIC_PAGE_METADATA = {
             "residual astigmatism calculator",
             "CER-AI Toric Calculator",
         ],
+        "main_entity": {"@id": "{base}/#toric-calculator"},
+    },
+    "/tr/torik-mercek-hesaplayici": {
+        "schema_type": "MedicalWebPage",
+        "title": "Torik Mercek Hesaplayıcı | Torik IOL Planlama – CER-AI",
+        "description": "CER-AI torik mercek hesaplayıcı: torik model, aks ve rezidüel astigmatizma için hekim test modülü. Klinik kullanım öncesi üretici hesaplayıcısıyla doğrulayın.",
+        "about": "Torik göz içi mercek hesaplama ve astigmatizma planlaması",
+        "in_language": "tr",
+        "alternate_path": "/toric-iol-calculator",
+        "keywords": ["torik mercek hesaplayıcı", "torik IOL hesaplama", "torik lens hesaplayıcı"],
         "main_entity": {"@id": "{base}/#toric-calculator"},
     },
     "/clinical-evidence": {
@@ -823,6 +836,7 @@ def _public_page_discovery_head(base: str, canonical_path: str) -> str:
         "/iol-calculation-software": _iol_software_schema,
         "/tr/akilli-mercek-iol-hesaplama": _iol_software_schema,
         "/toric-iol-calculator": _toric_software_schema,
+        "/tr/torik-mercek-hesaplayici": _toric_software_schema,
     }.get(canonical_path)
     if software_factory is not None:
         software_schema = {
@@ -1003,6 +1017,7 @@ def _sitemap_xml(base: str) -> str:
         (f"{base}/iol-calculation-software", "0.9"),
         (f"{base}/tr/akilli-mercek-iol-hesaplama", "0.9"),
         (f"{base}/toric-iol-calculator", "0.9"),
+        (f"{base}/tr/torik-mercek-hesaplayici", "0.9"),
         (f"{base}/clinical-evidence", "0.9"),
         (f"{base}/references", "0.9"),
         (f"{base}/what-is-recommended-for-corneal-ectasia-screening", "0.9"),
@@ -1172,6 +1187,12 @@ def install(core) -> None:
     def iol_calculation_software_tr(request: Request) -> HTMLResponse:
         return _render_public_page(
             _IOL_LANDING_TR, request, "/tr/akilli-mercek-iol-hesaplama"
+        )
+
+    @core.app.get("/tr/torik-mercek-hesaplayici", include_in_schema=False)
+    def toric_iol_calculator_tr(request: Request) -> HTMLResponse:
+        return _render_public_page(
+            _TORIC_LANDING_TR, request, "/tr/torik-mercek-hesaplayici"
         )
 
     @core.app.get("/toric-iol-calculator", include_in_schema=False)
