@@ -223,10 +223,9 @@
       const missing = [];
       if (numberOrNull("lensThickness") === null) missing.push(tr("Lens thickness (mm)"));
       if (numberOrNull("wtw") === null) missing.push(tr("HWTW (mm)"));
-      status.textContent = `${tr("Short eye (AL < 22.00 mm): Cooke K6 and the embedded toric calculation require")} ${missing.join(" + ")}. ${tr("Enter the missing measured value(s) before calculating.")}`;
+      status.textContent = `${tr("Short eye (AL < 22.00 mm): Cooke K6 and the embedded toric calculation require")} ${missing.join(" + ")}. ${tr("Enter the missing measured value(s), or select “I do not have this data — continue at ESCRS”.")}`;
       status.classList.add("error");
-      const firstMissing = numberOrNull("lensThickness") === null ? $("lensThickness") : $("wtw");
-      firstMissing.focus();
+      $("missingBiometryEscrs").focus();
       return false;
     }
     const corneaBack = corneaBackByEye[$("eye").value];
