@@ -322,8 +322,8 @@
       if(data.predictions?.length){html+=`<h3>${toricRoute?"Stage 1 — Cooke K6 spherical power":"Cooke K6 power"}</h3><table class="table"><thead><tr><th>IOL power</th><th>Predicted refraction</th><th>Selection</th></tr></thead><tbody>${data.predictions.map(p=>`<tr><td>${Number(p.IOL ?? p.iol_power).toFixed(2)}</td><td>${Number(p.Rx ?? p.predicted_refraction).toFixed(2)}</td><td>${p.IsBestOption ? "K6 best option" : ""}</td></tr>`).join("")}</tbody></table>`;}
       if(data.calculator_url) html+=`<a class="external" target="_blank" rel="noopener noreferrer" href="${data.calculator_url}">Optional manufacturer toric calculator comparison</a>`;
       $("powerResult").innerHTML=html; status.textContent=tr(data.calculation_status.replaceAll("_"," "));
-      if(data.escrs_url) root.querySelector(`#${eye}-escrsTransfer`).addEventListener("click", async () => {
-        const button = root.querySelector(`#${eye}-escrsTransfer`);
+      if(data.escrs_url) $("powerResult").querySelector(`#${eye}-escrsTransfer`).addEventListener("click", async () => {
+        const button = $("powerResult").querySelector(`#${eye}-escrsTransfer`);
         const escrsWindow = window.open("about:blank", "_blank");
         if (escrsWindow) escrsWindow.opener = null;
         button.disabled = true; status.className = "status";
