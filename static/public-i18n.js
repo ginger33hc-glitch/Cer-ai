@@ -6,6 +6,8 @@
   let locale = SUPPORTED.has(requested) ? requested : "en";
 
   const TR = {
+    "Acknowledgements":"Teşekkür",
+    "We thank our esteemed colleagues at Vizyon Eye Hospital, Dr. Efsane Cengiz, Dr. Ümit Atik, Dr. Ali Özer, Dr. Fatih Baltu, Dr. İdil Göksel and Dr. Ümit Yapıcı, for their contributions to the development and improvement of CER-AI.":"CER-AI programının geliştirilmesi ve iyileştirilmesine katkılarından dolayı Vizyon Göz Hastanesi hekimleri Sayın Dr. Efsane Cengiz, Dr. Ümit Atik, Dr. Ali Özer, Dr. Fatih Baltu, Dr. İdil Göksel ve Dr. Ümit Yapıcı’ya teşekkür ederiz.",
     "+90 532 436 95 32":"+90 532 436 95 32",
     "WhatsApp: +90 532 436 95 32":"WhatsApp: +90 532 436 95 32",
     "drhuseyincengiz@hotmail.com":"drhuseyincengiz@hotmail.com",
