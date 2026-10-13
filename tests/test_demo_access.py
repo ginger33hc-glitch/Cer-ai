@@ -140,7 +140,23 @@ def test_doctor_contacts_survive_reload_and_match_request_id(ledger):
     assert doctors["first.doctor"]["email"] == "doctor@example.org"
     assert doctors["first.doctor"]["phone"] == "+90 555 000 00 00"
     assert doctors["second.doctor"]["email"] == "other@example.org"
-    assert "password" not in json.dumps(doctors)
+    # Notification prose may mention "password"; credentials must stay private.
+    assert "strong-demo-password" not in json.dumps(doctors)
+    def assert_no_credentials(value):
+        if isinstance(value, dict):
+            for key, child in value.items():
+                assert "password" not in key.lower()
+                assert_no_credentials(child)
+        elif isinstance(value, list):
+            for child in value:
+                assert_no_credentials(child)
+        elif isinstance(value, str):
+            assert "pbkdf2_sha256$" not in value
+    assert_no_credentials(doctors)
+    for doctor in doctors.values():
+        message = doctor["approval_message"]
+        assert message.index("Thank you for your interest") < message.index("CER-AI'ye")
+        assert message.count("+905324369532") == 2
 
 
 @pytest.mark.parametrize("phone", ["", "555", "javascript:alert(1)", "905321234567"])
