@@ -1,0 +1,9 @@
+# Decision-critical runtime and production controls require explicit review.
+canonical_engine.py @ginger33hc-glitch
+clinical_core/ @ginger33hc-glitch
+iol_module/ @ginger33hc-glitch
+assessment_workflow.py @ginger33hc-glitch
+case_archive.py @ginger33hc-glitch
+archive_privacy.py @ginger33hc-glitch
+.github/workflows/ @ginger33hc-glitch
+railway.toml @ginger33hc-glitch
