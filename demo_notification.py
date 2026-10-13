@@ -181,6 +181,15 @@ def configured_demo_notifier() -> DemoPushNotifier | DemoEmailNotifier:
 def approval_message(item: dict[str, Any]) -> str:
     """One authoritative text for automatic delivery and owner compose links."""
     return (
+        "Thank you for your interest in CER-AI. "
+        "Your request has been approved and your user account has been created. "
+        "You can now start using CER-AI.\n\n"
+        f"Username: {item.get('username') or 'Please contact your administrator.'}\n"
+        "Sign in: https://cer-ai.com/clinical-modules\n"
+        "Your password will be provided separately.\n\n"
+        "If you have any questions, please contact us at +905324369532 or "
+        "drhuseyincengiz@hotmail.com.\n\n"
+        "────────────────────\n\n"
         "CER-AI'ye gösterdiğiniz ilgi için teşekkür ederiz. "
         "Talebiniz onaylandı, kullanıcı kaydınız açılmıştır. Kullanmaya başlayabilirsiniz.\n\n"
         f"Kullanıcı adınız: {item.get('username') or 'Yöneticinizden öğrenebilirsiniz.'}\n"
@@ -216,7 +225,7 @@ class DemoApprovalNotifier:
             return NotificationResult("FAILED", "SMTP", error_code="MISSING_EMAIL")
         try:
             message = EmailMessage()
-            message["Subject"] = "CER-AI kullanıcı kaydınız onaylandı"
+            message["Subject"] = "CER-AI account approved / Kullanıcı kaydınız onaylandı"
             message["From"] = sender
             message["To"] = recipient
             message["Reply-To"] = "drhuseyincengiz@hotmail.com"
