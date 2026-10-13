@@ -59,6 +59,7 @@ PROTECTED_PATHS = frozenset({
     "/iol/lenses",
     "/iol/power/plan",
     "/iol/escrs-transfer",
+    "/iol/report/pdf",
     "/demo-admin",
     "/demo-access/status",
 })

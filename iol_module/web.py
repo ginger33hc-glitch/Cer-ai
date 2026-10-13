@@ -7,7 +7,7 @@ import json
 from typing import Any
 
 from fastapi import Body, File, Form, HTTPException, UploadFile
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, Response
 from pydantic import ValidationError
 
 import operational_security
@@ -18,6 +18,7 @@ from .lens_catalog import public_catalog
 from .escrs_transfer import create_escrs_transfer
 from .models import EscrsTransferInput, IOLCaseInput, IOLPowerPlanInput
 from .power import plan_iol_power
+from .report import IOLReportInput, build_iol_report
 from .ui import render_iol_html
 
 
@@ -92,6 +93,22 @@ def install(core: Any) -> None:
             raise HTTPException(422, detail=json.loads(exc.json(include_url=False))) from exc
         except ValueError as exc:
             raise HTTPException(422, str(exc)) from exc
+
+    @core.app.post("/iol/report/pdf")
+    def iol_report_pdf(payload: dict[str, Any] = Body(...)):
+        try:
+            report = IOLReportInput.model_validate(payload)
+            current_principal = getattr(core, "_cerai_current_principal", None)
+            principal = current_principal() if callable(current_principal) else None
+            pdf = build_iol_report(report, getattr(principal, "display_name", ""))
+        except ValidationError as exc:
+            raise HTTPException(422, detail=json.loads(exc.json(include_url=False))) from exc
+        except ValueError as exc:
+            raise HTTPException(422, str(exc)) from exc
+        return Response(pdf, media_type="application/pdf", headers={
+            "Cache-Control": "no-store", "Content-Disposition": 'inline; filename="cerai-iol-report.pdf"',
+            "X-Content-Type-Options": "nosniff",
+        })
 
     @core.app.post("/iol/escrs-transfer")
     def iol_escrs_transfer(payload: dict[str, Any] = Body(...)):

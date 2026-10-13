@@ -3,6 +3,21 @@
   const stored = (localStorage.getItem("cerai-language") || "en").toLowerCase();
   const locale = stored === "tr" ? "tr" : "en";
   const TR = {
+    "One-page surgical report":"Tek sayfalık cerrahi rapor",
+    "A4 PDF with both loaded eyes, nasal/temporal orientation and calculated toric axes. Existing clinical warnings are retained.":"Yüklenen gözleri, nazal/temporal yönleri ve hesaplanmış torik aksları içeren A4 PDF. Mevcut klinik uyarılar korunur.",
+    "Open PDF":"PDF’yi aç",
+    "Print":"Yazdır",
+    "Share PDF":"PDF’yi paylaş",
+    "Download PDF":"PDF’yi indir",
+    "Retry report":"Raporu yeniden hazırla",
+    "Preparing the one-page PDF…":"Tek sayfalık PDF hazırlanıyor…",
+    "One-page PDF ready. Contains patient information.":"Tek sayfalık PDF hazır. Hasta bilgileri içerir.",
+    "Report could not be prepared. Review the results and retry.":"Rapor hazırlanamadı. Sonuçları kontrol edip yeniden deneyin.",
+    "Allow pop-ups to open the PDF, or download it.":"PDF’yi açmak için açılır pencerelere izin verin veya dosyayı indirin.",
+    "PDF opened for printing. If needed, use the PDF viewer's Print command.":"PDF yazdırmak için açıldı. Gerekirse PDF görüntüleyicisinin Yazdır komutunu kullanın.",
+    "File sharing is unavailable in this browser. PDF downloaded for sharing.":"Bu tarayıcı dosya paylaşımını desteklemiyor. PDF paylaşmanız için indirildi.",
+    "Sharing could not be completed. You can download the PDF.":"Paylaşım tamamlanamadı. PDF’yi indirebilirsiniz.",
+
     "PAD2 1.00 D is marked available soon in the August 2025 brochure and is excluded. The clinic label TPADC 375 is not a verified manufacturer model alias; results use PAD identifiers.":"Üreticinin Ağustos 2025 broşüründe PAD2 (1,00 D) henüz satışa sunulacak olarak işaretlidir; hesaplamaya dahil edilmedi. Klinik listesindeki TPADC 375 kodunun eşdeğerliği doğrulanamadı; sonuçlar üreticinin PAD kodlarıyla gösterilir.",
     "CNW0T2 1.00 D is documented in the Japanese PMDA labeling; local availability must be confirmed.":"CNW0T2 (1,00 D) Japonya PMDA belgesinde doğrulanmıştır; yerel temin durumu kontrol edilmelidir.",
     "CNWET2 is not in the reviewed model/power table and is excluded. CNWET7-9 are supported by the 2026 FDA extension; local availability is unverified.":"CNWET2 için incelenen üretici tablosunda güç eşleştirmesi bulunamadığından hesaplamaya dahil edilmedi. CNWET7–9, 2026 FDA belgesinde doğrulandı; yerel temin durumu kontrol edilmelidir.",

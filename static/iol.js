@@ -27,6 +27,10 @@
     $("calculateAll").disabled = workflowBusy || !recommended || !eyes.every(controller => controller.readyToCalculate());
     $("extractButton").disabled = workflowBusy;
     $("sourceImages").disabled = workflowBusy;
+    window.CERAI_IOL_REPORT?.setCase(!workflowBusy && loadedEyes.length && loadedEyes.every(eye => powerPlans[eye]) ? {
+      patient_name: $("patientName").value.trim(), patient_age_years: Number($("patientAge").value),
+      eyes: loadedEyes.map(eye => controllers.get(eye).reportSnapshot())
+    } : null);
   }
   let lensCatalog = [];
   let iolAssessmentRequestId = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
@@ -273,6 +277,8 @@
   }
   async function calculate() {
     const requestVersion = version;
+    powerPlans[eye] = null;
+    syncWorkflow();
     calculationRoot.hidden = false;
     if (!recommendation || !recommendationShown) { $("powerStatus").textContent = tr("Evaluate this eye before calculating its lens power."); return false; }
     if (!document.getElementById("patientForm").reportValidity() || !$("iolForm").reportValidity()) return false;
@@ -348,7 +354,7 @@
       });
       return true;
     } catch(error){if(requestVersion !== version) return false; status.textContent=error.message||"Power route could not be completed.";status.classList.add("error");return false;}
-    finally{$("powerButton").disabled=false;}
+    finally{$("powerButton").disabled=false; syncWorkflow();}
   }
 
     function invalidate(category = true) {
@@ -381,6 +387,7 @@
       recommendationShown: () => recommendationShown,
       readyToRecommend: () => $("iolForm").checkValidity(),
       readyToCalculate: () => recommendationShown && Boolean($("selectedLens").value),
+      reportSnapshot: () => ({eye, plan: powerPlans[eye], recommendation}),
       reset() {
         invalidate();
         root.hidden = true; recommendationRoot.hidden = true; calculationRoot.hidden = true;
