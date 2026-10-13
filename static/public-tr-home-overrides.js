@@ -74,7 +74,8 @@
       ["CER-AI Nasıl Çalışır", "#science"],
       ["Kullanım Kılavuzu", "#guide"],
       ["Hakkında", "#about"],
-      ["Geliştirici", "#developer"]
+      ["Geliştirici", "#developer"],
+      ["İletişim", "#contact"]
     ] : [
       ["Sample report", "#sample-report"],
       ["Learning Center", "/learning-center"],
@@ -84,7 +85,8 @@
       ["How CER-AI Works", "#science"],
       ["User Guide", "#guide"],
       ["About", "#about"],
-      ["Developer", "#developer"]
+      ["Developer", "#developer"],
+      ["Contact", "#contact"]
     ];
     links.forEach(([label, href]) => {
       if (href.startsWith("#") && !document.querySelector(href)) return;

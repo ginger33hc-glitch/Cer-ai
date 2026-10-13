@@ -6,6 +6,7 @@
   let locale = SUPPORTED.has(requested) ? requested : "en";
 
   const TR = {
+    "+90 532 436 95 32":"+90 532 436 95 32",
     "WhatsApp: +90 532 436 95 32":"WhatsApp: +90 532 436 95 32",
     "drhuseyincengiz@hotmail.com":"drhuseyincengiz@hotmail.com",
     "Turkish single-page CER-AI report":"Türkçe tek sayfalık CER-AI raporu",
