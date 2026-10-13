@@ -3,6 +3,9 @@
   const stored = (localStorage.getItem("cerai-language") || "en").toLowerCase();
   const locale = stored === "tr" ? "tr" : "en";
   const TR = {
+    "Remove image":"Sil",
+    "Replace image":"Değiştir",
+    "Could not update images. Please try again.":"Görüntüler güncellenemedi. Lütfen tekrar deneyin.",
     "One-page surgical report":"Tek sayfalık cerrahi rapor",
     "A4 PDF with both loaded eyes, nasal/temporal orientation and calculated toric axes. Existing clinical warnings are retained.":"Yüklenen gözleri, nazal/temporal yönleri ve hesaplanmış torik aksları içeren A4 PDF. Mevcut klinik uyarılar korunur.",
     "Open PDF":"PDF’yi aç",

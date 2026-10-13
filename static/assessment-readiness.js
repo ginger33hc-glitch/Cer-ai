@@ -109,7 +109,13 @@
   window.CER_AI_SourceImageRetention={
     openPicker:()=>imageInput.click(),
     files:()=>[...retained],
-    adopt:files=>setFiles([...files])
+    adopt:files=>setFiles([...files]),
+    replaceAll:files=>{
+      setFiles([...files]);
+      replaying=true;
+      try{imageInput.dispatchEvent(new Event('change',{bubbles:true}));}
+      finally{replaying=false;}
+    }
   };
 })();
 
