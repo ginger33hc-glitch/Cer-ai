@@ -29,6 +29,28 @@ def test_double_angle_vector_cancellation():
     assert abs((first + opposite).cylinder_d) < 1e-12
 
 
+def test_manufacturer_specific_steps_are_not_shared_by_suffix():
+    from iol_module.toric_catalog import VERIFIED_LENS_STEPS as series
+    # Biotech HFY-20 is 2.25 D, not 2.00 D. Liberty uses 0.50 D steps
+    # through 4.50 D; Rayner begins at 0.75 D and uses one model code.
+    assert series["eyecryl-toric-hfy20"]["HFY-20"] == 2.25
+    assert series["eyecryl-actv-toric-hfyd20"]["HFYD-20"] == 2.25
+    assert 2.00 in series["liberty-trifocal-toric"].values()
+    assert 2.25 not in series["liberty-trifocal-toric"].values()
+    assert series["rayone-emv-toric"]["RAO210T / CYL 0.75 D"] == 0.75
+    assert series["tecnis-puresee-toric-det150"]["DET600"] == 6.00
+    assert series["tecnis-odyssey-toric-drt150"]["DRT375"] == 3.75
+    assert "PAD2" not in series["enova-advance-toric"]  # Brochure: available soon.
+
+
+def test_rayone_emv_does_not_offer_27d_outside_documented_sphere_range():
+    eye = ToricBiometry(21.44, 42, 43.5, 90, -5.8, -6.1, 0, 550, 118.0)
+    with pytest.raises(ValueError, match="outside the documented toric lens range"):
+        research_toric_candidates(eye, "rayone-emv-toric",
+                                  spherical_equivalent_iol_d=27,
+                                  spherical_predicted_refraction_d=-0.25)
+
+
 def test_holladay1_position_needs_no_crystalline_lens_thickness():
     # Eq. 44.10, with Alcon's published A to surgeon-factor conversion.
     elp = holladay1_elp_mm(23.45, 43.0, 119.1)
@@ -46,7 +68,7 @@ def test_optical_step_does_not_claim_spectacle_residual():
     assert choice.marker_axis_deg == 83
     assert abs(choice.residual_iol_plane_d - 0.05) < 1e-9
     with pytest.raises(ValueError):
-        nearest_optical_step(optical, "enova-advance-toric")
+        nearest_optical_step(optical, "unknown-toric-family")
 
 
 def test_research_planner_ranks_discrete_panoptix_steps_and_respects_axes():
@@ -75,13 +97,13 @@ def test_average_eye_corneal_conversion_is_close_to_fda_reference_not_fixed_rati
     # FDA P190018B lists 0.98 D in its average pseudophakic model eye.
     # This synthetic eye is not that FDA eye and agreement is not clinical validation.
     assert abs(t3.residual_spectacle_cylinder_d - 0.98) < 0.05
-    assert len(values) == 7
+    assert len(values) == 8
 
 
 def test_research_planner_rejects_missing_catalog_or_nonfinite_sources():
     eye = ToricBiometry(24, 42, 43.5, 90, -5.8, -6.1, 0, 550, 119.1)
     with pytest.raises(ValueError):
-        research_toric_candidates(eye, "enova-advance-toric",
+        research_toric_candidates(eye, "unknown-toric-family",
                                   spherical_equivalent_iol_d=20,
                                   spherical_predicted_refraction_d=-0.25)
     with pytest.raises(ValueError):

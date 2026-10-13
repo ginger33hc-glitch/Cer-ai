@@ -3,6 +3,14 @@
   const stored = (localStorage.getItem("cerai-language") || "en").toLowerCase();
   const locale = stored === "tr" ? "tr" : "en";
   const TR = {
+    "PAD2 1.00 D is marked available soon in the August 2025 brochure and is excluded. The clinic label TPADC 375 is not a verified manufacturer model alias; results use PAD identifiers.":"Üreticinin Ağustos 2025 broşüründe PAD2 (1,00 D) henüz satışa sunulacak olarak işaretlidir; hesaplamaya dahil edilmedi. Klinik listesindeki TPADC 375 kodunun eşdeğerliği doğrulanamadı; sonuçlar üreticinin PAD kodlarıyla gösterilir.",
+    "CNW0T2 1.00 D is documented in the Japanese PMDA labeling; local availability must be confirmed.":"CNW0T2 (1,00 D) Japonya PMDA belgesinde doğrulanmıştır; yerel temin durumu kontrol edilmelidir.",
+    "CNWET2 is not in the reviewed model/power table and is excluded. CNWET7-9 are supported by the 2026 FDA extension; local availability is unverified.":"CNWET2 için incelenen üretici tablosunda güç eşleştirmesi bulunamadığından hesaplamaya dahil edilmedi. CNWET7–9, 2026 FDA belgesinde doğrulandı; yerel temin durumu kontrol edilmelidir.",
+    "One model with multiple cylinder powers; CYL labels are display descriptors, not separate manufacturer model codes.":"Aynı model farklı silindir güçlerinde üretilir. CYL ifadesi silindir gücünü gösterir; ayrı bir üretici model kodu değildir.",
+    "677MT and 677MTY share the listed powers. Confirm the clear/yellow variant and cylinder when ordering.":"677MT ve 677MTY aynı silindir basamaklarını kullanır. Siparişte şeffaf/sarı varyantı ve silindir gücünü doğrulayın.",
+    "Confirm regional availability and the product IFU.":"Yerel temin durumunu ve ürünün kullanım talimatını kontrol edin.",
+    "Spherical power is outside the documented toric lens range.":"Sferik güç, bu torik lensin belgelenmiş güç aralığının dışında.",
+
     "Page configuration could not be loaded. Please reload the page.":"Sayfa yapılandırması yüklenemedi. Lütfen sayfayı yenileyin.",
     "Surgeon-classified regularity is required when the active IOLMaster K difference is greater than 1.00 D.":"Aktif IOLMaster K farkı 1,00 D üzerinde olduğunda cerrah astigmatizmayı düzenli veya düzensiz olarak belirtmelidir.",
     "CER-AI sign-in required.":"CER-AI oturumu sona erdi. Lütfen yeniden giriş yapın.",
@@ -318,6 +326,7 @@
     "Cooke K6 calculation completed.":"Cooke K6 hesaplaması tamamlandı.",
     "Cooke K6 requires measured lens thickness for this calculation. Enter LT or continue at ESCRS if unavailable.":"Cooke K6 bu hesaplama için ölçülmüş lens kalınlığı istiyor. LT değerini girin; ölçüm yoksa ESCRS ile devam edin.",
     "Cooke K6 request limit reached (HTTP 429). Wait before retrying or continue at ESCRS. This is not a missing LT error.":"Cooke K6 istek sınırına ulaşıldı (HTTP 429). Tekrar denemeden önce bekleyin veya ESCRS ile devam edin. Bu hata LT eksikliği değildir.",
+    "No validated embedded model series for this lens. Use the manufacturer calculator and ESCRS for independent verification.":"Bu lens için uygulama içinde doğrulanmış model serisi bulunmuyor. Bağımsız kontrol için üretici hesaplayıcısını ve ESCRS’yi kullanın.",
     "No verified cylinder model series exists for this lens family in CER-AI. Use the manufacturer calculator and ESCRS.":"Bu lens ailesi için CER-AI içinde doğrulanmış torik silindir model serisi bulunmuyor. Üretici hesaplayıcısını ve ESCRS’yi kullanın.",
     "Calculate loaded eyes":"Yüklenen gözleri hesapla",
     "Lens thickness, mm":"Lens kalınlığı, mm",

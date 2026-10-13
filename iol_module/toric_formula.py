@@ -13,27 +13,9 @@ from math import atan2, cos, degrees, hypot, isfinite, radians, sin, sqrt
 
 SURGEON_SIA_D = 0.25
 
-# Nominal cylinder at the IOL plane. These are optical steps, not inventory
-# assertions. PanOptix regional availability must be verified before release.
-# Clareon Toric: FDA PMA P190018, SSED Table 3 (P190018B).
-# PanOptix: Japanese ophthalmic device registry's CNWTT2–6 listing.
-# TECNIS Eyhance: Johnson & Johnson EMEA product catalogue, model/power table.
-VERIFIED_LENS_STEPS: dict[str, dict[str, float]] = {
-    "clareon-toric-cnw0t8": {
-        "CNW0T3": 1.50, "CNW0T4": 2.25, "CNW0T5": 3.00,
-        "CNW0T6": 3.75, "CNW0T7": 4.50, "CNW0T8": 5.25,
-        "CNW0T9": 6.00,
-    },
-    "clareon-panoptix-toric-cnwtt3": {
-        "CNWTT2": 1.00, "CNWTT3": 1.50, "CNWTT4": 2.25,
-        "CNWTT5": 3.00, "CNWTT6": 3.75,
-    },
-    "tecnis-eyhance-toric-diu525": {
-        "DIU100": 1.00, "DIU150": 1.50, "DIU225": 2.25,
-        "DIU300": 3.00, "DIU375": 3.75, "DIU450": 4.50,
-        "DIU525": 5.25,
-    },
-}
+# One canonical, source-backed model/cylinder catalog. Verification refers to
+# product specifications, not clinical validation of this optical prototype.
+from .toric_catalog import VERIFIED_LENS_STEPS, TORIC_SPHERE_BOUNDS
 
 
 def holladay1_elp_mm(axial_length_mm: float, mean_k_d: float, optical_a_constant: float) -> float:
@@ -172,7 +154,7 @@ class ToricOpticalCandidate:
 
 
 def nearest_optical_step(required: Vergence, selected_lens_id: str) -> ToricOpticalCandidate:
-    """Rank listed Alcon steps in the IOL plane; research only.
+    """Rank documented model/cylinder options in the IOL plane; research only.
 
     Marker axis corresponds to plus-cylinder flat meridian (FDA P190018B).
     This IOL-plane residual is NOT a predicted postoperative spectacle Rx.
@@ -234,6 +216,9 @@ def research_toric_candidates(
     steps = VERIFIED_LENS_STEPS.get(selected_lens_id)
     if not steps:
         raise ValueError("No verified model series for this lens family.")
+    bounds = TORIC_SPHERE_BOUNDS.get(selected_lens_id)
+    if bounds and not bounds[0] <= spherical_equivalent_iol_d <= bounds[1]:
+        raise ValueError("Spherical power is outside the documented toric lens range.")
     incision_axis = eye.incision_axis_deg if eye.incision_axis_deg is not None else (eye.anterior_k1_axis_deg + 90) % 180
     numbers = (incision_axis, eye.axial_length_mm, eye.anterior_k1_d, eye.anterior_k2_d,
                eye.anterior_k1_axis_deg, eye.posterior_k1_d, eye.posterior_k2_d,

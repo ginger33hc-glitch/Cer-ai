@@ -314,7 +314,12 @@
       if(toricRoute && data.predictions?.length) html += `<div class="warning">${tr(data.message)}</div>`;
       if(toricRoute && data.toric_candidates?.length) {
         const fmt = (value, digits = 2) => Number.isFinite(Number(value)) ? Number(value).toFixed(digits) : "—";
-        const candidates = data.toric_candidates.filter(c => /^[A-Z0-9]+$/.test(c.model));
+        const candidates = data.toric_candidates.filter(c => /^[A-Z0-9 .\/-]+$/.test(c.model));
+        const reference = lensCatalog.find(lens => lens.id === data.selected_lens_id)?.manufacturer_reference;
+        if (reference?.note) {
+          const note = tr(reference.note).replace(/[&<>"']/g, char => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
+          html += `<p>${note}</p>`;
+        }
         html += `<div class="warning"><strong>TEST ONLY — unvalidated toric optical prototype.</strong> Independently check the source readings, model availability, implantation axis, and residual with the manufacturer's calculator before any clinical use.</div>`;
         html += `<h3>Embedded toric calculation — ${fmt(candidates[0]?.spherical_equivalent_iol_d)} D ${formula} <span>spherical equivalent</span></h3>`;
         html += `<div class="recommendation">${candidates[0]?.model ?? "—"} · ${fmt(candidates[0]?.marker_axis_deg, 1)}° marker axis</div>`;

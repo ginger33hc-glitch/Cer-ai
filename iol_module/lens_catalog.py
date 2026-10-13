@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 
+from .toric_catalog import MANUFACTURER_TORIC_REFERENCES, VERIFIED_LENS_STEPS
+
 ALCON_TORIC_URL = "https://www.myalcon-toriccalc.com/"
 TECNIS_TORIC_URL = "https://www.tecnistoriccalc.com/"
 
@@ -27,20 +29,20 @@ LENSES = (
     # Hospital-supplied optical A-constant list, 2026-10-01.
     # Printed codes identify the dropdown entries; they do not establish cylinder
     # powers or authorize additions to VERIFIED_LENS_STEPS. Existing IDs remain stable.
-    Lens("clareon-toric-cnw0t8", "CLAREON Mono Toric (CNW0T2)", "MONOFOCAL", "Toric", 119.1, "Alcon", ALCON_TORIC_URL),
+    Lens("clareon-toric-cnw0t8", "CLAREON Mono Toric (CNW0T series)", "MONOFOCAL", "Toric", 119.1, "Alcon", ALCON_TORIC_URL),
     Lens("clareon-panoptix-toric-cnwtt3", "CLAREON PanOptix Toric (CNWTT2)", "MULTIFOCAL", "Toric", 119.1, "Alcon", ALCON_TORIC_URL),
-    Lens("clareon-vivity-toric-cnwet2", "CLAREON Vivity Toric (CNWET2)", "EDOF", "Toric", 119.2, "Alcon", ALCON_TORIC_URL),
+    Lens("clareon-vivity-toric-cnwet2", "CLAREON Vivity Toric (CNWET series)", "EDOF", "Toric", 119.2, "Alcon", ALCON_TORIC_URL),
     Lens("tecnis-mono-toric-zct375", "TECNIS Mono Toric (ZCT375)", "MONOFOCAL", "Toric", 119.3, "Johnson & Johnson", TECNIS_TORIC_URL),
     Lens("tecnis-eyhance-toric-diu525", "TECNIS Eyhance Toric (DIU525)", "MONOFOCAL", "Enhanced monofocal toric", 119.3, "Johnson & Johnson", TECNIS_TORIC_URL),
     Lens("tecnis-odyssey-toric-drt150", "TECNIS Odyssey Toric (DRT150)", "MULTIFOCAL", "Toric", 119.3, "Johnson & Johnson", TECNIS_TORIC_URL),
     Lens("tecnis-puresee-toric-det150", "TECNIS PureSee Toric (DET150)", "EDOF", "Toric", 119.3, "Johnson & Johnson", TECNIS_TORIC_URL),
-    Lens("eyecryl-toric-hfy20", "EYECRYL Toric (HFY20)", "MONOFOCAL", "Toric", 118.9, "Biotech Healthcare", None),
-    Lens("eyecryl-actv-toric-hfyd20", "EYECRYL ACTV Toric (HFYD20)", "MULTIFOCAL", "Toric", 118.6, "Biotech Healthcare", None),
-    Lens("enova-advance-toric", "ENOVA Advance Toric (TPADC 375)", "EDOF", "Toric", 118.0, "ENOVA", None),
-    Lens("liberty-trifocal-toric", "LIBERTY Trifocal Toric", "MULTIFOCAL", "Toric", 118.9, "Medicontur", None),
-    Lens("elon-toric-bi-flex", "ELON Toric (Bi-Flex)", "EDOF", "Toric", 118.9, "Medicontur", None),
-    Lens("rayone-emv-toric", "RayOne EMV Toric", "MONOFOCAL", "Enhanced monofocal toric", 118.0, "Rayner", None),
-    Lens("rayone-trifocal-toric", "RayOne Trifocal Toric", "MULTIFOCAL", "Toric", 118.6, "Rayner", None),
+    Lens("eyecryl-toric-hfy20", "EYECRYL Toric (HFY20)", "MONOFOCAL", "Toric", 118.9, "Biotech Healthcare", "https://www.biotechcalculators.com/"),
+    Lens("eyecryl-actv-toric-hfyd20", "EYECRYL ACTV Toric (HFYD20)", "MULTIFOCAL", "Toric", 118.6, "Biotech Healthcare", "https://www.biotechcalculators.com/"),
+    Lens("enova-advance-toric", "ENOVA Advanced Toric (PAD series)", "EDOF", "Toric", 118.0, "ENOVA", "https://www.vsybiotechnology.com/surgeon-centre.html"),
+    Lens("liberty-trifocal-toric", "LIBERTY Trifocal Toric", "MULTIFOCAL", "Toric", 118.9, "Medicontur", "https://toriccalculator.net/"),
+    Lens("elon-toric-bi-flex", "ELON Toric (Bi-Flex)", "EDOF", "Toric", 118.9, "Medicontur", "https://toriccalculator.net/"),
+    Lens("rayone-emv-toric", "RayOne EMV Toric", "MONOFOCAL", "Enhanced monofocal toric", 118.0, "Rayner", "https://www.raytrace.rayner.com/"),
+    Lens("rayone-trifocal-toric", "RayOne Trifocal Toric", "MULTIFOCAL", "Toric", 118.6, "Rayner", "https://www.raytrace.rayner.com/"),
     Lens("tecnis-eyhance-gib00", "TECNIS Eyhance GIB00", "MONOFOCAL", "Enhanced monofocal", 119.3, "Johnson & Johnson", TECNIS_TORIC_URL),
     Lens("acrysof-single-sa60at", "AcrySof Single SA60AT", "MONOFOCAL", None, 118.7, "Alcon", ALCON_TORIC_URL),
     Lens("acrysof-ultrasert-au00t0", "AcrySof UltraSert AU00T0", "MONOFOCAL", None, 119.0, "Alcon", ALCON_TORIC_URL),
@@ -58,28 +60,6 @@ LENSES = (
     Lens("acrysof-iq-sn60wf", "AcrySof IQ SN60WF", "MONOFOCAL", None, 119.0, "Alcon", ALCON_TORIC_URL),
 )
 
-# Manufacturer-documented cylinder ranges are reference data only. They do NOT
-# authorize use by the unvalidated embedded toric optical prototype.
-# Canonical toric routing policy:
-# - VERIFIED_LENS_STEPS is the only source that may drive the embedded TEST-ONLY
-#   model/axis prototype.
-# - MANUFACTURER_TORIC_REFERENCES is display/audit evidence only and must never
-#   silently become an embedded calculation table.
-MANUFACTURER_TORIC_REFERENCES = {
-    "rayone-emv-toric": {
-        "model": "RAO210T", "cylinder_iol_plane_d": [0.75, 1.50, 2.25, 3.00, 3.75, 4.50],
-        "source": "https://rayner.com/global/en/iol/monofocal/rayone-emv-toric/",
-        "clinical_calculation_authorized": False,
-    },
-    "clareon-vivity-toric-cnwet2": {
-        "models": ["CNWET7", "CNWET8", "CNWET9"],
-        "cylinder_iol_plane_d": [4.50, 5.25, 6.00],
-        "source": "https://www.accessdata.fda.gov/scripts/cdrh/cfdocs/cfpma/pma.cfm?ID=P190018S046",
-        "note": "FDA 2026 range extension only; not the complete model series.",
-        "clinical_calculation_authorized": False,
-    },
-}
-
 LENSES_BY_ID = {lens.id: lens for lens in LENSES}
 
 
@@ -90,10 +70,5 @@ def get_lens(lens_id: str) -> Lens | None:
 def public_catalog() -> list[dict[str, object]]:
     return [{**lens.public_dict(),
              "manufacturer_reference": MANUFACTURER_TORIC_REFERENCES.get(lens.id),
-             "embedded_toric_supported": lens.id in _embedded_toric_lens_ids()}
+             "embedded_toric_supported": lens.id in VERIFIED_LENS_STEPS}
             for lens in LENSES]
-
-
-def _embedded_toric_lens_ids() -> set[str]:
-    from .toric_formula import VERIFIED_LENS_STEPS
-    return set(VERIFIED_LENS_STEPS)

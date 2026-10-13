@@ -552,15 +552,35 @@ def test_bilateral_upload_uses_one_shared_iolmaster(monkeypatch):
     assert response.json()["sources"][2]["extraction"]["iolmaster500"]["OS"]["axial_length_mm"] == 25.2
 
 
-def test_unsupported_toric_lens_still_offers_escrs():
+def test_supported_toric_lens_missing_posterior_still_offers_escrs():
     case = power_payload(selected_lens_id="tecnis-puresee-toric-det150", k2_d=43.25,
                          astigmatism_type="REGULAR", incision_axis_deg=110, sia_d=0.25)
     predictions = [{"IOL": 21.0, "Rx": 0.01, "IsBestOption": True}]
     with patch("iol_module.power._call_k6", return_value=predictions):
         plan = plan_iol_power(case)
-    assert plan.toric_status == "UNSUPPORTED"
+    assert plan.toric_status == "INPUTS_INCOMPLETE"
     assert plan.escrs_url == "https://iolcalculator.escrs.org/"
     assert plan.predictions == predictions
+
+
+@pytest.mark.parametrize("lens_id", [lens.id for lens in LENSES if lens.subtype and "toric" in lens.subtype.lower()])
+def test_every_catalogued_toric_family_produces_test_candidates(lens_id):
+    from iol_module.toric_catalog import VERIFIED_LENS_STEPS, TORIC_SOURCES
+    case = power_payload(
+        selected_lens_id=lens_id, k2_d=43.25, astigmatism_type="REGULAR",
+        incision_axis_deg=110, sia_d=0.25,
+        posterior_cornea={"eye": "OD", "source": "PENTACAM_4_MAPS_REFRACTIVE_CORNEA_BACK",
+                          "k1_d": -5.8, "k2_d": -6.1, "k1_axis_deg": 20, "k2_axis_deg": 110})
+    predictions = [{"IOL": 21.0, "Rx": 0.01, "IsBestOption": True}]
+    with patch("iol_module.power._call_k6", return_value=predictions):
+        plan = plan_iol_power(case)
+    assert plan.toric_status == "TEST_ONLY"
+    assert plan.calculation_status == "TEST_ONLY"
+    assert "not clinically validated" in plan.message
+    assert {c["model"]: c["cylinder_iol_d"] for c in plan.toric_candidates} == VERIFIED_LENS_STEPS[lens_id]
+    assert all(0 <= c["marker_axis_deg"] < 180 for c in plan.toric_candidates)
+    assert TORIC_SOURCES[lens_id]
+    assert plan.escrs_url == "https://iolcalculator.escrs.org/"
 
 
 @pytest.mark.parametrize("surgery", ["MYOPIC_LASIK_PRK", "HYPEROPIC_LASIK_PRK", "RK"])

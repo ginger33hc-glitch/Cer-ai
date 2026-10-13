@@ -20,7 +20,8 @@ from .models import (
     IOLPowerPlanInput,
     PriorCornealSurgery,
 )
-from .toric_formula import ToricBiometry, VERIFIED_LENS_STEPS, research_toric_candidates
+from .toric_catalog import VERIFIED_LENS_STEPS
+from .toric_formula import ToricBiometry, research_toric_candidates
 
 logger = logging.getLogger("uvicorn.error.iol.power")
 
@@ -287,7 +288,8 @@ def plan_iol_power(case: IOLPowerPlanInput) -> IOLPowerPlan:
                     )
                 except (ValueError, ZeroDivisionError, OverflowError) as exc:
                     toric_status = "CALCULATION_UNAVAILABLE"
-                    explanation = f"Embedded toric calculation rejected these measurements ({type(exc).__name__})."
+                    explanation = (str(exc) if str(exc) == "Spherical power is outside the documented toric lens range."
+                                   else f"Embedded toric calculation rejected these measurements ({type(exc).__name__}).")
                 else:
                     candidates = [asdict(candidate) for candidate in optical]
                     toric_status = "TEST_ONLY"
