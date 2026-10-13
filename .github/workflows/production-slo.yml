@@ -1,0 +1,30 @@
+name: Production SLO Evidence
+
+on:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/check_public_slo.py
+      - .github/workflows/production-slo.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-slo
+  cancel-in-progress: false
+
+jobs:
+  public-slo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - name: Check public availability, login routing, and latency
+        run: python scripts/check_public_slo.py
