@@ -6,6 +6,20 @@
   let locale = SUPPORTED.has(requested) ? requested : "en";
 
   const TR = {
+    "WhatsApp: +90 532 436 95 32":"WhatsApp: +90 532 436 95 32",
+    "drhuseyincengiz@hotmail.com":"drhuseyincengiz@hotmail.com",
+    "Turkish single-page CER-AI report":"Türkçe tek sayfalık CER-AI raporu",
+    "English single-page CER-AI report":"İngilizce tek sayfalık CER-AI raporu",
+    "Contact":"İletişim",
+    "Messages only":"Sadece mesaj",
+    "Program pages":"Program sayfaları",
+    "Corneal ectasia screening software":"Korneal ektazi tarama programı",
+    "IOL selection software":"Göz içi mercek seçim programı",
+    "Toric IOL calculator":"Torik mercek hesaplayıcı",
+    "Turkish — Single-page report (PDF)":"Türkçe — Tek sayfalık rapor (PDF)",
+    "Website":"Web sitesi",
+    "← Return to CER-AI":"← CER-AI’ye dön",
+    "CER-AI-adapted NICE":"CER-AI’ye uyarlanmış NICE",
     "Korneal ektazi tarama programı":"Korneal ektazi tarama programı",
     "Göz içi mercek seçim programı":"Göz içi mercek seçim programı",
     "Torik mercek hesaplayıcı":"Torik mercek hesaplayıcı",
@@ -362,16 +376,17 @@
       node.nodeValue = locale === "tr" ? translateText(originals.get(node)) : originals.get(node);
     }
 
-    root.querySelectorAll?.("[title],[aria-label],[placeholder]").forEach(el => {
+    root.querySelectorAll?.("[title],[aria-label],[placeholder],[alt]").forEach(el => {
       if (!attrOriginals.has(el)) {
         attrOriginals.set(el, {
+          alt: el.getAttribute("alt"),
           title: el.getAttribute("title"),
           ariaLabel: el.getAttribute("aria-label"),
           placeholder: el.getAttribute("placeholder")
         });
       }
       const orig = attrOriginals.get(el);
-      for (const [attr, key] of [["title","title"],["aria-label","ariaLabel"],["placeholder","placeholder"]]) {
+      for (const [attr, key] of [["alt","alt"],["title","title"],["aria-label","ariaLabel"],["placeholder","placeholder"]]) {
         const value = orig[key];
         if (value !== null) el.setAttribute(attr, locale === "tr" ? (TR[value] || value) : value);
       }
@@ -420,6 +435,9 @@
   }
 
   function routeLearningCenterLinks() {
+    document.querySelectorAll('a[href="/toric-iol-calculator"],a[href="/tr/torik-mercek-hesaplayici"]').forEach(link => {
+      link.setAttribute("href", locale === "tr" ? "/tr/torik-mercek-hesaplayici" : "/toric-iol-calculator");
+    });
     document.querySelectorAll('a[href="/iol-calculation-software"],a[href="/tr/akilli-mercek-iol-hesaplama"]').forEach(link => {
       link.setAttribute("href", locale === "tr" ? "/tr/akilli-mercek-iol-hesaplama" : "/iol-calculation-software");
     });

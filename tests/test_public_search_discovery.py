@@ -482,7 +482,8 @@ def test_turkish_toric_route_is_indexable_and_has_reciprocal_language_links(publ
     for html in (response.text, english.text):
         assert {(a['hreflang'], a['href']) for a in PageStructure(html).attributes('link') if a.get('rel') == 'alternate'} == expected
     assert f'<loc>https://cer-ai.com{path}</loc>' in sitemap.text
-    for route in (path, '/tr/korneal-ektazi-risk-degerlendirmesi', '/tr/akilli-mercek-iol-hesaplama'):
-        assert any(a.get('href') == 'https://cer-ai.com'+route and a.get('hreflang') == 'tr' for a in PageStructure(home.text).attributes('a'))
+    for route in ('/toric-iol-calculator', '/corneal-ectasia-risk-assessment', '/iol-calculation-software'):
+        assert any(a.get('href') == route for a in PageStructure(home.text).attributes('a'))
+    assert 'public-i18n.js' not in english.text
     with TestClient(public_app, base_url='https://cer-ai-staging.up.railway.app') as client:
         assert client.get(path).headers['x-robots-tag'] == 'noindex,nofollow'
