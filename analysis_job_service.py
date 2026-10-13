@@ -19,12 +19,13 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from starlette.datastructures import Headers
 
 from assessment_progress import bind_progress_sink
+from operational_security import MAX_FILE_BYTES, MAX_TOTAL_UPLOAD_BYTES
 
 
 JOB_TTL_SECONDS = 60 * 60
 MAX_JOBS = 64
-MAX_IMAGE_BYTES = 20 * 1024 * 1024
-MAX_TOTAL_BYTES = 80 * 1024 * 1024
+MAX_IMAGE_BYTES = MAX_FILE_BYTES
+MAX_TOTAL_BYTES = MAX_TOTAL_UPLOAD_BYTES
 _CLIENT_SCRIPT = "/static/analysis-jobs-client.js?v=2"
 _APP_HTML = Path("static/index.html")
 

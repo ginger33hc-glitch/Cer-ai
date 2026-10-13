@@ -20,7 +20,7 @@ from fastapi.responses import JSONResponse
 
 MIB = 1024 * 1024
 MAX_UPLOAD_FILES = max(1, min(int(os.getenv("CERAI_MAX_UPLOAD_FILES", "16")), 64))
-MAX_FILE_BYTES = max(MIB, min(int(os.getenv("CERAI_MAX_FILE_BYTES", str(12 * MIB))), 40 * MIB))
+MAX_FILE_BYTES = max(MIB, min(int(os.getenv("CERAI_MAX_FILE_BYTES", str(20 * MIB))), 40 * MIB))
 MAX_TOTAL_UPLOAD_BYTES = max(
     MAX_FILE_BYTES,
     min(int(os.getenv("CERAI_MAX_TOTAL_UPLOAD_BYTES", str(80 * MIB))), 256 * MIB),
