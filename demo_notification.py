@@ -176,3 +176,99 @@ def configured_demo_notifier() -> DemoPushNotifier | DemoEmailNotifier:
     """Use the owner's push channel when configured; retain legacy email otherwise."""
     push = DemoPushNotifier.from_environment()
     return push if push.topic else DemoEmailNotifier.from_environment()
+
+
+def approval_message(item: dict[str, Any]) -> str:
+    """One authoritative text for automatic delivery and owner compose links."""
+    return (
+        "CER-AI'ye gösterdiğiniz ilgi için teşekkür ederiz. "
+        "Talebiniz onaylandı, kullanıcı kaydınız açılmıştır. Kullanmaya başlayabilirsiniz.\n\n"
+        f"Kullanıcı adınız: {item.get('username') or 'Yöneticinizden öğrenebilirsiniz.'}\n"
+        "Giriş: https://cer-ai.com/clinical-modules\n"
+        "Şifreniz size ayrıca iletilir.\n\n"
+        "Bir sorunuz olursa lütfen +905324369532 numaralı telefondan veya "
+        "drhuseyincengiz@hotmail.com adresinden iletişime geçebilirsiniz."
+    )
+
+
+class DemoApprovalNotifier:
+    """Transactional email/SMS. Provider acceptance is not delivery confirmation.
+
+    Email: CERAI_SMTP_HOST, PORT (default 587), USER, PASSWORD, FROM.
+    SMS: CERAI_TWILIO_ACCOUNT_SID, AUTH_TOKEN, FROM (SMS sender).
+    No automatic retries after an ambiguous transport outcome.
+    """
+
+    def send(self, channel: str, item: dict[str, Any]) -> NotificationResult:
+        return self._email(item) if channel == "email" else self._sms(item)
+
+    def _email(self, item: dict[str, Any]) -> NotificationResult:
+        import smtplib
+        import ssl
+        from email.message import EmailMessage
+
+        host, user, password, sender = [os.getenv("CERAI_SMTP_" + key, "").strip()
+                                        for key in ("HOST", "USER", "PASSWORD", "FROM")]
+        if not all((host, user, password, sender)):
+            return NotificationResult("NOT_CONFIGURED", "SMTP", error_code="MISSING_CONFIGURATION")
+        recipient = str(item.get("email") or "").strip()
+        if not recipient:
+            return NotificationResult("FAILED", "SMTP", error_code="MISSING_EMAIL")
+        try:
+            message = EmailMessage()
+            message["Subject"] = "CER-AI kullanıcı kaydınız onaylandı"
+            message["From"] = sender
+            message["To"] = recipient
+            message["Reply-To"] = "drhuseyincengiz@hotmail.com"
+            message.set_content(approval_message(item))
+            port = int(os.getenv("CERAI_SMTP_PORT", "587"))
+            context = ssl.create_default_context()
+            factory = smtplib.SMTP_SSL if port == 465 else smtplib.SMTP
+            kwargs = {"timeout": 10}
+            if port == 465:
+                kwargs["context"] = context
+            with factory(host, port, **kwargs) as smtp:
+                if port != 465:
+                    smtp.starttls(context=context)
+                smtp.login(user, password)
+                refused = smtp.send_message(message)
+                if refused:
+                    return NotificationResult("FAILED", "SMTP", error_code="RECIPIENT_REJECTED")
+            return NotificationResult("ACCEPTED", "SMTP")
+        except smtplib.SMTPResponseException:
+            return NotificationResult("FAILED", "SMTP", error_code="PROVIDER_REJECTED")
+        except (OSError, smtplib.SMTPException):
+            return NotificationResult("UNKNOWN", "SMTP", error_code="DELIVERY_UNCONFIRMED")
+        except ValueError:
+            return NotificationResult("FAILED", "SMTP", error_code="INVALID_CONFIGURATION")
+
+    def _sms(self, item: dict[str, Any]) -> NotificationResult:
+        import base64
+        import re
+
+        account, token, sender = [os.getenv("CERAI_TWILIO_" + key, "").strip()
+                                   for key in ("ACCOUNT_SID", "AUTH_TOKEN", "FROM")]
+        if not all((account, token, sender)):
+            return NotificationResult("NOT_CONFIGURED", "TWILIO_SMS", error_code="MISSING_CONFIGURATION")
+        if not re.fullmatch(r"AC[0-9a-fA-F]{32}", account):
+            return NotificationResult("FAILED", "TWILIO_SMS", error_code="INVALID_CONFIGURATION")
+        phone = re.sub(r"[ ()-]", "", str(item.get("phone") or ""))
+        if not re.fullmatch(r"\+[1-9][0-9]{6,14}", phone):
+            return NotificationResult("FAILED", "TWILIO_SMS", error_code="INVALID_PHONE")
+        request = Request(
+            f"https://api.twilio.com/2010-04-01/Accounts/{account}/Messages.json",
+            data=urlencode({"To": phone, "From": sender, "Body": approval_message(item)}).encode(),
+            method="POST", headers={
+                "Authorization": "Basic " + base64.b64encode(f"{account}:{token}".encode()).decode(),
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+        )
+        try:
+            response = DemoEmailNotifier._urlopen_transport(request, 10.0)
+            if response.get("sid") and response.get("status") in {"accepted", "queued", "sending", "sent", "delivered"}:
+                return NotificationResult("ACCEPTED", "TWILIO_SMS", message_id=response["sid"])
+            return NotificationResult("FAILED", "TWILIO_SMS", error_code="PROVIDER_REJECTED")
+        except HTTPError as exc:
+            return NotificationResult("FAILED", "TWILIO_SMS", error_code=f"HTTP_{exc.code}")
+        except (URLError, TimeoutError, OSError, ValueError):
+            return NotificationResult("UNKNOWN", "TWILIO_SMS", error_code="DELIVERY_UNCONFIRMED")

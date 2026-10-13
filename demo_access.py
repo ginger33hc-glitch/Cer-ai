@@ -24,7 +24,8 @@ from fastapi import Body, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse
 
 import user_access
-from demo_notification import NotificationResult, configured_demo_notifier
+from demo_notification import (NotificationResult, configured_demo_notifier,
+                               DemoApprovalNotifier, approval_message)
 
 
 DEMO_QUOTA_LIMIT = 10
@@ -109,6 +110,8 @@ class DemoAccessLedger:
             raise HTTPException(422, "Doctor name is required.")
         if not _EMAIL_RE.fullmatch(email):
             raise HTTPException(422, "A valid professional email address is required.")
+        if not re.fullmatch(r"\+[1-9][0-9]{6,14}", re.sub(r"[ ()-]", "", phone)):
+            raise HTTPException(422, "Enter a valid phone number with country code, e.g. +905321234567.")
         if not institution:
             raise HTTPException(422, "Institution is required.")
         request_id = uuid4().hex
@@ -150,6 +153,13 @@ class DemoAccessLedger:
                     "status": "REJECTED",
                     "rejected_at_utc": event.get("created_at_utc"),
                 })
+            elif request_id in requests and event.get("event_type") == "DEMO_APPROVAL_NOTIFICATION":
+                requests[request_id].setdefault("approval_notifications", {})[event["channel"]] = {
+                    "status": event.get("notification_status"),
+                    "provider": event.get("notification_provider"),
+                    "error_code": event.get("notification_error_code"),
+                    "attempted_at_utc": event.get("created_at_utc"),
+                }
             elif request_id in requests and event.get("event_type") == "DEMO_NOTIFICATION":
                 requests[request_id].update({
                     "notification_status": event.get("notification_status"),
@@ -244,6 +254,7 @@ class DemoAccessLedger:
     def doctor_accounts(self) -> list[dict[str, Any]]:
         """Owner-safe doctor inventory from the authoritative static + persistent registries."""
         accounts = list(user_access.configured_accounts()) + self.approved_accounts()
+        requests_by_id = {item["request_id"]: item for item in self.requests()} if self.enabled else {}
         result = []
         seen = set()
         for account in accounts:
@@ -251,7 +262,10 @@ class DemoAccessLedger:
             if principal.role != user_access.ROLE_DOCTOR or principal.user_id in seen:
                 continue
             seen.add(principal.user_id)
+            contact = requests_by_id.get(principal.demo_request_id, {})
             result.append({
+                **{key: contact.get(key) for key in ("email", "phone", "institution", "country", "specialty", "created_at_utc", "request_id", "approval_notifications")},
+                "approval_message": approval_message(contact) if contact else None,
                 "user_id": principal.user_id,
                 "username": principal.username,
                 "doctor_name": principal.display_name,
@@ -306,6 +320,32 @@ class DemoAccessLedger:
             "quota_limit": DEMO_QUOTA_LIMIT,
             "approved_at_utc": event["created_at_utc"],
         }
+
+    def notify_approval(self, request_id: str, notifier) -> dict[str, Any]:
+        # Persist the attempt before contacting the provider. A timeout or crash
+        # is uncertain, never an invitation to send a duplicate automatically.
+        with _lock:
+            item = self._request(request_id)
+            if item["status"] != "APPROVED":
+                raise HTTPException(409, "Only approved requests can receive an approval notification.")
+            for channel in ("email", "sms"):
+                previous = item.get("approval_notifications", {}).get(channel, {}).get("status")
+                if previous in {"ACCEPTED", "SENDING", "UNKNOWN"}:
+                    continue
+                def record(result):
+                    self._write("DEMO_APPROVAL_NOTIFICATION", {
+                        "request_id": request_id, "channel": channel,
+                        "notification_status": result.status,
+                        "notification_provider": result.provider,
+                        "notification_error_code": result.error_code,
+                    })
+                record(NotificationResult("SENDING", channel.upper()))
+                try:
+                    result = notifier.send(channel, item)
+                except Exception:
+                    result = NotificationResult("UNKNOWN", channel.upper(), error_code="DELIVERY_UNCONFIRMED")
+                record(result)
+            return self._request(request_id).get("approval_notifications", {})
 
     def reject(self, request_id: str, owner) -> dict[str, Any]:
         with _lock:
@@ -400,6 +440,7 @@ def install(core: Any) -> None:
     runtime = getattr(core, "_cerai_case_archive_runtime", None)
     ledger = DemoAccessLedger(runtime.archive if runtime and runtime.enabled else None)
     notifier = configured_demo_notifier()
+    approval_notifier = DemoApprovalNotifier()
     user_access.set_dynamic_account_lookup(ledger.account_for_username)
     core._cerai_demo_access = ledger
     core._cerai_demo_notifier = notifier
@@ -435,12 +476,12 @@ def install(core: Any) -> None:
     @core.app.get("/demo-access/admin/requests", include_in_schema=False)
     def demo_requests():
         _require_owner()
-        return {"requests": ledger.requests()}
+        return JSONResponse({"requests": [dict(item, approval_message=approval_message(item)) for item in ledger.requests()]}, headers={"Cache-Control": "no-store"})
 
     @core.app.get("/demo-access/admin/doctors", include_in_schema=False)
     def list_doctors():
         _require_owner()
-        return {"doctors": ledger.doctor_accounts()}
+        return JSONResponse({"doctors": ledger.doctor_accounts()}, headers={"Cache-Control": "no-store"})
 
     @core.app.post("/demo-access/admin/doctors", include_in_schema=False)
     def create_full_doctor(payload: dict[str, Any] = Body(...)):
@@ -473,7 +514,14 @@ def install(core: Any) -> None:
     @core.app.post("/demo-access/admin/requests/{request_id}/approve", include_in_schema=False)
     def approve_demo(request_id: str, payload: dict[str, Any] = Body(...)):
         owner = _require_owner()
-        return ledger.approve(request_id, payload.get("username"), payload.get("password"), owner)
+        result = ledger.approve(request_id, payload.get("username"), payload.get("password"), owner)
+        result["approval_notifications"] = ledger.notify_approval(request_id, approval_notifier)
+        return result
+
+    @core.app.post("/demo-access/admin/requests/{request_id}/notify-approval", include_in_schema=False)
+    def notify_approved_demo(request_id: str):
+        _require_owner()
+        return {"approval_notifications": ledger.notify_approval(request_id, approval_notifier)}
 
     @core.app.post("/demo-access/admin/requests/{request_id}/reject", include_in_schema=False)
     def reject_demo(request_id: str):

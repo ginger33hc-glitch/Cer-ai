@@ -126,3 +126,62 @@ def test_public_and_login_pages_expose_bilingual_demo_request_entry():
     assert 'href="/demo-membership"' in homepage
     assert 'href="/demo-membership"' in login
     assert "Henüz üyeliğiniz yoksa 10 hastalık ücretsiz demo üyeliği için tıklayınız." in translations
+
+
+def test_doctor_contacts_survive_reload_and_match_request_id(ledger):
+    first = _request(ledger)
+    second = ledger.submit_request({"doctor_name": "Dr. Demo Surgeon", "institution": "Other",
+                                    "email": "other@example.org", "phone": "+441234567890"})
+    owner = user_access.Principal("owner-1", "owner", "Owner", "OWNER")
+    ledger.approve(first["request_id"], "first.doctor", "strong-demo-password", owner)
+    ledger.approve(second["request_id"], "second.doctor", "strong-demo-password", owner)
+    restored = demo_access.DemoAccessLedger(ledger.archive)
+    doctors = {item["username"]: item for item in restored.doctor_accounts()}
+    assert doctors["first.doctor"]["email"] == "doctor@example.org"
+    assert doctors["first.doctor"]["phone"] == "+90 555 000 00 00"
+    assert doctors["second.doctor"]["email"] == "other@example.org"
+    assert "password" not in json.dumps(doctors)
+
+
+@pytest.mark.parametrize("phone", ["", "555", "javascript:alert(1)", "905321234567"])
+def test_new_requests_require_international_phone(ledger, phone):
+    with pytest.raises(demo_access.HTTPException) as exc:
+        ledger.submit_request({"doctor_name": "Doctor", "institution": "Clinic",
+                               "email": "doctor@example.org", "phone": phone})
+    assert exc.value.status_code == 422
+    assert ledger.requests() == []
+
+
+def test_approval_notification_is_idempotent_and_failure_keeps_account(ledger):
+    request = _request(ledger)
+    owner = user_access.Principal("owner-1", "owner", "Owner", "OWNER")
+    calls = []
+    class Notifier:
+        def send(self, channel, item):
+            calls.append((channel, item["email"]))
+            return NotificationResult("ACCEPTED" if channel == "email" else "UNKNOWN", "TEST")
+    with pytest.raises(demo_access.HTTPException):
+        ledger.notify_approval(request["request_id"], Notifier())
+    ledger.approve(request["request_id"], "demo.doctor", "strong-demo-password", owner)
+    ledger.notify_approval(request["request_id"], Notifier())
+    restored = demo_access.DemoAccessLedger(ledger.archive)
+    restored.notify_approval(request["request_id"], Notifier())
+    assert calls == [("email", "doctor@example.org"), ("sms", "doctor@example.org")]
+    assert restored.requests()[0]["status"] == "APPROVED"
+
+
+def test_legacy_phone_missing_does_not_break_contact_inventory(ledger):
+    request = _request(ledger)
+    for key in ledger.archive.store.list(demo_access._EVENT_PREFIX):
+        event = json.loads(ledger.archive.get_bytes(key))
+        if event["event_type"] == "DEMO_REQUESTED":
+            # Recreate a legacy request via the same append-only writer.
+            legacy = dict(event)
+            for field in ("ledger", "event_id", "event_type", "created_at_utc"):
+                legacy.pop(field)
+            legacy["phone"] = ""
+            ledger._write("DEMO_REQUESTED", legacy)
+    owner = user_access.Principal("owner-1", "owner", "Owner", "OWNER")
+    ledger.approve(request["request_id"], "legacy.doctor", "strong-demo-password", owner)
+    assert ledger.doctor_accounts()[0]["phone"] == ""
+    assert ledger.doctor_accounts()[0]["email"] == "doctor@example.org"

@@ -109,3 +109,29 @@ def test_push_failure_and_bad_topic_fail_closed(monkeypatch):
     monkeypatch.delenv("CERAI_DEMO_NTFY_TOPIC")
     monkeypatch.setenv("CERAI_DEMO_NOTIFICATION_RECIPIENT", "owner@example.org")
     assert isinstance(demo_notification.configured_demo_notifier(), demo_notification.DemoEmailNotifier)
+
+
+def test_approval_missing_providers_never_claims_sent(monkeypatch):
+    for key in ("CERAI_SMTP_HOST", "CERAI_TWILIO_ACCOUNT_SID"):
+        monkeypatch.delenv(key, raising=False)
+    notifier = demo_notification.DemoApprovalNotifier()
+    for channel in ("email", "sms"):
+        assert notifier.send(channel, _request_record()).status == "NOT_CONFIGURED"
+    message = demo_notification.approval_message({"username": "demo.doctor"})
+    assert "+905324369532" in message
+    assert "drhuseyincengiz@hotmail.com" in message
+    assert "demo.doctor" in message
+
+
+def test_sms_uses_exact_application_recipient_and_reports_acceptance(monkeypatch):
+    for key, value in {"ACCOUNT_SID": "AC" + "a" * 32, "AUTH_TOKEN": "test", "FROM": "+15550001111"}.items():
+        monkeypatch.setenv("CERAI_TWILIO_" + key, value)
+    captured = {}
+    def transport(request, timeout):
+        captured.update(parse_qs(request.data.decode()))
+        return {"sid": "SMtest", "status": "queued"}
+    monkeypatch.setattr(demo_notification.DemoEmailNotifier, "_urlopen_transport", staticmethod(transport))
+    result = demo_notification.DemoApprovalNotifier().send("sms", _request_record())
+    assert result.status == "ACCEPTED"
+    assert captured["To"] == ["+905550000000"]
+    assert "drhuseyincengiz@hotmail.com" in captured["Body"][0]
