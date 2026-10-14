@@ -55,8 +55,8 @@ _INDEXNOW_KEY = "731d2001b05e7e15840a00e98f53447d"
 _PUBLIC_PAGE_LASTMOD = {
     "/about/huseyin-cengiz": "2026-10-11",
     "/tr/korneal-ektazi-risk-degerlendirmesi": "2026-10-12",
-    "/": "2026-10-12",
-    "/corneal-ectasia-risk-assessment": "2026-10-11",
+    "/": "2026-10-14",
+    "/corneal-ectasia-risk-assessment": "2026-10-14",
     "/iol-calculation-software": "2026-10-11",
     "/tr/akilli-mercek-iol-hesaplama": "2026-10-12",
     "/toric-iol-calculator": "2026-10-12",
@@ -93,9 +93,9 @@ _PUBLIC_PAGE_METADATA = {
     "/corneal-ectasia-risk-assessment": {
         "alternate_path": "/tr/korneal-ektazi-risk-degerlendirmesi",
         "schema_type": "MedicalWebPage",
-        "title": "AI-Assisted Corneal Ectasia Screening Software | CER-AI",
+        "title": "Preoperative Laser Surgery Screening Software | CER-AI",
         "description": (
-            'AI-assisted software supporting subclinical keratoconus and corneal ectasia assessment before LASIK and PRK, with Pentacam report reading for surgeon review.'
+            'Preoperative laser surgery screening software for ophthalmologists: Pentacam report review, corneal ectasia risk assessment and LASIK/PRK tissue-safety checks.'
         ),
         "about": "Corneal ectasia risk assessment before refractive surgery",
         "keywords": [
