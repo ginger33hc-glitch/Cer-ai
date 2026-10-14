@@ -321,7 +321,7 @@
     "Prior RK requires the external post-RK calculation pathway.":"Önceki RK, harici post-RK hesaplama yolunu gerektirir.",
     "Regular IOLMaster K difference is at least 1.00 D. Continue in the selected lens manufacturer's official toric calculator.":"Düzenli IOLMaster K farkı en az 1,00 D'dir. Seçilen lens üreticisinin resmi torik hesaplayıcısında devam edin.",
     "No verified official toric calculator is configured for this manufacturer; calculation is unavailable.":"Bu üretici için doğrulanmış resmi torik hesaplayıcı yapılandırılmamıştır; hesaplama kullanılamıyor.",
-    "Incision axis, degrees (default: steep K2; surgeon-editable)":"Kesi aksı, derece (varsayılan: dik K2; cerrah değiştirebilir)",
+    "Incision axis, degrees (default: 180°; surgeon-editable)":"Kesi aksı, derece (varsayılan: 180°; cerrah değiştirebilir)",
     "SIA axis, degrees (follows incision)":"SIA aksı, derece (kesi aksını takip eder)",
     "SIA axis must coincide with the incision axis.":"SIA aksı kesi aksıyla aynı olmalıdır.",
     "Cornea Back — complete unreadable values":"Arka kornea — okunamayan değerleri tamamlayın",

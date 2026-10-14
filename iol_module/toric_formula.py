@@ -219,7 +219,7 @@ def research_toric_candidates(
     bounds = TORIC_SPHERE_BOUNDS.get(selected_lens_id)
     if bounds and not bounds[0] <= spherical_equivalent_iol_d <= bounds[1]:
         raise ValueError("Spherical power is outside the documented toric lens range.")
-    incision_axis = eye.incision_axis_deg if eye.incision_axis_deg is not None else (eye.anterior_k1_axis_deg + 90) % 180
+    incision_axis = eye.incision_axis_deg if eye.incision_axis_deg is not None else 180.0
     numbers = (incision_axis, eye.axial_length_mm, eye.anterior_k1_d, eye.anterior_k2_d,
                eye.anterior_k1_axis_deg, eye.posterior_k1_d, eye.posterior_k2_d,
                eye.posterior_k1_axis_deg, eye.corneal_thickness_um,

@@ -79,7 +79,7 @@ def test_research_planner_ranks_discrete_panoptix_steps_and_respects_axes():
     assert [v.model for v in values] == ["CNWTT4", "CNWTT5", "CNWTT3", "CNWTT6", "CNWTT2"]
     assert values[0].marker_axis_deg == 0
     assert 0.15 < values[0].residual_spectacle_cylinder_d < 0.25
-    rotated = ToricBiometry(24, 42, 43.5, 120, -5.8, -6.1, 30, 550, 119.1)
+    rotated = ToricBiometry(24, 42, 43.5, 120, -5.8, -6.1, 30, 550, 119.1, incision_axis_deg=30)
     rotated_values = research_toric_candidates(
         rotated, "clareon-panoptix-toric-cnwtt3",
         spherical_equivalent_iol_d=20, spherical_predicted_refraction_d=-0.25)
@@ -114,10 +114,10 @@ def test_research_planner_rejects_missing_catalog_or_nonfinite_sources():
 
 def test_surgeon_incision_axis_changes_toric_optical_result():
     from dataclasses import replace
-    eye = ToricBiometry(24, 42, 43.5, 90, -5.8, -6.1, 0, 550, 119.1)
+    eye = ToricBiometry(24, 42, 43.5, 25, -5.8, -6.1, 0, 550, 119.1)
     args = dict(spherical_equivalent_iol_d=20, spherical_predicted_refraction_d=0)
     default = research_toric_candidates(eye, "clareon-panoptix-toric-cnwtt3", **args)
-    explicit = research_toric_candidates(replace(eye, incision_axis_deg=0), "clareon-panoptix-toric-cnwtt3", **args)
+    explicit = research_toric_candidates(replace(eye, incision_axis_deg=180), "clareon-panoptix-toric-cnwtt3", **args)
     changed = research_toric_candidates(replace(eye, incision_axis_deg=90), "clareon-panoptix-toric-cnwtt3", **args)
     assert default == explicit
     assert changed != default

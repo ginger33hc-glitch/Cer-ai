@@ -144,8 +144,7 @@
     $("incisionAxis").required = required;
     $("sia").required = required;
     if (required) {
-      const steep = numberOrNull("k2Axis");
-      $("incisionAxis").value = incisionOverrides[$("eye").value] ?? (steep === null ? "" : steep);
+      $("incisionAxis").value = incisionOverrides[$("eye").value] ?? 180;
       $("siaAxis").value = $("incisionAxis").value;
       $("sia").value = "0.25";
     }
