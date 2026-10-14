@@ -97,7 +97,7 @@ def test_public_homepage_identifies_software_and_clinical_author():
         assert by_type["Person"]["sameAs"] == [
             "https://www.linkedin.com/in/huseyin-cengiz-md-881b9797/"
         ]
-        assert by_type["MedicalWebPage"]["dateModified"] == "2026-10-12"
+        assert by_type["MedicalWebPage"]["dateModified"] == "2026-10-14"
 
 
 def test_clinical_app_has_stable_app_entry():
@@ -265,7 +265,7 @@ def test_public_landing_page_answers_surgeon_discovery_questions():
         response = client.get("/corneal-ectasia-risk-assessment")
         assert response.status_code == 200
         for phrase in (
-            "AI-assisted corneal ectasia screening for refractive surgeons",
+            "Preoperative laser surgery screening software for ophthalmologists",
             "Frequently asked questions about CER-AI",
             "Which Pentacam images does a CER-AI assessment require?",
             "Who is CER-AI designed for?",
