@@ -24,7 +24,7 @@
     $("recommendAll").disabled = workflowBusy || !eyes.length || !eyes.every(controller => controller.readyToRecommend());
     const recommended = eyes.length && eyes.every(controller => controller.recommendationShown());
     $("calculationActions").hidden = !recommended;
-    $("calculateAll").disabled = workflowBusy || !recommended || !eyes.every(controller => controller.readyToCalculate());
+    $("calculateAll").disabled = workflowBusy || !recommended;
     $("extractButton").disabled = workflowBusy;
     $("sourceImages").disabled = workflowBusy;
     window.CERAI_IOL_REPORT?.setCase(!workflowBusy && loadedEyes.length && loadedEyes.every(eye => powerPlans[eye]) ? {
@@ -280,6 +280,14 @@
     powerPlans[eye] = null;
     syncWorkflow();
     calculationRoot.hidden = false;
+    $("powerResult").replaceChildren();
+    const missingLens = !$("selectedLens").value;
+    if (missingLens) {
+      $("powerStatus").textContent = `${eye}: ${tr("Select a clinic lens.")}`;
+      $("powerStatus").className = "status error";
+      $("selectedLens").reportValidity();
+      return false;
+    }
     if (!recommendation || !recommendationShown) { $("powerStatus").textContent = tr("Evaluate this eye before calculating its lens power."); return false; }
     if (!document.getElementById("patientForm").reportValidity() || !$("iolForm").reportValidity()) return false;
     const status = $("powerStatus"); status.className="status"; const difference = kDifference();
@@ -475,7 +483,6 @@
     const requestCaseVersion = caseVersion;
     if (workflowBusy || !loadedEyes.length || !$("patientForm").reportValidity()) return;
     if (method === "recommend" && !loadedEyes.every(eye => controllers.get(eye).readyToRecommend())) return;
-    if (method === "calculate" && !loadedEyes.every(eye => controllers.get(eye).readyToCalculate())) return;
     if (method === "evaluate") controllers.forEach(controller => controller.invalidate());
     workflowBusy = true; syncWorkflow();
     $("bothStatus").textContent = tr("Processing loaded eyes…");
@@ -487,7 +494,9 @@
       }));
       if (requestCaseVersion !== caseVersion) return;
       $("bothStatus").textContent = tr(results.every(result => result.status === "fulfilled" && result.value === true)
-        ? "Completed. Review the separate OD and OS results below."
+        ? (method === "recommend"
+          ? "Recommendation generated. Select the lens for Stage 2."
+          : "Completed. Review the separate OD and OS results below.")
         : "Review each eye's status and complete any missing fields.");
     } finally { workflowBusy = false; syncWorkflow(); }
   }
