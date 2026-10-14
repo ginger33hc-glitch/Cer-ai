@@ -140,7 +140,7 @@ def draw_eye(canvas, eye, x, top, axis, tr):
     canvas.drawCentredString(cx, top-151, tr("Anterior view", "Önden görünüm"))
 
 
-def build_iol_report(report: IOLReportInput, surgeon: str = "") -> bytes:
+def build_iol_report(report: IOLReportInput, surgeon: str = "", *, report_date: str | None = None) -> bytes:
     tr = lambda en, turkish: turkish if report.locale == "tr" else en
     width, height = A4
     left, content_width = 34, width-68
@@ -221,14 +221,14 @@ def build_iol_report(report: IOLReportInput, surgeon: str = "") -> bytes:
         raise ValueError("Report content does not fit one readable page. Please review the report data.")
 
     buffer = BytesIO()
-    canvas = Canvas(buffer, pagesize=A4)
+    canvas = Canvas(buffer, pagesize=A4, invariant=1)
     canvas.setTitle("CER-AI IOL report")
     canvas.setAuthor("CER-AI")
     canvas.setFillColor(navy); canvas.setFont("IOL-Bold", 17)
     canvas.drawString(left, height-42, tr("CER-AI | IOL surgical plan", "CER-AI | IOL cerrahi planı"))
     canvas.setFont("IOL-Regular", 8)
     now = datetime.now(ZoneInfo("Europe/Istanbul"))
-    canvas.drawRightString(width-left, height-58, now.strftime("%d.%m.%Y %H:%M") + " (UTC+03:00)")
+    canvas.drawRightString(width-left, height-58, (report_date or now.strftime("%d.%m.%Y %H:%M")) + " (UTC+03:00)")
     header.drawOn(canvas, left, height-77-header_height)
     top = height-87-header_height
     for item, toric, values, main_height, bio, bio_height, warning, warning_height, block_height in blocks:

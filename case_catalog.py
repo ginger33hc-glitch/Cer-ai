@@ -100,6 +100,7 @@ def build_entry(
     eyes.sort(key=lambda item: {"OD": 0, "OS": 1}.get(item.get("eye"), 2))
     return {
         "catalog_format": CATALOG_FORMAT,
+        "module": ready.get("module", "REFRACTIVE"),
         "case_id": case_id,
         "revision_id": revision_id,
         "created_by": _creator_payload(actor),
@@ -257,7 +258,7 @@ def _present_entry(principal: Any, entry: Dict[str, Any]) -> Dict[str, Any]:
     )
     presented["owner_deidentified"] = bool(principal.role == "OWNER" and not identifiable)
     presented["identifiable_access"] = identifiable
-    presented["original_source_access"] = identifiable
+    presented["original_source_access"] = identifiable and entry.get("module") != "IOL"
     return presented
 
 
@@ -372,6 +373,8 @@ def install(core: Any, archive_runtime: Any) -> None:
             owner_deidentified = principal.role == "OWNER" and not _principal_created_entry(
                 principal, entry
             )
+            if entry.get("module") == "IOL" and kind != "pdf":
+                raise HTTPException(404, "IOL reports are available as PDF.")
             regenerated_summary = False
             if owner_deidentified:
                 from reports import build_conclusion_pdf, build_docx, build_pdf
@@ -381,8 +384,12 @@ def install(core: Any, archive_runtime: Any) -> None:
                     raise HTTPException(404, "Archived CER-AI canonical assessment not found.")
                 payload = archive_privacy.owner_assessment(assessment)
                 payload["locale"] = locale
-                content = {"pdf": build_pdf, "docx": build_docx,
-                           "conclusion": build_conclusion_pdf}[kind](payload)
+                if entry.get("module") == "IOL":
+                    from iol_module.archive import build_archived_iol_pdf
+                    content = build_archived_iol_pdf(payload)
+                else:
+                    content = {"pdf": build_pdf, "docx": build_docx,
+                               "conclusion": build_conclusion_pdf}[kind](payload)
             else:
                 ref = archive_runtime.archive.find_report(case_id, revision_id, locale, kind)
                 if ref is None and kind == "conclusion":

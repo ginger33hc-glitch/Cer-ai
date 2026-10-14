@@ -39,6 +39,11 @@ def regenerate_bytes(
         if owner_deidentified else dict(assessment)
     )
     localized["locale"] = "tr" if str(locale).lower().startswith("tr") else "en"
+    if localized.get("module") == "IOL":
+        if kind != "pdf":
+            raise HTTPException(404, "IOL reports are available as PDF.")
+        from iol_module.archive import build_archived_iol_pdf
+        return build_archived_iol_pdf(localized)
     if kind == "pdf":
         return pdf_builder(localized)
     if kind == "docx":

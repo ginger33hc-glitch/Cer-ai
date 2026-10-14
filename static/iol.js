@@ -28,6 +28,7 @@
     $("extractButton").disabled = workflowBusy;
     $("sourceImages").disabled = workflowBusy;
     window.CERAI_IOL_REPORT?.setCase(!workflowBusy && loadedEyes.length && loadedEyes.every(eye => powerPlans[eye]) ? {
+      assessment_request_id: iolAssessmentRequestId,
       patient_name: $("patientName").value.trim(), patient_age_years: Number($("patientAge").value),
       eyes: loadedEyes.map(eye => controllers.get(eye).reportSnapshot())
     } : null);

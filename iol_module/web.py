@@ -97,15 +97,22 @@ def install(core: Any) -> None:
     @core.app.post("/iol/report/pdf")
     def iol_report_pdf(payload: dict[str, Any] = Body(...)):
         try:
-            report = IOLReportInput.model_validate(payload)
+            report_payload = dict(payload)
+            assessment_request_id = report_payload.pop("assessment_request_id", None)
+            report = IOLReportInput.model_validate(report_payload)
             current_principal = getattr(core, "_cerai_current_principal", None)
             principal = current_principal() if callable(current_principal) else None
-            pdf = build_iol_report(report, getattr(principal, "display_name", ""))
+            if principal is None:
+                from user_access import current_principal as bound_principal
+                principal = bound_principal()
+            from .archive import archive_iol_report
+            pdf, archive_headers = archive_iol_report(core, report, principal, assessment_request_id)
         except ValidationError as exc:
             raise HTTPException(422, detail=json.loads(exc.json(include_url=False))) from exc
         except ValueError as exc:
             raise HTTPException(422, str(exc)) from exc
         return Response(pdf, media_type="application/pdf", headers={
+            **archive_headers,
             "Cache-Control": "no-store", "Content-Disposition": 'inline; filename="cerai-iol-report.pdf"',
             "X-Content-Type-Options": "nosniff",
         })

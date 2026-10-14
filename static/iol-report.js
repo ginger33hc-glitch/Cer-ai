@@ -29,7 +29,7 @@
       pdfUrl = URL.createObjectURL(blob);
       pdfFile = new File([blob], "cerai-iol-report.pdf", {type:"application/pdf"});
       buttons.forEach(id => { $(id).disabled = false; });
-      status("One-page PDF ready. Contains patient information.");
+      status(response.headers.get("X-CERAI-Archive-Status") === "ARCHIVED" ? "PDF ready and archived. Contains patient information." : "One-page PDF ready. Contains patient information.");
     } catch (error) {
       if (token !== generation || error.name === "AbortError") return;
       status("Report could not be prepared. Review the results and retry.", true);

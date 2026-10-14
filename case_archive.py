@@ -494,7 +494,7 @@ class EncryptedArchive:
         ready: Dict[str, Any],
         *,
         pdf_builder: Callable[[Dict[str, Any]], bytes],
-        docx_builder: Callable[[Dict[str, Any]], bytes],
+        docx_builder: Optional[Callable[[Dict[str, Any]], bytes]] = None,
         conclusion_builder: Optional[Callable[[Dict[str, Any]], bytes]] = None,
     ) -> RevisionRef:
         canonical = self._canonical_ready(ready)
@@ -519,7 +519,6 @@ class EncryptedArchive:
             localized = deepcopy(canonical)
             localized["locale"] = locale
             pdf = pdf_builder(localized)
-            docx = docx_builder(localized)
             refs.append(
                 self.put_bytes(
                     case_id,
@@ -530,16 +529,17 @@ class EncryptedArchive:
                     locale=locale,
                 )
             )
-            refs.append(
-                self.put_bytes(
-                    case_id,
-                    group,
-                    "report-docx",
-                    docx,
-                    media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                    locale=locale,
+            if docx_builder is not None:
+                refs.append(
+                    self.put_bytes(
+                        case_id,
+                        group,
+                        "report-docx",
+                        docx_builder(localized),
+                        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                        locale=locale,
+                    )
                 )
-            )
             if conclusion_builder is not None:
                 refs.append(self.put_bytes(
                     case_id, group, "conclusion-pdf", conclusion_builder(localized),

@@ -33,7 +33,8 @@ def make_client(role="DOCTOR"):
         _cerai_authenticate_request=authenticate,
         _cerai_bind_principal=user_access.bind_current_principal,
         _cerai_reset_principal=user_access.reset_current_principal,
-        _cerai_case_archive_runtime=SimpleNamespace(enabled=True),
+        _cerai_case_archive_runtime=case_archive.CaseArchiveRuntime(
+            case_archive.EncryptedArchive(case_archive.MemoryObjectStore(), b"x" * 32), required=True),
         _cerai_audit_log_installed=True,
         _cerai_historical_report_installed=True,
         _cerai_research_export_enabled=False,
@@ -117,7 +118,7 @@ def test_unauthenticated_iol_redirects_to_login_and_authenticated_iol_is_separat
     assert "IOL Decision Assistant" in allowed.text
     assert "IOL Calculation Surgery" in allowed.text
     assert "Doctor &lt;One&gt;" in allowed.text
-    assert "/static/iol.js?v=35" in allowed.text
+    assert "/static/iol.js?v=36" in allowed.text
     assert 'href="/clinical-modules"' in allowed.text
 
 

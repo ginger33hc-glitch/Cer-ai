@@ -277,6 +277,7 @@
     "Generate IOL recommendation":"IOL önerisi oluştur","Stage 1 — category decision":"Aşama 1 — kategori kararı",
     "Stage 2 — lens and power route":"Aşama 2 — lens ve güç yolu","Clinic lens":"Klinik lensi","Clinic lens family":"Klinik lens ailesi","Select an eligible lens":"Uygun bir lens seçin",
     "Pentacam 4 Maps Refractive (toric)":"Pentacam 4 Maps Refractive (torik)","Same operative eye. Cornea Back K1/K2 and a principal axis are transcribed. Embedded toric results are unvalidated and for surgeon testing only.":"Ameliyat edilecek aynı göze ait Cornea Back K1/K2 ve bir ana meridyen aksı aktarılır. Uygulama içindeki torik sonuçlar doğrulanmamıştır; yalnızca cerrah testi içindir.",
+    "PDF ready and archived. Contains patient information.":"PDF hazır ve arşivlendi. Hasta bilgileri içerir.",
     "Incision axis, degrees (steep K2)":"İnsizyon aksı, derece (dik K2)","SIA axis, degrees (steep K2)":"SIA aksı, derece (dik K2)",
     "TEST ONLY":"YALNIZCA TEST","TEST ONLY — unvalidated toric optical prototype.":"YALNIZCA TEST — doğrulanmamış torik optik prototip.",
     "Independently check the source readings, model availability, implantation axis, and residual with the manufacturer's calculator before any clinical use.":"Herhangi bir klinik kullanımdan önce kaynak ölçümlerini, model bulunabilirliğini, yerleştirme aksını ve rezidüeli üreticinin hesaplayıcısıyla bağımsız olarak doğrulayın.",
