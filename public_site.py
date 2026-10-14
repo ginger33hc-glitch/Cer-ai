@@ -627,7 +627,7 @@ def _discovery_head(base: str, *, robots_directive: str) -> str:
     """Machine-readable discovery metadata for public CER-AI pages."""
     home_title = "CER-AI | AI-Assisted Corneal Screening and Ectasia Risk"
     home_description = (
-        'Refractive surgery screening software for LASIK and PRK, with AI-assisted Pentacam reading and corneal ectasia risk assessment. IOL planning support.'
+        'Preoperative evaluation for refractive surgery and IOL implantation. CER-AI supports corneal ectasia screening, IOL selection, spherical power and toric planning.'
     )
     citations = [
         {
@@ -665,8 +665,7 @@ def _discovery_head(base: str, *, robots_directive: str) -> str:
                 "url": f"{base}/",
                 "name": "CER-AI",
                 "description": (
-                    "Clinical decision-support software for structured preoperative "
-                    "corneal ectasia risk assessment in refractive surgery."
+                    home_description
                 ),
                 "inLanguage": "en",
             },
