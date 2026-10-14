@@ -38,10 +38,13 @@ jobs:
               Path('static/public-i18n.js'),
               Path('tests/test_public_site.py'),
           }
-          # Preserve this pre-existing wire-protocol header until all deployed clients have moved
-          # to named-user sessions. It is a technical compatibility identifier, not product branding.
+          # Preserve exact wire-protocol headers used by authentication and IOL archive clients.
+          # These are technical compatibility identifiers, not product branding.
           technical_compatibility_identifiers = (
               'X-CERAI-Access-Key',
+              'X-CERAI-Archive-Status',
+              'X-CERAI-Case-ID',
+              'X-CERAI-Revision-ID',
           )
 
           failures = []
