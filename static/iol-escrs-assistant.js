@@ -1,26 +1,8 @@
 /* Build transfers only from the completed, per-eye canonical power plans. */
 (() => {
   "use strict";
-  const modelNames = {
-    "acrysof-single-sa60at":"AcrySof SA60AT",
-    "acrysof-ultrasert-au00t0":"AcrySof AU00T0",
-    "acrysof-three-piece-ma60ac":"AcrySof MA60AC",
-    "acrysof-vivity-dft015":"AcrySof IQ Vivity DFT015",
-    "clareon-mono-sy60wf":"Clareon SY60WF",
-    "acrysof-iq-sn60wf":"AcrySof SN60WF",
-    "clareon-panoptix-cnwtt0":"Clareon PanOptix CNWTT0",
-    "clareon-toric-cnw0t8":"Clareon Toric CNW0T2-T9",
-    "clareon-panoptix-toric-cnwtt3":"Clareon PanOptix Toric CNWTT2-6",
-    "clareon-vivity-toric-cnwet2":"Clareon Vivity Toric CNWET2-T6/CCWET2-T6",
-    "tecnis-mono-toric-zct375":"ZCT",
-    "tecnis-eyhance-toric-diu525":"DIU",
-    "tecnis-odyssey-toric-drt150":"DRT",
-    "tecnis-puresee-toric-det150":"DET",
-    "tecnis-puresee-den00v":"DEN00V",
-    "tecnis-odyssey-drn00v":"DRN00V",
-    "tecnis-multifocal-zlb00":"ZLB00"
-  };
-  function buildPayload({plans,loadedEyes,catalog,patientName,age,sex,surgeon}) {
+
+  function buildPayload({plans,loadedEyes,catalog,patientName,age,sex,surgeon,modelNames}) {
     const initials = String(patientName || "").trim().split(/\s+/u).filter(Boolean).map(word => [...word][0].toLocaleUpperCase("tr")).join("");
     if (!initials || !surgeon || !Number.isInteger(age) || age < 1 || age > 120) throw new Error("Review the patient name, age and signed-in doctor before ESCRS transfer.");
     if (!["Male","Female"].includes(sex)) throw new Error("Review biological sex before transfer.");
@@ -42,26 +24,29 @@
     }
     return payload;
   }
-  function request(action,payload,timeout=1500) {
-    return new Promise((resolve,reject) => {
-      const id = crypto.randomUUID();
-      const timer = setTimeout(() => {window.removeEventListener("message",receive); reject(new Error("Install the CER-AI ESCRS Assistant, then reload this page for full automatic transfer."));},timeout);
-      function receive(event) {
-        if (event.source !== window || event.origin !== location.origin || event.data?.channel !== "CERAI_ESCRS_RESPONSE" || event.data.id !== id) return;
-        clearTimeout(timer); window.removeEventListener("message",receive);
-        event.data.ok ? resolve(event.data) : reject(new Error(event.data.error || "ESCRS assistant could not open the transfer."));
-      }
-      window.addEventListener("message",receive);
-      window.postMessage({channel:"CERAI_ESCRS_REQUEST",id,action,payload},location.origin);
-    });
-  }
   async function transfer(data) {
-    await request("PING");
-    const response = await fetch("/auth/me",{credentials:"same-origin",cache:"no-store"});
-    if (!response.ok) throw new Error("Sign in again to identify the surgeon for ESCRS.");
-    const identity = await response.json();
-    const payload = buildPayload({...data,surgeon:identity.user?.display_name});
-    await request("TRANSFER",payload,10000);
+    const tr = text => window.CERAI_I18N?.translate ? window.CERAI_I18N.translate(text) : text;
+    if (!window.confirm(tr("I accept the ESCRS calculator terms for this calculation: https://iolcalculator.escrs.org/Resources/ESCRS_IOL_Calculator_Terms_of_Use.pdf"))) return false;
+    const target = window.open("about:blank", "_blank");
+    if (target) { target.opener = null; target.document.body.textContent = tr("Preparing your ESCRS cloud session. Keep this page open."); }
+    try {
+      const [identityResponse,configResponse] = await Promise.all([
+        fetch("/auth/me",{credentials:"same-origin",cache:"no-store"}),
+        fetch("/iol/escrs-cloud-config",{credentials:"same-origin",cache:"no-store"})
+      ]);
+      if (!identityResponse.ok) throw new Error("Sign in again to identify the surgeon for ESCRS.");
+      const config = await configResponse.json();
+      if (!configResponse.ok || !config.enabled) throw new Error("ESCRS cloud transfer is unavailable.");
+      const identity = await identityResponse.json();
+      const payload = buildPayload({...data,surgeon:identity.user?.display_name,modelNames:config.models});
+      const response = await fetch("/iol/escrs-cloud-transfer",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({...payload,terms_accepted:true})});
+      const result = await response.json();
+      if (!response.ok) throw new Error(typeof result.detail === "string" ? result.detail : "ESCRS cloud transfer could not be verified.");
+      const url = new URL(result.escrs_url);
+      if (url.protocol !== "https:" || !["production-sfo.browserless.io","production-ams.browserless.io","production-lon.browserless.io"].includes(url.hostname) || !url.pathname.includes("/live/")) throw new Error("Invalid ESCRS cloud session address.");
+      if (target) target.location.replace(url.href); else window.location.assign(url.href);
+      return true;
+    } catch(error) { if(target) target.close(); throw error; }
   }
   window.CERAI_ESCRS_ASSISTANT = {buildPayload,transfer};
 })();

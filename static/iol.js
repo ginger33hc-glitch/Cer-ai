@@ -325,8 +325,8 @@
       }
       html+=`<p><span>ACD target</span>: ${Number(data.target_refraction_d).toFixed(2)} D (<span>locked</span>)</p>`;
       if(data.second_formula_required) html+=`<div class="warning"><span>Second modern formula verification required</span> (AL ${Number(data.inputs.axial_length_mm).toFixed(2)} mm). <span>Use ESCRS where available and verify all values manually.</span></div>`;
-      if(data.escrs_url) html+=`<button id="${eye}-escrsTransfer" class="external" type="button">Transfer values to ESCRS</button>`;
-      if(data.escrs_url) html+=`<button id="${eye}-escrsAutomatic" class="external" type="button">Full automatic ESCRS transfer — browser assistant</button><p><a href="/static/escrs-assistant.html" target="_blank" rel="noopener">ESCRS Assistant setup and supported lenses</a></p>`;
+      if(data.escrs_url) html+=`<button id="${eye}-escrsTransfer" class="external" type="button">Transfer biometry only to ESCRS</button>`;
+      if(data.escrs_url) html+=`<button id="${eye}-escrsAutomatic" class="external" type="button">Open ESCRS with all values — no installation</button>`;
       const toricRoute = data.route === "MANUFACTURER_TORIC";
       if(toricRoute && data.predictions?.length) html += `<div class="warning">${tr(data.message)}</div>`;
       if(toricRoute && data.toric_candidates?.length) {
@@ -350,13 +350,14 @@
         const button = $("powerResult").querySelector(`#${eye}-escrsAutomatic`);
         button.disabled = true; status.className = "status";
         try {
-          await window.CERAI_ESCRS_ASSISTANT.transfer({
+          const opened = await window.CERAI_ESCRS_ASSISTANT.transfer({
             plans:JSON.parse(JSON.stringify(powerPlans)),loadedEyes:[...loadedEyes],catalog:lensCatalog,
             patientName:document.getElementById("patientName").value,
             age:Number(document.getElementById("patientAge").value),
             sex:document.getElementById("biologicalSex").value
           });
-          status.textContent = tr("ESCRS Assistant opened. Wait for its field verification and review the form before calculating.");
+          if (opened === false) return;
+          status.textContent = tr("Verified ESCRS cloud session opened. Review the form before calculating. Session limit: two minutes.");
         } catch (error) { status.textContent = tr(error.message); status.classList.add("error"); }
         finally { button.disabled = false; }
       });

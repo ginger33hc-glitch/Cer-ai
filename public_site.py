@@ -54,9 +54,9 @@ _PUBLIC_CONTENT_LASTMOD = "2026-09-11"
 _INDEXNOW_KEY = "731d2001b05e7e15840a00e98f53447d"
 _PUBLIC_PAGE_LASTMOD = {
     "/about/huseyin-cengiz": "2026-10-11",
-    "/tr/korneal-ektazi-risk-degerlendirmesi": "2026-10-12",
-    "/": "2026-10-14",
-    "/corneal-ectasia-risk-assessment": "2026-10-14",
+    "/tr/korneal-ektazi-risk-degerlendirmesi": "2026-10-16",
+    "/": "2026-10-16",
+    "/corneal-ectasia-risk-assessment": "2026-10-16",
     "/iol-calculation-software": "2026-10-11",
     "/tr/akilli-mercek-iol-hesaplama": "2026-10-12",
     "/toric-iol-calculator": "2026-10-12",
@@ -93,9 +93,9 @@ _PUBLIC_PAGE_METADATA = {
     "/corneal-ectasia-risk-assessment": {
         "alternate_path": "/tr/korneal-ektazi-risk-degerlendirmesi",
         "schema_type": "MedicalWebPage",
-        "title": "Preoperative Laser Surgery Screening Software | CER-AI",
+        "title": "Corneal Ectasia Screening Program | CER-AI",
         "description": (
-            'Preoperative laser surgery screening software for ophthalmologists: Pentacam report review, corneal ectasia risk assessment and LASIK/PRK tissue-safety checks.'
+            'CER-AI corneal ectasia screening program: clinical decision support using Pentacam images for preoperative LASIK, PRK and SMILE evaluation.'
         ),
         "about": "Corneal ectasia risk assessment before refractive surgery",
         "keywords": [
@@ -578,7 +578,8 @@ def _ectasia_software_schema(base: str) -> dict:
         "applicationSubCategory": "Corneal ectasia risk assessment",
         "operatingSystem": "Web",
         "description": (
-            "CER-AI is refractive surgery screening software for LASIK and PRK. "
+            "CER-AI is a clinical decision support platform for preoperative corneal ectasia risk screening and refractive surgery evaluation. It analyzes uploaded Pentacam images to support ophthalmologists assessing candidates for LASIK, PRK, and SMILE. "
+            
             "CER-AI Corneal Ectasia Risk Assessment presents ERSS, Pentacam Final "
             "BAD-D, NICE and PS3 as independently interpretable pathways alongside "
             "separate procedure-specific tissue-safety checks."
@@ -625,9 +626,9 @@ def _toric_software_schema(base: str) -> dict:
 
 def _discovery_head(base: str, *, robots_directive: str) -> str:
     """Machine-readable discovery metadata for public CER-AI pages."""
-    home_title = "CER-AI | AI-Assisted Corneal Screening and Ectasia Risk"
+    home_title = "CER-AI | Corneal Ectasia Screening & IOL Decision Support"
     home_description = (
-        'Preoperative evaluation for refractive surgery and IOL implantation. CER-AI supports corneal ectasia screening, IOL selection, spherical power and toric planning.'
+        'CER-AI clinical decision support for corneal ectasia screening, Pentacam-based LASIK, PRK and SMILE evaluation, IOL selection and calculation.'
     )
     citations = [
         {
@@ -935,7 +936,10 @@ def _llms_txt(base: str) -> str:
 
 > CER-AI is a web-based ophthalmic clinical decision-support platform with two main modules, presented in clinical priority order: (1) Corneal Ectasia Risk Assessment, the primary module for refractive-surgery screening; and (2) IOL Selection and Calculation for cataract planning. The Toric Calculator is a capability within the second module, not a separate third module. CER-AI is intended for qualified ophthalmic professionals and does not replace surgeon judgment.
 
-## Refractive surgery screening for LASIK and PRK
+## Corneal ectasia screening program
+CER-AI is a clinical decision support platform for preoperative corneal ectasia risk screening and refractive surgery evaluation. It analyzes uploaded Pentacam images to support ophthalmologists assessing candidates for LASIK, PRK, and SMILE.
+
+## Refractive surgery screening for LASIK, PRK and SMILE
 CER-AI supports preoperative refractive surgery screening before laser vision correction. Its LASIK screening software and PRK screening software organize Pentacam findings, independent ectasia-risk pathways and procedure-specific corneal tissue-safety checks for surgeon review.
 Türkçe: CER-AI, lazerle görme düzeltmesi öncesinde refraktif cerrahi taramasını destekler. LASIK (lazik) tarama programı ve PRK tarama programı olarak Pentacam bulgularını, bağımsız ektazi risk yollarını ve işleme özgü korneal doku güvenliği kontrollerini cerrah incelemesine sunar.
 

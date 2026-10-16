@@ -41,7 +41,7 @@ def test_product_page_explains_category_ai_boundaries_and_examples(public_app):
     assert response.status_code == 200
     html = response.text
     for phrase in (
-        "corneal ectasia screening and risk assessment software",
+        "clinical decision support platform for preoperative corneal ectasia risk screening",
         "How does CER-AI use artificial intelligence?",
         "Extracted measurements can be incorrect, incomplete or conflicting",
         "canonical rule-based assessment engine",
@@ -238,7 +238,7 @@ def test_production_canonical_and_real_software_identity_remain_intact(public_ap
         (
             "/corneal-ectasia-risk-assessment",
             "MedicalWebPage",
-            "Preoperative Laser Surgery Screening Software | CER-AI",
+            "Corneal Ectasia Screening Program | CER-AI",
         ),
         (
             "/iol-calculation-software",
@@ -293,7 +293,7 @@ def test_static_public_pages_have_page_specific_discovery_identity(
     assert schema["url"] == f"https://cer-ai.com{path}"
     assert schema["name"] == title
     expected_date = {
-        "/corneal-ectasia-risk-assessment": "2026-10-14",
+        "/corneal-ectasia-risk-assessment": "2026-10-16",
         "/iol-calculation-software": "2026-10-11",
         "/toric-iol-calculator": "2026-10-12",
         "/clinical-evidence": "2026-09-12",

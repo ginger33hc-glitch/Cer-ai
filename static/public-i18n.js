@@ -1,4 +1,4 @@
-/* CER-AI public website bilingual presentation layer. Clinical logic is untouched. */
+/* CER-AI public website bilingual presentation layer (screening identity updated 2026-10-16). Clinical logic is untouched. */
 (() => {
   const STORAGE_KEY = "cerai-public-language";
   const SUPPORTED = new Set(["en", "tr"]);
@@ -6,6 +6,13 @@
   let locale = SUPPORTED.has(requested) ? requested : "en";
 
   const TR = {
+    "CER-AI | Corneal Ectasia Screening & IOL Decision Support": "CER-AI | Korneal Ektazi Taraması ve IOL Karar Desteği",
+    "Corneal Ectasia Screening Program | CER-AI": "Korneal Ektazi Tarama Programı | CER-AI",
+    "CER-AI clinical decision support for corneal ectasia screening, Pentacam-based LASIK, PRK and SMILE evaluation, IOL selection and calculation.": "CER-AI: korneal ektazi taraması, Pentacam tabanlı LASIK, PRK ve SMILE değerlendirmesi, IOL seçimi ve hesaplaması için klinik karar desteği.",
+    "CER-AI corneal ectasia screening program: clinical decision support using Pentacam images for preoperative LASIK, PRK and SMILE evaluation.": "CER-AI korneal ektazi tarama programı: Pentacam görüntüleriyle ameliyat öncesi LASIK, PRK ve SMILE değerlendirmesi için klinik karar desteği.",
+    "CER-AI is a clinical decision support platform for preoperative corneal ectasia risk screening and refractive surgery evaluation. It analyzes uploaded Pentacam images to support ophthalmologists assessing candidates for LASIK, PRK, and SMILE.": "CER-AI, ameliyat öncesi korneal ektazi risk taraması ve refraktif cerrahi değerlendirmesi için bir klinik karar destek platformudur. Yüklenen Pentacam görüntülerini analiz ederek LASIK, PRK ve SMILE adaylarını değerlendiren göz hekimlerine destek olur.",
+    "CER-AI is a clinical decision support platform for preoperative corneal ectasia risk screening and refractive surgery evaluation. It analyzes uploaded Pentacam images to support ophthalmologists assessing candidates for LASIK, PRK, and SMILE. AI assists image reading; separate rule-based pathways organize the risk assessment for surgeon review.": "CER-AI, ameliyat öncesi korneal ektazi risk taraması ve refraktif cerrahi değerlendirmesi için bir klinik karar destek platformudur. Yüklenen Pentacam görüntülerini analiz ederek LASIK, PRK ve SMILE adaylarını değerlendiren göz hekimlerine destek olur. Yapay zekâ görüntülerin okunmasına yardımcı olur; ayrı kural tabanlı yollar risk değerlendirmesini cerrahın incelemesi için düzenler.",
+    "Corneal ectasia screening program for ophthalmologists": "Göz hekimleri için korneal ektazi tarama programı",
     "Preoperative laser surgery screening":"Lazer cerrahisi öncesi tarama",
     "Acknowledgements":"Teşekkür",
     "We thank our esteemed colleagues at Vizyon Eye Hospital, Dr. Efsane Cengiz, Dr. Ümit Atik, Dr. Ali Özer, Dr. Fatih Baltu, Dr. İdil Göksel and Dr. Ümit Yapıcı, for their contributions to the development and improvement of CER-AI.":"CER-AI programının geliştirilmesi ve iyileştirilmesine katkılarından dolayı Vizyon Göz Hastanesi hekimleri Sayın Dr. Efsane Cengiz, Dr. Ümit Atik, Dr. Ali Özer, Dr. Fatih Baltu, Dr. İdil Göksel ve Dr. Ümit Yapıcı’ya teşekkür ederiz.",

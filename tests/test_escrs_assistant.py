@@ -21,7 +21,7 @@ const catalog=[{id:'clareon-panoptix-toric-cnwtt3',manufacturer:'Alcon',subtype:
 const eye=(side,al)=>({eye:side,biological_sex:'Female',axial_length_mm:al,acd_mm:3.1,
  k1_d:42.5,k2_d:44,k1_axis_deg:15,k2_axis_deg:105,incision_axis_deg:180,sia_d:.25,
  prior_corneal_surgery:'NONE',lens_thickness_mm:null,cct_um:550,wtw_mm:11.8});
-const data={catalog,loadedEyes:['OD','OS'],patientName:'İpek Şen',age:61,sex:'Female',surgeon:'Test Surgeon',plans:{
+const data={modelNames:JSON.parse(fs.readFileSync('static/escrs-models.json','utf8')),catalog,loadedEyes:['OD','OS'],patientName:'İpek Şen',age:61,sex:'Female',surgeon:'Test Surgeon',plans:{
  OD:{selected_lens_id:catalog[0].id,route:'MANUFACTURER_TORIC',inputs:eye('OD',23.5),target_refraction_d:-.25,a_constant:119.1},
  OS:{selected_lens_id:catalog[1].id,route:'COOKE_K6',inputs:eye('OS',24.2),target_refraction_d:-.5,a_constant:119.3}}};
 const p=build(data);validate(p);

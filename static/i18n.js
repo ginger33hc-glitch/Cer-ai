@@ -3,6 +3,16 @@
   const stored = (localStorage.getItem("cerai-language") || "en").toLowerCase();
   const locale = stored === "tr" ? "tr" : "en";
   const TR = {
+    "Open ESCRS with all values — no installation":"ESCRS’yi tüm değerlerle aç — kurulum gerekmez",
+    "Transfer biometry only to ESCRS":"ESCRS’ye yalnızca biyometri aktar",
+    "Verified ESCRS cloud session opened. Review the form before calculating. Session limit: two minutes.":"Doğrulanmış ESCRS bulut oturumu açıldı. Hesaplamadan önce formu kontrol edin. Oturum sınırı: iki dakika.",
+    "I accept the ESCRS calculator terms for this calculation: https://iolcalculator.escrs.org/Resources/ESCRS_IOL_Calculator_Terms_of_Use.pdf":"Bu hesaplama için ESCRS hesaplayıcısının kullanım koşullarını kabul ediyorum: https://iolcalculator.escrs.org/Resources/ESCRS_IOL_Calculator_Terms_of_Use.pdf",
+    "Preparing your ESCRS cloud session. Keep this page open.":"ESCRS bulut oturumunuz hazırlanıyor. Bu sayfayı açık tutun.",
+    "ESCRS cloud transfer is unavailable.":"ESCRS bulut aktarımına şu anda erişilemiyor.",
+    "ESCRS cloud transfer could not be verified. No completed session was opened.":"ESCRS bulut aktarımı doğrulanamadı. Tamamlanmış bir oturum açılmadı.",
+    "An ESCRS cloud session is still active. Wait up to two minutes before retrying.":"Bir ESCRS bulut oturumu hâlâ açık. Tekrar denemeden önce en fazla iki dakika bekleyin.",
+    "ESCRS cloud capacity is busy. Try again shortly.":"ESCRS bulut kapasitesi dolu. Kısa süre sonra tekrar deneyin.",
+
     "Full automatic ESCRS transfer — browser assistant":"ESCRS’ye tam otomatik aktarım — tarayıcı yardımcısı",
     "ESCRS Assistant setup and supported lenses":"ESCRS yardımcısı kurulumu ve desteklenen lensler",
     "ESCRS Assistant opened. Wait for its field verification and review the form before calculating.":"ESCRS yardımcısı açıldı. Alan doğrulamasını bekleyin ve hesaplamadan önce formu kontrol edin.",

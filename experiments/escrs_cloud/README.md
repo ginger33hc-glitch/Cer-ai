@@ -51,4 +51,3 @@ Live validation notes (2026-10-17 Europe/Istanbul):
 - Successful BrowserQL response had no errors and verify.value was
   {"OD":"Clareon PanOptix Toric CNWTT2-6","OS":"DEN00V"}.
 - Seven focused Python checks plus the DOM contract scenarios passed.
-
