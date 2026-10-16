@@ -61,6 +61,7 @@ def _base_inputs(case: IOLPowerPlanInput) -> dict[str, object]:
         "k2_axis_deg": case.k2_axis_deg,
         "astigmatism_d": case.astigmatism_d,
         "target_refraction_d": _target_from_acd(case.acd_mm),
+        "prior_corneal_surgery": case.prior_corneal_surgery.value,
     }
     for key, value in {
         "cct_um": case.cct_um,

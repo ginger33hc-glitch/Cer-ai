@@ -215,6 +215,8 @@
     return {
       axial_length_mm: inputs.axial_length_mm, acd_mm: inputs.acd_mm,
       k1_d: inputs.k1_d, k2_d: inputs.k2_d,
+      k1_axis_deg: inputs.k1_axis_deg ?? null, k2_axis_deg: inputs.k2_axis_deg ?? null,
+      prior_corneal_surgery: inputs.prior_corneal_surgery ?? null,
       cct_um: inputs.cct_um ?? null, lens_thickness_mm: inputs.lens_thickness_mm ?? null,
       wtw_mm: inputs.wtw_mm ?? null
     };
@@ -324,6 +326,7 @@
       html+=`<p><span>ACD target</span>: ${Number(data.target_refraction_d).toFixed(2)} D (<span>locked</span>)</p>`;
       if(data.second_formula_required) html+=`<div class="warning"><span>Second modern formula verification required</span> (AL ${Number(data.inputs.axial_length_mm).toFixed(2)} mm). <span>Use ESCRS where available and verify all values manually.</span></div>`;
       if(data.escrs_url) html+=`<button id="${eye}-escrsTransfer" class="external" type="button">Transfer values to ESCRS</button>`;
+      if(data.escrs_url) html+=`<button id="${eye}-escrsAutomatic" class="external" type="button">Full automatic ESCRS transfer — browser assistant</button><p><a href="/static/escrs-assistant.html" target="_blank" rel="noopener">ESCRS Assistant setup and supported lenses</a></p>`;
       const toricRoute = data.route === "MANUFACTURER_TORIC";
       if(toricRoute && data.predictions?.length) html += `<div class="warning">${tr(data.message)}</div>`;
       if(toricRoute && data.toric_candidates?.length) {
@@ -343,6 +346,20 @@
       if(data.predictions?.length){html+=`<h3>${tr(toricRoute ? `Stage 1 — ${formula} spherical power` : `${formula} power`)}</h3><table class="table"><thead><tr><th>IOL power</th><th>Predicted refraction</th><th>Selection</th></tr></thead><tbody>${data.predictions.map(p=>`<tr><td>${Number(p.IOL ?? p.iol_power).toFixed(2)}</td><td>${Number(p.Rx ?? p.predicted_refraction).toFixed(2)}</td><td>${p.IsBestOption ? tr("Closest to target") : ""}</td></tr>`).join("")}</tbody></table>`;}
       if(data.calculator_url) html+=`<a class="external" target="_blank" rel="noopener noreferrer" href="${data.calculator_url}">Optional manufacturer toric calculator comparison</a>`;
       $("powerResult").innerHTML=html; status.textContent=tr(data.calculation_status.replaceAll("_"," "));
+      if(data.escrs_url) $("powerResult").querySelector(`#${eye}-escrsAutomatic`).addEventListener("click", async () => {
+        const button = $("powerResult").querySelector(`#${eye}-escrsAutomatic`);
+        button.disabled = true; status.className = "status";
+        try {
+          await window.CERAI_ESCRS_ASSISTANT.transfer({
+            plans:JSON.parse(JSON.stringify(powerPlans)),loadedEyes:[...loadedEyes],catalog:lensCatalog,
+            patientName:document.getElementById("patientName").value,
+            age:Number(document.getElementById("patientAge").value),
+            sex:document.getElementById("biologicalSex").value
+          });
+          status.textContent = tr("ESCRS Assistant opened. Wait for its field verification and review the form before calculating.");
+        } catch (error) { status.textContent = tr(error.message); status.classList.add("error"); }
+        finally { button.disabled = false; }
+      });
       if(data.escrs_url) $("powerResult").querySelector(`#${eye}-escrsTransfer`).addEventListener("click", async () => {
         const button = $("powerResult").querySelector(`#${eye}-escrsTransfer`);
         const escrsWindow = window.open("about:blank", "_blank");
@@ -354,7 +371,7 @@
           const transfer = await response.json(); if(!response.ok) throw new Error(errorMessage(transfer));
           if (escrsWindow) escrsWindow.location.replace(transfer.escrs_url);
           else window.location.assign(transfer.escrs_url);
-          status.textContent = "Biometry transferred to ESCRS. Verify every imported value before calculation.";
+          status.textContent = "ESCRS transfer link opened. Verify imported measurements. Select the IOL and check target refraction, toric mode, SIA and incision axis in ESCRS; these settings are not transferred.";
         } catch(error) {
           if (escrsWindow) escrsWindow.close();
           status.textContent = error.message || "ESCRS transfer could not be completed."; status.classList.add("error");

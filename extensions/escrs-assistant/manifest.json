@@ -1,0 +1,12 @@
+{
+  "manifest_version": 3,
+  "name": "CER-AI ESCRS Assistant",
+  "version": "0.1.0",
+  "description": "Transfer the reviewed CER-AI plan to ESCRS. Never starts a calculation.",
+  "permissions": ["storage"],
+  "background": {"service_worker": "background.js"},
+  "content_scripts": [
+    {"matches": ["https://cer-ai.com/iol*", "https://www.cer-ai.com/iol*"], "js": ["bridge.js"]},
+    {"matches": ["https://iolcalculator.escrs.org/"], "js": ["adapter.js", "receiver.js"]}
+  ]
+}
