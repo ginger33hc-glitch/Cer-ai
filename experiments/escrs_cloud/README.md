@@ -35,3 +35,12 @@ Local Chromium installation is no longer required.
 
 Observed account limit: 120,000 ms per session. A 300,000 ms LiveURL
 request was rejected before launch; the prototype now uses 120 seconds.
+
+Live validation notes (2026-10-17 Europe/Istanbul):
+- Explicit owner confirmation permitted accepting the ESCRS terms for testing.
+- Native BrowserQL click accepted the dialog; the form rendered.
+- First full transfer failed at Gender: synthetic click did not open MudSelect.
+- Actual Gender markup is a readonly input with role=combobox. MudSelect's
+  upstream control opens via onmousedown. The canonical adapter now dispatches
+  that event; its DOM contract and three adapter packaging tests pass.
+- Patched full live read-back is still being checked; do not mark it passed.

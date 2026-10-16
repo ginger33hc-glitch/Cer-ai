@@ -5,7 +5,7 @@ class Input {
   get value(){return this._value;}
   set value(v){this._value=String(v);}
   getAttribute(){return null;}
-  focus(){} blur(){} dispatchEvent(e){this.events.push(e.type);}
+  focus(){} blur(){} dispatchEvent(e){this.events.push(e.type);if(e.type==='mousedown'&&this.options)openOptions(this);}
   click(){if(this.type==='checkbox')this.checked=!this.checked;else if(this.options)openOptions(this);}
 }
 class Combo {
