@@ -238,7 +238,7 @@ def test_production_canonical_and_real_software_identity_remain_intact(public_ap
         (
             "/corneal-ectasia-risk-assessment",
             "MedicalWebPage",
-            "Preoperative Laser Surgery Screening Software | CER-AI",
+            "Corneal Ectasia Screening Program | CER-AI",
         ),
         (
             "/iol-calculation-software",

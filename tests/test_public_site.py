@@ -265,7 +265,7 @@ def test_public_landing_page_answers_surgeon_discovery_questions():
         response = client.get("/corneal-ectasia-risk-assessment")
         assert response.status_code == 200
         for phrase in (
-            "Preoperative laser surgery screening software for ophthalmologists",
+            "Corneal ectasia screening program for ophthalmologists",
             "Frequently asked questions about CER-AI",
             "Which Pentacam images does a CER-AI assessment require?",
             "Who is CER-AI designed for?",
