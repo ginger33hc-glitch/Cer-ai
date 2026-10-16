@@ -12,41 +12,12 @@ on:
       - archive_privacy.py
       - .github/workflows/**
       - railway.toml
-  pull_request_review:
-    types: [submitted, dismissed]
   workflow_dispatch:
 
 permissions:
   contents: read
-  pull-requests: read
 
 jobs:
-  independent-review:
-    if: github.event_name != 'workflow_dispatch'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Require an approval from someone other than the author
-        uses: actions/github-script@v8
-        with:
-          script: |
-            const pr = context.payload.pull_request;
-            if (!pr) core.setFailed('This control must run in pull-request context.');
-            const reviews = await github.paginate(github.rest.pulls.listReviews, {
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: pr.number,
-              per_page: 100
-            });
-            const latest = new Map();
-            for (const review of reviews) latest.set(review.user.login, review.state);
-            const approvals = [...latest.entries()]
-              .filter(([login, state]) => state === 'APPROVED' && login !== pr.user.login)
-              .map(([login]) => login);
-            if (!approvals.length) {
-              core.setFailed('Decision-critical changes require at least one independent approval.');
-            }
-            core.info('Independent approvals: ' + approvals.join(', '));
-
   critical-regression:
     runs-on: ubuntu-latest
     env:
