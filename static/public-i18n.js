@@ -1,4 +1,4 @@
-/* CER-AI public website bilingual presentation layer. Clinical logic is untouched. */
+/* CER-AI public website bilingual presentation layer (screening identity updated 2026-10-16). Clinical logic is untouched. */
 (() => {
   const STORAGE_KEY = "cerai-public-language";
   const SUPPORTED = new Set(["en", "tr"]);
