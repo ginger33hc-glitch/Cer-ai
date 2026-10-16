@@ -247,9 +247,28 @@ class EscrsEyeInput(StrictModel):
     acd_mm: float = Field(gt=0, le=10)
     k1_d: float = Field(ge=30, le=60)
     k2_d: float = Field(ge=30, le=60)
+    k1_axis_deg: float | None = Field(default=None, ge=0, le=180)
+    k2_axis_deg: float | None = Field(default=None, ge=0, le=180)
+    prior_corneal_surgery: PriorCornealSurgery | None = None
     cct_um: float | None = Field(default=None, ge=300, le=900)
     lens_thickness_mm: float | None = Field(default=None, ge=2.5, le=7)
     wtw_mm: float | None = Field(default=None, ge=8, le=16)
+
+    @model_validator(mode="after")
+    def validate_transfer_measurements(self):
+        # BiomDIRECT requires integer axes and an exactly orthogonal pair.
+        # Do not silently infer, swap or rotate clinical measurements.
+        if self.k1_d > self.k2_d:
+            raise ValueError("ESCRS transfer requires K1 to be no greater than K2.")
+        for axis in (self.k1_axis_deg, self.k2_axis_deg):
+            if axis is not None and not axis.is_integer():
+                raise ValueError("ESCRS transfer requires whole-degree K axes. Review the source axes.")
+        if self.k1_axis_deg is not None and self.k2_axis_deg is not None:
+            if abs(self.k2_axis_deg - self.k1_axis_deg) != 90:
+                raise ValueError("ESCRS transfer requires K axes exactly 90 degrees apart. Review the source axes.")
+        if self.cct_um is not None and not self.cct_um.is_integer():
+            raise ValueError("ESCRS transfer requires CCT in whole micrometers. Review the source value.")
+        return self
 
 
 class EscrsTransferInput(StrictModel):

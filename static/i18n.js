@@ -3,6 +3,20 @@
   const stored = (localStorage.getItem("cerai-language") || "en").toLowerCase();
   const locale = stored === "tr" ? "tr" : "en";
   const TR = {
+    "Full automatic ESCRS transfer — browser assistant":"ESCRS’ye tam otomatik aktarım — tarayıcı yardımcısı",
+    "ESCRS Assistant setup and supported lenses":"ESCRS yardımcısı kurulumu ve desteklenen lensler",
+    "ESCRS Assistant opened. Wait for its field verification and review the form before calculating.":"ESCRS yardımcısı açıldı. Alan doğrulamasını bekleyin ve hesaplamadan önce formu kontrol edin.",
+    "Install the CER-AI ESCRS Assistant, then reload this page for full automatic transfer.":"Tam otomatik aktarım için CER-AI ESCRS yardımcısını yükleyip bu sayfayı yenileyin.",
+    "Review the patient name, age and signed-in doctor before ESCRS transfer.":"ESCRS aktarımından önce hasta adını, yaşını ve oturum açan doktoru kontrol edin.",
+    "Calculate both eyes before transferring a bilateral case to ESCRS.":"İki gözlü olguyu ESCRS’ye aktarmadan önce iki gözün de hesabını tamamlayın.",
+    "The current patient and eye data differ from the calculation. Recalculate before transfer.":"Güncel hasta ve göz bilgileri hesaplamadan farklı. Aktarımdan önce yeniden hesaplayın.",
+    "Select the intended toric lens family and recalculate before automatic transfer.":"Otomatik aktarımdan önce istenen torik lens ailesini seçip yeniden hesaplayın.",
+    "This lens has no verified ESCRS model mapping. No substitute will be selected.":"Bu lensin doğrulanmış ESCRS model eşleşmesi yok. Yerine başka model seçilmeyecek.",
+    "Review biological sex before transfer.":"Aktarımdan önce biyolojik cinsiyeti kontrol edin.",
+    "Invalid eye assignment.":"Göz eşleştirmesi geçersiz.",
+    "Sign in again to identify the surgeon for ESCRS.":"ESCRS için cerrahı belirlemek üzere yeniden oturum açın.",
+    "ESCRS assistant could not open the transfer.":"ESCRS yardımcısı aktarımı açamadı.",
+
     "Remove image":"Sil",
     "Replace image":"Değiştir",
     "Could not update images. Please try again.":"Görüntüler güncellenemedi. Lütfen tekrar deneyin.",
@@ -363,6 +377,12 @@
     "Use ESCRS where available and verify all values manually.":"Uygun olduğunda ESCRS kullanın ve tüm değerleri elle doğrulayın.",
     "Creating a secure, de-identified ESCRS transfer…":"Güvenli, kimliksizleştirilmiş ESCRS aktarımı oluşturuluyor…",
     "Biometry transferred to ESCRS. Verify every imported value before calculation.":"Biyometri ESCRS'ye aktarıldı. Hesaplamadan önce içe aktarılan her değeri doğrulayın.",
+    "ESCRS transfer link opened. Verify imported measurements. Select the IOL and check target refraction, toric mode, SIA and incision axis in ESCRS; these settings are not transferred.":"ESCRS aktarım bağlantısı açıldı. İçe aktarılan ölçümleri doğrulayın. ESCRS’de lensi seçin; hedef refraksiyon, torik modu, SIA ve kesi aksını kontrol edin. Bu tercihler aktarılmaz.",
+    "Calculate both eyes before transferring a bilateral case to ESCRS.":"İki gözlü olguyu ESCRS’ye aktarmadan önce her iki gözün hesaplamasını tamamlayın.",
+    "ESCRS transfer requires whole-degree K axes. Review the source axes.":"ESCRS aktarımı tam derece K aksları gerektirir. Kaynak akslarını kontrol edin.",
+    "ESCRS transfer requires K axes exactly 90 degrees apart. Review the source axes.":"ESCRS aktarımında K aksları arasında tam 90 derece olmalıdır. Kaynak akslarını kontrol edin.",
+    "ESCRS transfer requires CCT in whole micrometers. Review the source value.":"ESCRS aktarımı tam mikrometre CCT değeri gerektirir. Kaynak değeri kontrol edin.",
+    "ESCRS transfer requires K1 to be no greater than K2.":"ESCRS aktarımında K1, K2’den büyük olamaz.",
     "ESCRS transfer could not be completed.":"ESCRS aktarımı tamamlanamadı.",
     "Selected lens is not in the clinic-approved catalog.":"Seçilen lens, klinik tarafından onaylanmış katalogda bulunmuyor.",
     "Astigmatism regularity is required for toric routing.":"Torik yönlendirme için astigmatizma düzenliliği gereklidir.","Incision axis and surgeon-specific SIA are required for toric routing.":"Torik yönlendirme için insizyon aksı ve cerraha özgü SIA gereklidir.",

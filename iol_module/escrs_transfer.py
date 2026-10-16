@@ -29,10 +29,18 @@ def _eye_data(eye) -> dict[str, object]:
         "K2_magnitude": eye.k2_d,
         "keratometric_index": 1.3375,
     }
+    for field, value in (("K1_axis", eye.k1_axis_deg), ("K2_axis", eye.k2_axis_deg)):
+        if value is not None:
+            data[field] = int(value)
+    if eye.prior_corneal_surgery is not None:
+        data["post_refractive"] = {
+            "NONE": "None", "MYOPIC_LASIK_PRK": "Myopic LVC",
+            "HYPEROPIC_LASIK_PRK": "Hyperopic LVC", "RK": "Radial Keratotomy",
+        }[eye.prior_corneal_surgery.value]
     if eye.lens_thickness_mm is not None:
         data["LT"] = eye.lens_thickness_mm
     if eye.cct_um is not None:
-        data["CCT"] = eye.cct_um
+        data["CCT"] = int(eye.cct_um)
     if eye.wtw_mm is not None:
         data["WTW"] = eye.wtw_mm
     return data

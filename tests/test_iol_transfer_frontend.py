@@ -12,7 +12,7 @@ def test_escrs_button_binds_in_moved_results_and_handles_transfer_failure():
     script = r'''
 const fs = require('fs'), vm = require('vm'), assert = require('assert');
 const source = fs.readFileSync('static/iol.js', 'utf8');
-const start = source.indexOf('      if(data.escrs_url)', source.indexOf('$("powerResult").innerHTML=html'));
+const start = source.indexOf('      if(data.escrs_url) $("powerResult").querySelector(`#${eye}-escrsTransfer`)');
 const binding = source.slice(start, source.indexOf('      return true;', start));
 (async () => {
   for (const eye of ['OD', 'OS']) {
