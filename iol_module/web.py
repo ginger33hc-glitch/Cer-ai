@@ -127,4 +127,24 @@ def install(core: Any) -> None:
         except RuntimeError as exc:
             raise HTTPException(502, str(exc)) from exc
 
+    @core.app.get("/iol/escrs-cloud-config")
+    def iol_escrs_cloud_config():
+        import os
+        from user_access import require_current_principal
+        from .escrs_cloud import model_names
+        require_current_principal()
+        return {"enabled": bool(os.environ.get("BROWSERLESS_TOKEN", "").strip()), "models": model_names()}
+
+    @core.app.post("/iol/escrs-cloud-transfer")
+    def iol_escrs_cloud_transfer(payload: dict[str, Any] = Body(...)):
+        from user_access import require_current_principal
+        from .escrs_cloud import CloudTransfer, create_cloud_transfer
+        principal = require_current_principal()
+        try:
+            # The signed-in doctor's identity is authoritative.
+            case = CloudTransfer.model_validate({**payload, "surgeon": principal.display_name})
+        except ValidationError as exc:
+            raise HTTPException(422, detail=json.loads(exc.json(include_url=False))) from exc
+        return create_cloud_transfer(case, principal.user_id)
+
     core._cerai_iol_module_installed = True

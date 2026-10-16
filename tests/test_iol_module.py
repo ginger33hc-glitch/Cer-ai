@@ -278,7 +278,7 @@ def test_short_eye_ui_allows_optional_biometry_and_keeps_escrs():
     assert 'id="lensThicknessField" hidden' in html
     assert 'missingBiometryEscrs' not in html
     assert 'Go to ESCRS Calculator' not in script
-    assert 'Transfer values to ESCRS' in script
+    assert 'Open ESCRS with all values — no installation' in script
     assert 'id="calculateAll" type="button" disabled>Calculate</button>' in html
 
 
