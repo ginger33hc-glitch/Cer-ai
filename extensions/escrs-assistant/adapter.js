@@ -48,7 +48,13 @@
     const input = field(root(), name);
     if (expected.some(value => norm(value) === norm(valueOf(input)))) return valueOf(input);
     if (input.disabled) throw new Error(`${name} is disabled.`);
-    input.click();
+    // MudSelect opens on mousedown on its input control. A synthetic click
+    // alone never reaches that handler (unlike the autocomplete IOL input).
+    if (input.getAttribute("role") === "combobox") {
+      input.dispatchEvent(new MouseEvent("mousedown", {button:0,bubbles:true}));
+    } else {
+      input.click();
+    }
     const options = await until(() => {
       const items = [...document.querySelectorAll('[role="option"]')].filter(e => e.getClientRects().length);
       return items.length ? items : null;

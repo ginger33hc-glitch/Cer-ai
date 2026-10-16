@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CER-AI Browserless — synthetic prototype</title>
+<style>body{margin:0;background:#eef3f6;color:#152e3d;font:16px system-ui}header{padding:12px}button{padding:12px;margin:3px;font:inherit}iframe{width:100%;height:75dvh;border:0;background:white}</style>
+<header><strong>CER-AI · Browserless</strong><p>Synthetic test only. No phone installation.</p>
+<button id="start">Open ESCRS</button><button id="fill" disabled>Fill test case</button><button id="close" disabled>End session</button>
+<p id="status" role="status">Not connected.</p></header>
+<iframe id="viewer" title="Live ESCRS session" sandbox="allow-same-origin allow-scripts" allow="clipboard-read; clipboard-write"></iframe>
+<script>
+const viewer=document.getElementById('viewer'),status=document.getElementById('status');
+const start=document.getElementById('start'),fill=document.getElementById('fill'),close=document.getElementById('close');
+let ws;
+function send(message){if(ws?.readyState===WebSocket.OPEN)ws.send(JSON.stringify(message));}
+start.onclick=()=>{
+ start.disabled=true;status.textContent='Opening Browserless session…';
+ ws=new WebSocket(`${location.protocol==='https:'?'wss':'ws'}://${location.host}/session`);
+ ws.onmessage=e=>{const data=JSON.parse(e.data);if(data.status)status.textContent=data.status;if(data.liveURL){viewer.src=data.liveURL;fill.disabled=false;close.disabled=false;}};
+ ws.onerror=()=>{status.textContent='Connection failed. No successful transfer confirmed.';};
+ ws.onclose=()=>{start.disabled=false;fill.disabled=true;close.disabled=true;viewer.removeAttribute('src');status.textContent+=' Session closed.';};
+};
+fill.onclick=()=>{send({action:'fill'});viewer.focus();};
+close.onclick=()=>send({action:'close'});
+window.addEventListener('pagehide',()=>ws?.close());
+</script></html>

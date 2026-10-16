@@ -10,9 +10,9 @@ class Input {
 }
 class Combo {
   constructor(name,value,options){this.name=name;this.textContent=value;this.options=options;}
-  getAttribute(key){return key==='aria-label'?this.name:null;}
-  click(){openOptions(this);}
-  dispatchEvent(){}
+  getAttribute(key){return key==='aria-label'?this.name:key==='role'?'combobox':null;}
+  click(){throw Error("MudSelect requires mousedown");}
+  dispatchEvent(e){if(e.type==='mousedown')openOptions(this);}
 }
 let options=[];
 function openOptions(control){options=control.options.map(text=>({textContent:text,getClientRects:()=>[1],click(){if(control instanceof Combo)control.textContent=text;else control.value=text;options=[];}}));}
@@ -33,7 +33,7 @@ function fixture() {
   // Hidden MudBlazor inputs have no labels; visible div[role=combobox] carries the value.
   const hidden=new Input('','hidden');
   const document={querySelectorAll:s=>s==='h5'?[OD.heading,OS.heading]:s==='[role="option"]'?options:s==='[role="dialog"]'?[]:[...Object.values(fields),hidden,...Object.values(OD.fields),...Object.values(OS.fields)]};
-  const ctx={document,HTMLInputElement:Input,Event:class{constructor(type){this.type=type;}},KeyboardEvent:class{},setTimeout:fn=>{fn();},Date};
+  const ctx={document,HTMLInputElement:Input,Event:class{constructor(type){this.type=type;}},KeyboardEvent:class{},MouseEvent:class{constructor(type){this.type=type;}},setTimeout:fn=>{fn();},Date};
   vm.createContext(ctx);vm.runInContext(fs.readFileSync('extensions/escrs-assistant/adapter.js','utf8'),ctx);
   return {OD,OS,fields,run:ctx.CeraiEscrsAdapter.run};
 }
