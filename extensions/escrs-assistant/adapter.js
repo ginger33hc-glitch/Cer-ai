@@ -9,11 +9,13 @@
     throw new Error(message);
   }
   function field(root, name) {
-    const found = [...root.querySelectorAll("input")].filter(input =>
-      [...(input.labels || [])].some(label => norm(label.textContent) === norm(name)));
+    const found = [...root.querySelectorAll('input, [role="combobox"]')].filter(input =>
+      input.type !== "hidden" && (norm(input.getAttribute("aria-label")) === norm(name) ||
+      [...(input.labels || [])].some(label => norm(label.textContent) === norm(name))));
     if (found.length !== 1) throw new Error(`Cannot identify ${name} unambiguously.`);
     return found[0];
   }
+  const valueOf = control => typeof control.value === "string" ? control.value : control.textContent.trim();
   function eyeRoot(side) {
     const heading = [...document.querySelectorAll("h5")].filter(h => norm(h.textContent) === (side === "OD" ? "od right" : "os left"));
     if (heading.length !== 1) return null;
@@ -31,7 +33,7 @@
     input.blur();
     await pause(300);
     input = field(root(), name);
-    const same = input.type === "number" ? input.value !== "" && Number(input.value) === Number(value) : input.value === String(value);
+    const same = value === "" ? input.value === "" : input.type === "number" ? input.value !== "" && Number(input.value) === Number(value) : input.value === String(value);
     if (!same) throw new Error(`${name} did not retain the transferred value.`);
   }
   async function toggle(root, name, value) {
@@ -44,7 +46,7 @@
   }
   async function select(root, name, expected) {
     const input = field(root(), name);
-    if (expected.some(value => norm(value) === norm(input.value))) return input.value;
+    if (expected.some(value => norm(value) === norm(valueOf(input)))) return valueOf(input);
     if (input.disabled) throw new Error(`${name} is disabled.`);
     input.click();
     const options = await until(() => {
@@ -58,7 +60,7 @@
     }
     const chosen = matches[0].textContent.trim();
     matches[0].click();
-    await until(() => norm(field(root(), name).value) === norm(chosen), `${name} selection was not retained.`);
+    await until(() => norm(valueOf(field(root(), name))) === norm(chosen), `${name} selection was not retained.`);
     await pause(400);
     return chosen;
   }
@@ -89,13 +91,18 @@
     const p = validate(payload);
     await until(() => eyeRoot("OD") && eyeRoot("OS"), "ESCRS form is not ready. Complete any terms dialog yourself, then retry.", 30000);
     if ([...document.querySelectorAll('[role="dialog"]')].some(e => e.getClientRects().length)) throw new Error("Close the ESCRS dialog yourself, then retry.");
+    for (const side of ["OD","OS"]) {
+      const root = eyeRoot(side);
+      if (!p.eyes[side] && field(root,"AL").value !== "") throw new Error(`${side}: the unused eye is not empty. Open a new transfer from CER-AI.`);
+      if (p.eyes[side] && field(root,"Keratoconus").checked) throw new Error(`${side}: keratoconus mode is not supported by this transfer.`);
+    }
     const whole = () => document;
     await fill(whole,"Surgeon",p.surgeon);
     await fill(whole,"Patient Initials",p.initials);
     await fill(whole,"Age",p.age);
     await select(whole,"Gender",[p.sex]);
     await fill(whole,"Id",p.patient_id || "");
-    const selected = {};
+    const selected = {}, cookeConstants = {};
     for (const side of ["OD","OS"]) {
       const e = p.eyes[side]; if (!e) continue;
       const root = () => eyeRoot(side);
@@ -105,11 +112,11 @@
       await select(root,"Index",["1.3375"]);
       await select(root,"Manufacturer",e.manufacturer_matches);
       selected[side] = await select(root,"Select IOL",e.lens_matches);
-      for (const [label,key] of [["AL","axial_length_mm"],["ACD","acd_mm"],["LT","lens_thickness_mm"],["CCT","cct_um"],["WTW","wtw_mm"],["K1","k1_d"],["K2","k2_d"],["Target Refraction","target_refraction_d"]]) await fill(root,label,e[key]);
+      for (const [label,key] of [["AL","axial_length_mm"],["ACD","acd_mm"],["LT","lens_thickness_mm"],["CCT","cct_um"],["WTW","wtw_mm"],["K1","k1_d"],["K2","k2_d"],["Target Refraction","target_refraction_d"]]) await fill(root,label,e[key] ?? "");
       // Other formulas retain their own ESCRS model-specific constants (e.g. pACD).
       if (!e.toric) {
         const cooke = [...root().querySelectorAll("input")].some(i => [...(i.labels || [])].some(l => norm(l.textContent) === "cooke a-constant"));
-        if (cooke) await fill(root,"Cooke A-Constant",e.a_constant);
+        if (cooke) { await fill(root,"Cooke A-Constant",e.a_constant); cookeConstants[side] = e.a_constant; }
       }
       if (e.toric) for (const [label,key] of [["K1 axis","k1_axis_deg"],["K2 axis","k2_axis_deg"],["Incision","incision_axis_deg"],["SIA","sia_d"]]) await fill(root,label,e[key]);
     }
@@ -117,15 +124,21 @@
     for (const [side,e] of Object.entries(p.eyes)) {
       const root = eyeRoot(side);
       if (norm(field(root,"Select IOL").value) !== norm(selected[side]) || field(root,"Toric").checked !== e.toric) throw new Error(`${side}: lens/mode read-back failed.`);
+      if (!e.manufacturer_matches.some(v => norm(v) === norm(valueOf(field(root,"Manufacturer")))) || norm(valueOf(field(root,"Index"))) !== "1.3375") throw new Error(`${side}: manufacturer/index read-back failed.`);
+      if (field(root,"Post LASIK/PRK/RK").checked || field(root,"Argos (SoS) AL").checked || field(root,"Keratoconus").checked) throw new Error(`${side}: unexpected calculation mode.`);
+      if (cookeConstants[side] !== undefined && Number(field(root,"Cooke A-Constant").value) !== cookeConstants[side]) throw new Error(`${side}: Cooke constant read-back failed.`);
       const checks = [["AL","axial_length_mm"],["ACD","acd_mm"],["K1","k1_d"],["K2","k2_d"],["Target Refraction","target_refraction_d"],["LT","lens_thickness_mm"],["CCT","cct_um"],["WTW","wtw_mm"]];
       if (e.toric) checks.push(["K1 axis","k1_axis_deg"],["K2 axis","k2_axis_deg"],["Incision","incision_axis_deg"],["SIA","sia_d"]);
       for (const [label,key] of checks) {
-        if (e[key] === null || e[key] === undefined) continue;
+        if (e[key] === null || e[key] === undefined) {
+          if (field(root,label).value !== "") throw new Error(`${side}: ${label} should be empty.`);
+          continue;
+        }
         if (field(root,label).value === "" || Number(field(root,label).value) !== e[key]) throw new Error(`${side}: ${label} read-back failed.`);
       }
     }
-    for (const [label,value] of [["Surgeon",p.surgeon],["Patient Initials",p.initials],["Age",String(p.age)],["Gender",p.sex]]) {
-      if (norm(field(document,label).value) !== norm(value)) throw new Error(`${label} read-back failed.`);
+    for (const [label,value] of [["Surgeon",p.surgeon],["Patient Initials",p.initials],["Age",String(p.age)],["Gender",p.sex],["Id",p.patient_id || ""]]) {
+      if (norm(valueOf(field(document,label))) !== norm(value)) throw new Error(`${label} read-back failed.`);
     }
     return selected;
   }

@@ -46,3 +46,17 @@ for (const [key,value] of [['k1_axis_deg',null],['sia_d',-1],['lens_thickness_mm
 '''
     result = subprocess.run(['node', '-e', script], cwd=ROOT, capture_output=True, text=True)
     assert result.returncode == 0, result.stderr
+
+
+def test_adapter_dom_contracts():
+    if not shutil.which('node'):
+        pytest.skip('Node is not available')
+    result = subprocess.run(['node', 'tests/js/escrs_adapter_contract.cjs'], cwd=ROOT, capture_output=True, text=True, timeout=30)
+    assert result.returncode == 0, result.stderr
+
+
+def test_assistant_message_source_and_tab_binding():
+    if not shutil.which('node'):
+        pytest.skip('Node is not available')
+    result = subprocess.run(['node', 'tests/js/escrs_background_contract.cjs'], cwd=ROOT, capture_output=True, text=True, timeout=30)
+    assert result.returncode == 0, result.stderr

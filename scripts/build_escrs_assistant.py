@@ -3,7 +3,7 @@ from pathlib import Path
 from zipfile import ZipFile, ZipInfo, ZIP_DEFLATED
 
 ROOT = Path(__file__).resolve().parents[1]
-FILES = ('manifest.json', 'background.js', 'bridge.js', 'adapter.js', 'receiver.js')
+FILES = ('manifest.json', 'background.js', 'bridge.js', 'adapter.js', 'receiver.js', 'test.html', 'test.js')
 
 
 def build():
