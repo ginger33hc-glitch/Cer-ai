@@ -30,7 +30,8 @@ Validation status: BROWSERLESS_TOKEN was configured in Railway production on
 2026-10-16. Browserless REST reached ESCRS with HTTP 200; BrowserQL created a
 LiveURL. Standard /chromium/function lacks the LiveURL CDP command, so this
 prototype uses the documented /chromium/stealth connection for hybrid sessions.
-Full form render, all-field read-back and real-device tests remain NOT VERIFIED.
+Full form render and the synthetic bilateral all-field read-back now PASS.
+Real-device interaction and embedded-session continuity remain NOT VERIFIED.
 Local Chromium installation is no longer required.
 
 Observed account limit: 120,000 ms per session. A 300,000 ms LiveURL
@@ -43,4 +44,11 @@ Live validation notes (2026-10-17 Europe/Istanbul):
 - Actual Gender markup is a readonly input with role=combobox. MudSelect's
   upstream control opens via onmousedown. The canonical adapter now dispatches
   that event; its DOM contract and three adapter packaging tests pass.
-- Patched full live read-back is still being checked; do not mark it passed.
+- Patched full live read-back PASS: OD Clareon PanOptix Toric CNWTT2-6,
+  OS DEN00V. The canonical adapter completed its final field-by-field checks,
+  including Gender, manufacturer, Toric flags, both eyes' measurements and
+  targets, surgeon/initials/age, OD incision 180 and SIA 0.25.
+- Successful BrowserQL response had no errors and verify.value was
+  {"OD":"Clareon PanOptix Toric CNWTT2-6","OS":"DEN00V"}.
+- Seven focused Python checks plus the DOM contract scenarios passed.
+
