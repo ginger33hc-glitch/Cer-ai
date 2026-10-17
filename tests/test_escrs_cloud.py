@@ -30,6 +30,7 @@ def case():
 @pytest.fixture(autouse=True)
 def clean_leases(monkeypatch):
     _leases.clear()
+    monkeypatch.delenv("BROWSERLESS_SESSION_SECONDS", raising=False)
     monkeypatch.setenv("BROWSERLESS_TOKEN", "test-secret-do-not-return")
     monkeypatch.setenv("BROWSERLESS_HOST", "production-sfo.browserless.io")
     yield
@@ -193,3 +194,29 @@ def test_iol_page_changes_asset_url_when_transfer_script_changes(monkeypatch):
     pattern = r'/static/iol-escrs-assistant.js\?v=[^" ]+'
     assert re.search(pattern, before)[0] != re.search(pattern, after)[0]
     assert '/static/iol-escrs-assistant.js?v=2"' not in before
+
+
+def test_five_minute_viewer_has_preparation_budget_and_matching_keepalive(monkeypatch):
+    from urllib.parse import parse_qs, urlsplit
+    monkeypatch.setenv("BROWSERLESS_SESSION_SECONDS", "300")
+    query = build_query(CloudTransfer.model_validate(case()))
+    assert "liveURL(detached:true,timeout:300000" in query
+    assert "reconnect(timeout:300000)" in query
+    with patch("iol_module.escrs_cloud.urlopen", return_value=upstream()) as fetch:
+        result = create_cloud_transfer(CloudTransfer.model_validate(case()), "doctor")
+        assert parse_qs(urlsplit(fetch.call_args.args[0].full_url).query)["timeout"] == ["425000"]
+        assert result["viewer_limit_seconds"] == 300
+        assert result["session_limit_seconds"] == 425
+        with pytest.raises(HTTPException) as caught:
+            create_cloud_transfer(CloudTransfer.model_validate(case()), "doctor")
+        assert caught.value.status_code == 429
+        assert 300 <= int(caught.value.headers["Retry-After"]) <= 426
+
+
+def test_invalid_duration_fails_before_contacting_provider(monkeypatch):
+    monkeypatch.setenv("BROWSERLESS_SESSION_SECONDS", "999999")
+    with patch("iol_module.escrs_cloud.urlopen") as fetch:
+        with pytest.raises(HTTPException) as caught:
+            create_cloud_transfer(CloudTransfer.model_validate(case()), "doctor")
+        assert caught.value.status_code == 503
+        fetch.assert_not_called()
