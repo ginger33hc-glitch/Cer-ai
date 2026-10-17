@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 from typing import Any
 
 from fastapi import Body, File, Form, HTTPException, UploadFile
@@ -145,12 +146,16 @@ def install(core: Any) -> None:
     @core.app.post("/iol/escrs-cloud-transfer")
     def iol_escrs_cloud_transfer(payload: dict[str, Any] = Body(...)):
         from user_access import require_current_principal
-        from .escrs_cloud import CloudTransfer, create_cloud_transfer
+        from .escrs_cloud import CloudEye, CloudTransfer, create_cloud_transfer
         principal = require_current_principal()
         try:
             # The signed-in doctor's identity is authoritative.
             case = CloudTransfer.model_validate({**payload, "surgeon": principal.display_name})
         except ValidationError as exc:
+            allowed = set(CloudTransfer.model_fields) | set(CloudEye.model_fields)
+            fields = sorted({part for error in exc.errors() for part in error['loc']
+                             if isinstance(part, str) and part in allowed})
+            logging.getLogger(__name__).warning('ESCRS transfer validation rejected fields: %s', ','.join(fields))
             raise HTTPException(422, detail=json.loads(exc.json(include_url=False))) from exc
         audit = getattr(core, '_cerai_audit_event', None)
         if not callable(audit):
