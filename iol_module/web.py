@@ -139,14 +139,16 @@ def install(core: Any) -> None:
     def iol_escrs_cloud_config():
         import os
         from user_access import require_current_principal
-        from .escrs_cloud import model_names
+        from .escrs_cloud import cloud_provider, model_names
         require_current_principal()
-        return {"enabled": bool(os.environ.get("BROWSERLESS_TOKEN", "").strip()), "models": model_names()}
+        provider = cloud_provider()
+        key = 'BROWSERBASE_API_KEY' if provider == 'browserbase' else 'BROWSERLESS_TOKEN'
+        return {"enabled": bool(os.environ.get(key, "").strip()), "models": model_names(), 'provider':provider}
 
     @core.app.post("/iol/escrs-cloud-transfer")
     def iol_escrs_cloud_transfer(payload: dict[str, Any] = Body(...)):
         from user_access import require_current_principal
-        from .escrs_cloud import CloudEye, CloudTransfer, create_cloud_transfer
+        from .escrs_cloud import CloudEye, CloudTransfer, cloud_provider, create_cloud_transfer
         principal = require_current_principal()
         try:
             # The signed-in doctor's identity is authoritative.
@@ -157,17 +159,24 @@ def install(core: Any) -> None:
                              if isinstance(part, str) and part in allowed})
             logging.getLogger(__name__).warning('ESCRS transfer validation rejected fields: %s', ','.join(fields))
             raise HTTPException(422, detail=json.loads(exc.json(include_url=False))) from exc
+        provider = cloud_provider()
+        if case.provider != provider or (provider == 'browserbase' and case.consent_version != 'ESCRS-CLOUD-2026-10-17-V2'):
+            raise HTTPException(409, 'The ESCRS provider changed. Reload CER-AI and accept the current disclosure.')
         audit = getattr(core, '_cerai_audit_event', None)
         if not callable(audit):
             raise HTTPException(503, 'Transfer audit is unavailable. Please retry.')
         # Fixed metadata only: never include the request, measurements or viewer URL.
         receipt = audit('ESCRS_TRANSFER_CONSENT', actor=principal,
               details={'consent_version': case.consent_version,
-                       'recipients': ['Browserless', 'ESCRS IOL Calculator']})
+                       'recipients': ['Browserbase' if provider == 'browserbase' else 'Browserless', 'ESCRS IOL Calculator']})
         if receipt is None:
             raise HTTPException(503, 'Transfer consent could not be recorded. Please retry.')
         try:
-            result = create_cloud_transfer(case, principal.user_id)
+            if provider == 'browserbase':
+                from .escrs_browserbase import create_browserbase_transfer
+                result = create_browserbase_transfer(case, principal.user_id)
+            else:
+                result = create_cloud_transfer(case, principal.user_id)
         except HTTPException as exc:
             audit('ESCRS_TRANSFER_OUTCOME', actor=principal,
                   details={'status': 'FAILED', 'http_status': exc.status_code})
@@ -175,4 +184,6 @@ def install(core: Any) -> None:
         audit('ESCRS_TRANSFER_OUTCOME', actor=principal, details={'status': 'VERIFIED'})
         return result
 
+    from .escrs_browserbase import install as install_browserbase_sessions
+    install_browserbase_sessions(core)
     core._cerai_iol_module_installed = True
