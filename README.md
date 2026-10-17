@@ -14,6 +14,26 @@ For clinicians evaluating software for ectasia assessment, the [product overview
 
 The public pages describe the workflow and evidence boundaries; they do not assess individual patients or establish external validation of the complete software.
 
+## v2.0.5 IOL source archive and report provenance
+
+Successful IOL extraction persists the uploaded sources and extracted data in the
+existing encrypted archive before releasing the result. Upload and PDF use the
+same doctor-scoped assessment identifier. Retrying the same sources is idempotent;
+reusing an identifier for different sources is rejected. Archive failures block
+extraction release. Existing archive access controls remain authoritative.
+
+IOL assessment snapshots and PDFs now retain the software version, independent
+IOL policy identifier and deployment commit. Historical snapshots without this
+metadata remain explicitly UNKNOWN; no current version is backfilled into them.
+Historical source images that were never archived cannot be recovered by this
+change. Calculation formulas and clinical thresholds are unchanged.
+
+ESCRS cloud handoff now discloses both Browserless and ESCRS recipients and the
+transmitted fields in English and Turkish. Versioned transfer consent must be
+persisted before contacting the provider; operational outcome events exclude
+patient data, credentials and session URLs. Boundary documentation and the
+production-controls description have been reconciled with the existing runtime.
+
 ## v2.0.4 inclusive signed I-S boundary and production CI gate
 
 CER-AI owner-defined morphology classifies I-S <= -2.50 D or >= +0.50 D

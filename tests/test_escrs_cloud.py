@@ -20,6 +20,8 @@ def case():
     payload = synthetic_case()
     payload["initials"] = "CT"
     payload["terms_accepted"] = True
+    payload["data_transfer_accepted"] = True
+    payload["consent_version"] = "ESCRS-BROWSERLESS-2026-10-17"
     payload["eyes"]["OD"]["lens_id"] = "clareon-panoptix-toric-cnwtt3"
     payload["eyes"]["OS"]["lens_id"] = "tecnis-puresee-den00v"
     return payload
@@ -37,6 +39,9 @@ def clean_leases(monkeypatch):
 def test_cloud_input_rejects_wrong_model_manufacturer_mode_and_consent():
     for change in (
         lambda p: p.update(terms_accepted=False),
+        lambda p: p.update(data_transfer_accepted=False),
+        lambda p: p.pop("data_transfer_accepted"),
+        lambda p: p.update(consent_version="old"),
         lambda p: p["eyes"]["OD"].update(toric=False),
         lambda p: p["eyes"]["OS"].update(lens_matches=["DRN00V"]),
         lambda p: p["eyes"]["OD"].update(manufacturer_matches=["Other"]),
@@ -107,7 +112,8 @@ def test_upstream_error_does_not_echo_secret_url():
 def test_cloud_routes_require_login_and_use_server_doctor_identity():
     from iol_module.web import install
     import operational_security
-    core = SimpleNamespace(app=FastAPI())
+    events = []
+    core = SimpleNamespace(app=FastAPI(), _cerai_audit_event=lambda event, **kw: events.append((event,kw)) or {"recorded": True})
     install(core)
     with TestClient(core.app) as client:
         assert client.get("/iol/escrs-cloud-config").status_code == 401
@@ -116,6 +122,23 @@ def test_cloud_routes_require_login_and_use_server_doctor_identity():
             response = client.post("/iol/escrs-cloud-transfer", json=case())
             assert response.status_code == 200
             assert transfer.call_args.args[0].surgeon == "Signed-in Surgeon"
+            assert [e[0] for e in events] == ["ESCRS_TRANSFER_CONSENT", "ESCRS_TRANSFER_OUTCOME"]
+            evidence = json.dumps([e[1]["details"] for e in events])
+            for value in ("CT", "Signed-in Surgeon", "liveURL", "test-secret", "axial_length_mm"):
+                assert value not in evidence
+            events.clear()
+            transfer.side_effect = HTTPException(502, "Private upstream details")
+            assert client.post("/iol/escrs-cloud-transfer", json=case()).status_code == 502
+            assert events[-1][1]["details"] == {"status":"FAILED", "http_status":502}
+            assert "Private upstream" not in str(events)
+            core._cerai_audit_event = lambda *a, **kw: None
+            transfer.reset_mock()
+            assert client.post("/iol/escrs-cloud-transfer", json=case()).status_code == 503
+            transfer.assert_not_called()
+            del core._cerai_audit_event
+            transfer.reset_mock()
+            assert client.post("/iol/escrs-cloud-transfer", json=case()).status_code == 503
+            transfer.assert_not_called()
     assert "/iol/escrs-cloud-transfer" in operational_security.PROTECTED_PATHS
 
 
@@ -126,11 +149,11 @@ def test_mobile_web_handoff_closes_failed_popups_and_requires_consent():
 const fs=require('fs'),vm=require('vm'),assert=require('assert');
 const names=JSON.parse(fs.readFileSync('static/escrs-models.json','utf8'));
 let consent=true,fail=false,destination,closed=false,opens=0;
-const ctx={URL,window:{confirm:()=>consent,open:()=>{opens++;return {opener:{},document:{body:{}},location:{replace:u=>destination=u},close:()=>closed=true};}},fetch:async(url,options)=>{
+const ctx={URL,window:{confirm:message=>{assert(message.includes("Browserless"));assert(message.includes("initials"));assert(message.includes("ESCRS calculator terms"));return consent;},open:()=>{opens++;return {opener:{},document:{body:{}},location:{replace:u=>destination=u},close:()=>closed=true};}},fetch:async(url,options)=>{
  if(url==='/auth/me')return {ok:true,json:async()=>({user:{display_name:'Signed-in Doctor'}})};
  if(url==='/iol/escrs-cloud-config')return {ok:true,json:async()=>({enabled:true,models:names})};
  assert.equal(url,'/iol/escrs-cloud-transfer');const p=JSON.parse(options.body);
- assert.equal(p.terms_accepted,true);assert.equal(p.surgeon,'Signed-in Doctor');
+ assert.equal(p.terms_accepted,true);assert.equal(p.data_transfer_accepted,true);assert.equal(p.consent_version,"ESCRS-BROWSERLESS-2026-10-17");assert.equal(p.surgeon,'Signed-in Doctor');
  assert.equal(p.eyes.OD.toric,true);assert.equal(p.eyes.OS.toric,false);
  assert.equal(p.initials,'CT');assert(!JSON.stringify(p).includes('Case Test'));
  return {ok:!fail,json:async()=>fail?{detail:'Verification failed'}:{escrs_url:'https://production-sfo.browserless.io/e/x/live/index.html?i=viewer'}};

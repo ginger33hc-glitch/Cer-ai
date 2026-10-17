@@ -41,6 +41,9 @@ def install(core: Any) -> None:
     ):
         current_principal = getattr(core, "_cerai_current_principal", None)
         principal = current_principal() if callable(current_principal) else None
+        if principal is None:
+            from user_access import current_principal as bound_principal
+            principal = bound_principal()
         if principal is not None and principal.access_plan == "DEMO" and not str(assessment_request_id or "").strip():
             raise HTTPException(422, "Demo IOL assessment identifier is required.")
         assert_demo_credit = getattr(core, "_cerai_assert_demo_credit", None)
@@ -63,6 +66,10 @@ def install(core: Any) -> None:
             )
         except ValueError as exc:
             raise HTTPException(422, str(exc)) from exc
+        from .archive import archive_iol_sources
+        source_archive = archive_iol_sources(
+            core, payloads, results, principal, assessment_request_id, patient_name,
+        )
         consume_demo_credit = getattr(core, "_cerai_consume_demo_credit", None)
         if principal is not None and callable(consume_demo_credit):
             consume_demo_credit(
@@ -70,7 +77,7 @@ def install(core: Any) -> None:
                 str(assessment_request_id or "iol-full-account"),
                 "IOL",
             )
-        return {"sources": results, "identity": identity}
+        return {"sources": results, "identity": identity, "source_archive": source_archive}
 
     @core.app.post("/iol/evaluate")
     def iol_evaluate(payload: dict[str, Any] = Body(...)):
@@ -145,6 +152,22 @@ def install(core: Any) -> None:
             case = CloudTransfer.model_validate({**payload, "surgeon": principal.display_name})
         except ValidationError as exc:
             raise HTTPException(422, detail=json.loads(exc.json(include_url=False))) from exc
-        return create_cloud_transfer(case, principal.user_id)
+        audit = getattr(core, '_cerai_audit_event', None)
+        if not callable(audit):
+            raise HTTPException(503, 'Transfer audit is unavailable. Please retry.')
+        # Fixed metadata only: never include the request, measurements or viewer URL.
+        receipt = audit('ESCRS_TRANSFER_CONSENT', actor=principal,
+              details={'consent_version': case.consent_version,
+                       'recipients': ['Browserless', 'ESCRS IOL Calculator']})
+        if receipt is None:
+            raise HTTPException(503, 'Transfer consent could not be recorded. Please retry.')
+        try:
+            result = create_cloud_transfer(case, principal.user_id)
+        except HTTPException as exc:
+            audit('ESCRS_TRANSFER_OUTCOME', actor=principal,
+                  details={'status': 'FAILED', 'http_status': exc.status_code})
+            raise
+        audit('ESCRS_TRANSFER_OUTCOME', actor=principal, details={'status': 'VERIFIED'})
+        return result
 
     core._cerai_iol_module_installed = True

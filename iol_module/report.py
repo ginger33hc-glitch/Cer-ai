@@ -140,7 +140,10 @@ def draw_eye(canvas, eye, x, top, axis, tr):
     canvas.drawCentredString(cx, top-151, tr("Anterior view", "Önden görünüm"))
 
 
-def build_iol_report(report: IOLReportInput, surgeon: str = "", *, report_date: str | None = None) -> bytes:
+def build_iol_report(report: IOLReportInput, surgeon: str = "", *, report_date: str | None = None,
+                     versions: dict | None = None) -> bytes:
+    from .provenance import current_versions
+    versions = current_versions() if versions is None else versions
     tr = lambda en, turkish: turkish if report.locale == "tr" else en
     width, height = A4
     left, content_width = 34, width-68
@@ -251,5 +254,11 @@ def build_iol_report(report: IOLReportInput, surgeon: str = "", *, report_date: 
     footer = paragraph(tr("Dashed line: toric marker axis. No line when no toric axis is available.\nDecision support only. Final responsibility rests with the surgeon. Verify patient, eye, lens and axis before surgery.",
                           "Kesikli çizgi: torik işaret aksı. Torik aks yoksa çizgi gösterilmez.\nKarar desteğidir. Nihai sorumluluk cerrahtadır. Cerrahi öncesi hasta, göz, lens ve aksı doğrulayın."), 7.5)
     footer.wrap(content_width, 55); footer.drawOn(canvas, left, 27)
+    canvas.setFillColor(colors.HexColor("#34495e"))
+    canvas.setFont("IOL-Regular", 5.8)
+    canvas.drawString(left, 16,
+                     f"Software: {versions.get('software') or 'UNKNOWN'} | "
+                     f"IOL policy: {versions.get('clinical_policy') or 'UNKNOWN'}")
+    canvas.drawString(left, 8, f"Commit: {versions.get('deployment_sha') or 'UNKNOWN'}")
     canvas.showPage(); canvas.save()
     return buffer.getvalue()

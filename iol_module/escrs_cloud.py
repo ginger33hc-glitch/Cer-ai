@@ -63,6 +63,8 @@ class CloudTransfer(StrictModel):
     sex: Literal["Male", "Female"]
     surgeon: str = Field(min_length=1, max_length=160)
     terms_accepted: Literal[True]
+    data_transfer_accepted: Literal[True]
+    consent_version: Literal["ESCRS-BROWSERLESS-2026-10-17"]
     eyes: dict[Literal["OD", "OS"], CloudEye] = Field(min_length=1, max_length=2)
 
     @model_validator(mode="after")
@@ -73,7 +75,7 @@ class CloudTransfer(StrictModel):
 
 
 def build_query(case: CloudTransfer) -> str:
-    payload = case.model_dump(mode="json", exclude={"terms_accepted"})
+    payload = case.model_dump(mode="json", exclude={"terms_accepted", "data_transfer_accepted", "consent_version"})
     adapter = (ROOT / "extensions/escrs-assistant/adapter.js").read_text()
     code = adapter + "\nreturn JSON.stringify(await globalThis.CeraiEscrsAdapter.run(" + json.dumps(payload, ensure_ascii=True) + "));"
     consent = "[...document.querySelectorAll('button')].find(b=>b.textContent.trim().toUpperCase()==='I AGREE')"
