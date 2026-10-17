@@ -294,7 +294,7 @@ def test_static_public_pages_have_page_specific_discovery_identity(
     assert schema["name"] == title
     expected_date = {
         "/corneal-ectasia-risk-assessment": "2026-10-16",
-        "/iol-calculation-software": "2026-10-11",
+        "/iol-calculation-software": "2026-10-17",
         "/toric-iol-calculator": "2026-10-12",
         "/clinical-evidence": "2026-09-12",
         "/references": "2026-09-12",
@@ -364,6 +364,9 @@ def test_iol_product_page_states_the_integrated_lens_decision_workflow(public_ap
     ):
         assert text in response.text
     assert "not a claim that competing systems lack IOL or toric calculation" in response.text
+    assert "CER-AI 3.0: From report photos to IOL and toric planning" in response.text
+    assert "including Toric mode for supported toric lenses" in response.text
+    assert "automatic import of its results into CER-AI is not claimed" in response.text
 
 
 def test_toric_product_page_exposes_prototype_validation_boundary(public_app):
@@ -437,7 +440,7 @@ def test_iol_locales_have_consistent_metadata_and_crawlable_links(public_app, pa
     descriptions = [a['content'] for a in page.attributes('meta') if a.get('name') == 'description']
     assert descriptions == [schema['description']]
     assert title == schema['name']
-    lastmod = '2026-10-12' if language == 'tr' else '2026-10-11'
+    lastmod = '2026-10-17'
     assert f'<loc>https://cer-ai.com{path}</loc><lastmod>{lastmod}</lastmod>' in sitemap.text
     if language == 'tr':
         for phrase in ('göz içi mercek', 'akıllı mercek'):

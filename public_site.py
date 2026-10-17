@@ -55,10 +55,10 @@ _INDEXNOW_KEY = "731d2001b05e7e15840a00e98f53447d"
 _PUBLIC_PAGE_LASTMOD = {
     "/about/huseyin-cengiz": "2026-10-11",
     "/tr/korneal-ektazi-risk-degerlendirmesi": "2026-10-16",
-    "/": "2026-10-16",
+    "/": "2026-10-17",
     "/corneal-ectasia-risk-assessment": "2026-10-16",
-    "/iol-calculation-software": "2026-10-11",
-    "/tr/akilli-mercek-iol-hesaplama": "2026-10-12",
+    "/iol-calculation-software": "2026-10-17",
+    "/tr/akilli-mercek-iol-hesaplama": "2026-10-17",
     "/toric-iol-calculator": "2026-10-12",
     "/tr/torik-mercek-hesaplayici": "2026-10-12",
     "/clinical-evidence": "2026-09-12",
@@ -124,7 +124,7 @@ _PUBLIC_PAGE_METADATA = {
     "/tr/akilli-mercek-iol-hesaplama": {
         "schema_type": "MedicalWebPage",
         "title": "Göz İçi Mercek Seçim Programı | Akıllı Mercek – CER-AI",
-        "description": "CER-AI göz içi mercek seçim programı: monofokal, EDOF ve multifokal akıllı mercek seçimi, IOL gücü ve torik planlama için göz hekimlerine karar desteği.",
+        "description": "CER-AI 3.0: Pentacam ve biyometri raporu fotoğraflarından göz içi mercek ve akıllı mercek seçimi, IOL gücü, torik planlama ve ESCRS’ye aktarım.",
         "about": "Katarakt cerrahisinde göz içi mercek seçimi ve IOL hesaplama desteği",
         "in_language": "tr",
         "alternate_path": "/iol-calculation-software",
@@ -141,9 +141,7 @@ _PUBLIC_PAGE_METADATA = {
         "schema_type": "MedicalWebPage",
         "title": "Cataract IOL Selection Software | Multifocal EDOF Toric – CER-AI",
         "description": (
-            "Cataract and refractive lens surgery IOL selection software supporting "
-            "monofocal, EDOF and multifocal suitability assessment, spherical IOL "
-            "calculation and toric planning for surgeon review."
+            'CER-AI 3.0 reads Pentacam and biometry report photos for IOL selection, spherical power and toric planning, with reviewed lens and measurement transfer to ESCRS.'
         ),
         "about": "Intraocular lens calculation and lens-category decision support",
         "keywords": [
@@ -546,7 +544,9 @@ def _iol_software_schema(base: str) -> dict:
             "sources to lens-category eligibility—including EDOF and multifocal "
             "options—and toric-need assessment. After the surgeon selects a preferred "
             "lens family, it supports embedded Cooke K6 spherical IOL power calculation "
-            "when required biometry is complete, with explicit external verification routes."
+            "when required biometry is complete, with explicit external verification routes. "
+            "Supported report photographs can supply measurements for review and "
+            "transfer to ESCRS with the selected lens and matching Toric mode."
         ),
         "featureList": [
             "Pentacam-based lens-category eligibility before calculation",
@@ -554,7 +554,8 @@ def _iol_software_schema(base: str) -> dict:
             "Toric-need assessment before surgeon lens-family selection",
             "Embedded Cooke K6 spherical power calculation",
             "IOLMaster and Pentacam source review",
-            "External ESCRS comparison route",
+            "AI-assisted reading of supported report photographs",
+            "Reviewed biometry and selected-lens transfer to ESCRS, including Toric mode",
             "Prior corneal surgery routing",
             "Auditable inputs, exclusions and warnings",
         ],
@@ -628,7 +629,7 @@ def _discovery_head(base: str, *, robots_directive: str) -> str:
     """Machine-readable discovery metadata for public CER-AI pages."""
     home_title = "CER-AI | Corneal Ectasia Screening & IOL Decision Support"
     home_description = (
-        'CER-AI clinical decision support for corneal ectasia screening, Pentacam-based LASIK, PRK and SMILE evaluation, IOL selection and calculation.'
+        'CER-AI 3.0: AI-assisted Pentacam and biometry photo reading, IOL power and toric planning, ESCRS transfer and corneal ectasia screening.'
     )
     citations = [
         {
@@ -948,6 +949,8 @@ In Turkey, LASIK and PRK laser vision correction are commonly called “göz çi
 CER-AI is relevant to searches about IOL calculation software, intraocular lens calculators, Cooke K6, IOL decision support, toric IOL calculators, astigmatism planning, toric implantation axis, predicted residual astigmatism, corneal ectasia, post-LASIK ectasia, keratoconus susceptibility screening, refractive-surgery ectasia risk, Pentacam tomography/topography, Belin/Ambrosio Final BAD-D, the Randleman Ectasia Risk Score System (ERSS), NICE, PS3, pachymetry, residual stromal bed, LASIK screening, PRK screening, and procedure-specific corneal tissue safety. The public product pages explain preoperative post-LASIK ectasia risk assessment, keratoconus screening review, evaluating software for ectasia assessment, IOL calculation and selection, and the embedded toric IOL calculator. Its optical model is test-only and requires independent manufacturer verification.
 
 The software keeps ERSS, Pentacam Final BAD-D, NICE, and PS3 independently interpretable. CER-AI does not merge, blend, harmonize, average, or add their results into a single score. Procedure-specific tissue-safety checks also remain separate. Public pages describe the concepts and workflow; patient-specific clinical assessment occurs only inside the protected application.
+
+CER-AI 3.0 reads supported Pentacam and IOLMaster biometry report photographs with AI assistance. Reviewed measurements and the selected lens can be transferred to ESCRS, including matching Toric mode for supported lenses, without an installed application. Calculation in ESCRS remains external; automatic import of ESCRS results is not claimed.
 
 The integrated cataract workflow begins with defined Pentacam and biometry sources. It evaluates eligibility for monofocal, enhanced monofocal, EDOF, and multifocal categories and whether regular corneal astigmatism requires toric planning. The surgeon then selects the preferred lens family. When required inputs are complete, the IOL module calculates spherical power with Cooke K6. The embedded Toric Calculator may then display toric model candidates, marker axis, and predicted residual astigmatism. Its optical model is a test-only, clinically unvalidated prototype and must be independently checked with the selected lens manufacturer's calculator.
 

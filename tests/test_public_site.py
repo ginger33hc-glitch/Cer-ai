@@ -81,7 +81,7 @@ def test_public_homepage_identifies_software_and_clinical_author():
         graph = json.loads(match.group(1))["@graph"]
         by_type = {item["@type"]: item for item in graph if item["@type"] != "SoftwareApplication"}
         software = next(item for item in graph if item.get("@id") == "https://cer-ai.com/#software")
-        assert software["softwareVersion"] == "2.0.8"
+        assert software["softwareVersion"] == "3.0.0"
         assert software["alternateName"] == (
             "Corneal Ectasia Risk Assessment Intelligence"
         )
@@ -97,14 +97,14 @@ def test_public_homepage_identifies_software_and_clinical_author():
         assert by_type["Person"]["sameAs"] == [
             "https://www.linkedin.com/in/huseyin-cengiz-md-881b9797/"
         ]
-        assert by_type["MedicalWebPage"]["dateModified"] == "2026-10-16"
+        assert by_type["MedicalWebPage"]["dateModified"] == "2026-10-17"
 
 
 def test_clinical_app_has_stable_app_entry():
     with TestClient(canonical_engine.app, base_url="https://cer-ai.com") as client:
         response = client.get("/app")
         assert response.status_code == 200
-        assert "CER-AI — Corneal Ectasia Risk Assessment Intelligence v2.0.8" in response.text
+        assert "CER-AI — Corneal Ectasia Risk Assessment Intelligence v3.0.0" in response.text
         assert "public-home" not in response.text
 
 
