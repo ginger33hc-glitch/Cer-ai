@@ -31,6 +31,7 @@ def case():
 def clean_leases(monkeypatch):
     _leases.clear()
     monkeypatch.delenv("BROWSERLESS_SESSION_SECONDS", raising=False)
+    monkeypatch.delenv("CERAI_ESCRS_PROVIDER", raising=False)
     monkeypatch.setenv("BROWSERLESS_TOKEN", "test-secret-do-not-return")
     monkeypatch.setenv("BROWSERLESS_HOST", "production-sfo.browserless.io")
     yield
@@ -156,15 +157,15 @@ def test_mobile_web_handoff_closes_failed_popups_and_requires_consent():
     script = r'''
 const fs=require('fs'),vm=require('vm'),assert=require('assert');
 const names=JSON.parse(fs.readFileSync('static/escrs-models.json','utf8'));
-let consent=true,fail=false,validation=null,destination,closed=false,opens=0;
-const ctx={URL,window:{confirm:message=>{assert(message.includes("Browserless"));assert(message.includes("initials"));assert(message.includes("ESCRS calculator terms"));return consent;},open:()=>{opens++;return {opener:{},document:{body:{}},location:{replace:u=>destination=u},close:()=>closed=true};}},fetch:async(url,options)=>{
+let provider="browserless",consent=true,fail=false,validation=null,destination,closed=false,opens=0;
+const ctx={URL,window:{location:{origin:"https://cer-ai.com"},confirm:message=>{assert(message.includes(provider==="browserbase"?"Browserbase":"Browserless"));assert(message.includes("initials"));assert(message.includes("ESCRS calculator terms"));return consent;},open:()=>{opens++;return {opener:{},document:{body:{}},location:{replace:u=>destination=u},close:()=>closed=true};}},fetch:async(url,options)=>{
  if(url==='/auth/me')return {ok:true,json:async()=>({user:{display_name:'Signed-in Doctor'}})};
- if(url==='/iol/escrs-cloud-config')return {ok:true,json:async()=>({enabled:true,models:names})};
+ if(url==='/iol/escrs-cloud-config')return {ok:true,json:async()=>({enabled:true,models:names,provider})};
  assert.equal(url,'/iol/escrs-cloud-transfer');const p=JSON.parse(options.body);
- assert.equal(p.terms_accepted,true);assert.equal(p.data_transfer_accepted,true);assert.equal(p.consent_version,"ESCRS-BROWSERLESS-2026-10-17");assert.equal(p.surgeon,'Signed-in Doctor');
+ assert.equal(p.terms_accepted,true);assert.equal(p.data_transfer_accepted,true);assert.equal(p.consent_version,"ESCRS-CLOUD-2026-10-17-V2");assert.equal(p.provider,provider);assert.equal(p.surgeon,'Signed-in Doctor');
  assert.equal(p.eyes.OD.toric,true);assert.equal(p.eyes.OS.toric,false);
  assert.equal(p.initials,'CT');assert(!JSON.stringify(p).includes('Case Test'));
- return {ok:!fail&&!validation,status:validation?422:fail?502:200,json:async()=>validation?{detail:[{loc:[validation],input:"private-input"}]}:fail?{detail:'Verification failed'}:{escrs_url:'https://production-sfo.browserless.io/e/x/live/index.html?i=viewer'}};
+ return {ok:!fail&&!validation,status:validation?422:fail?502:200,json:async()=>validation?{detail:[{loc:[validation],input:"private-input"}]}:fail?{detail:'Verification failed'}:{escrs_url:provider==='browserbase'?'/iol/escrs-session/'+'a'.repeat(32):'https://production-sfo.browserless.io/e/x/live/index.html?i=viewer'}};
 }};
 vm.createContext(ctx);vm.runInContext(fs.readFileSync('static/iol-escrs-assistant.js','utf8'),ctx);
 const eye=side=>({eye:side,biological_sex:'Female',axial_length_mm:23.5,acd_mm:3.1,k1_d:42.5,k2_d:44,k1_axis_deg:15,k2_axis_deg:105,cct_um:550,lens_thickness_mm:4.3,wtw_mm:11.8,incision_axis_deg:180,sia_d:.25,prior_corneal_surgery:'NONE'});
@@ -174,7 +175,8 @@ const data={patientName:'Case Test',age:61,sex:'Female',loadedEyes:['OD','OS'],c
  fail=true;await assert.rejects(transfer(data),/Verification failed/);assert(closed);
  fail=false;validation="consent_version";await assert.rejects(transfer(data),/Reload CER-AI/);
  validation="eyes";await assert.rejects(transfer(data),/Review the patient details/);
- consent=false;const before=opens;assert.equal(await transfer(data),false);assert.equal(opens,before);
+ consent=false;const before=opens;assert.equal(await transfer(data),false);assert.equal(opens,before+1);assert(closed);
+ consent=true;validation=null;provider="browserbase";assert.equal(await transfer(data),true);assert(destination.includes("/iol/escrs-session/"));
 })().catch(e=>{console.error(e);process.exitCode=1;});
 '''
     result = subprocess.run(["node", "-e", script], cwd=Path(__file__).resolve().parents[1], capture_output=True, text=True, timeout=15)

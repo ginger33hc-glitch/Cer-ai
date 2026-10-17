@@ -159,7 +159,7 @@ def _access_key_valid(request: Request) -> bool:
 
 
 def _is_protected_path(path: str) -> bool:
-    return path in PROTECTED_PATHS or any(path.startswith(prefix) for prefix in PROTECTED_PREFIXES)
+    return path.startswith("/iol/escrs-session/") or path in PROTECTED_PATHS or any(path.startswith(prefix) for prefix in PROTECTED_PREFIXES)
 
 
 def _request_limit(path: str) -> int:
@@ -180,6 +180,8 @@ def _secure_response(response, path: str):
         "form-action 'self'; img-src 'self' data: blob:; connect-src 'self'; "
         "script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'"
     )
+    if path.startswith('/iol/escrs-session/'):
+        response.headers['Content-Security-Policy'] += "; frame-src https://www.browserbase.com https://browserbase.com"
     response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
     if _is_protected_path(path):
         response.headers["Cache-Control"] = "no-store"
