@@ -19,9 +19,19 @@ from .models import EscrsEyeInput, PriorCornealSurgery, StrictModel
 
 ROOT = Path(__file__).resolve().parents[1]
 HOSTS = {"production-sfo.browserless.io", "production-ams.browserless.io", "production-lon.browserless.io"}
-SESSION_SECONDS = 120
+PREPARATION_SECONDS = 125
 _lock = Lock()
 _leases: dict[str, float] = {}
+
+
+def session_limits() -> tuple[int, int]:
+    """Keep Free working; enable five viewer minutes only after a plan upgrade."""
+    value = os.environ.get("BROWSERLESS_SESSION_SECONDS", "120").strip()
+    if value == "300":
+        return 300, 300 + PREPARATION_SECONDS
+    if value == "120":
+        return 90, 120
+    raise HTTPException(503, "Invalid ESCRS session duration configuration.")
 
 
 def model_names() -> dict[str, str]:
@@ -75,6 +85,7 @@ class CloudTransfer(StrictModel):
 
 
 def build_query(case: CloudTransfer) -> str:
+    viewer_seconds, _ = session_limits()
     payload = case.model_dump(mode="json", exclude={"terms_accepted", "data_transfer_accepted", "consent_version"})
     adapter = (ROOT / "extensions/escrs-assistant/adapter.js").read_text()
     code = adapter + "\nreturn JSON.stringify(await globalThis.CeraiEscrsAdapter.run(" + json.dumps(payload, ensure_ascii=True) + "));"
@@ -84,8 +95,8 @@ def build_query(case: CloudTransfer) -> str:
         f'click(selector:{json.dumps(consent)},timeout:45000) {{ time }} '
         'waitForSelector(selector:"input",timeout:20000) { time } '
         f'verify:evaluate(content:{json.dumps(code)},timeout:60000) {{ value }} '
-        'liveURL(detached:true,timeout:90000,interactable:true,resizable:true) { liveURL } '
-        'reconnect(timeout:90000) { browserWSEndpoint } }'
+        f'liveURL(detached:true,timeout:{viewer_seconds * 1000},interactable:true,resizable:true) {{ liveURL }} '
+        f'reconnect(timeout:{viewer_seconds * 1000}) {{ browserWSEndpoint }} }}'
     )
 
 
@@ -94,21 +105,23 @@ def create_cloud_transfer(case: CloudTransfer, user_id: str) -> dict:
     host = os.environ.get("BROWSERLESS_HOST", "production-sfo.browserless.io")
     if not token or host not in HOSTS:
         raise HTTPException(503, "ESCRS cloud transfer is unavailable.")
+    viewer_seconds, total_seconds = session_limits()
     now = monotonic()
     with _lock:
         for key in list(_leases):
             if _leases[key] <= now:
                 del _leases[key]
         if user_id in _leases or len(_leases) >= 2:
-            raise HTTPException(429, "An ESCRS cloud session is still active. Wait up to two minutes before retrying.", headers={"Retry-After": "120"})
-        _leases[user_id] = now + SESSION_SECONDS
+            retry = max(1, int(_leases.get(user_id, min(_leases.values())) - now) + 1)
+            raise HTTPException(429, "An ESCRS cloud session is still active. Wait for it to finish before retrying.", headers={"Retry-After": str(retry)})
+        _leases[user_id] = now + total_seconds
     try:
         request = Request(
-            "https://" + host + "/chromium/bql?" + urlencode({"token": token, "timeout": SESSION_SECONDS * 1000}),
+            "https://" + host + "/chromium/bql?" + urlencode({"token": token, "timeout": total_seconds * 1000}),
             data=json.dumps({"query": build_query(case)}).encode(),
             headers={"Content-Type": "application/json", "Accept": "application/json"},
         )
-        with urlopen(request, timeout=125) as response:
+        with urlopen(request, timeout=PREPARATION_SECONDS) as response:
             result = json.loads(response.read(512 * 1024))
         if result.get("errors"):
             raise ValueError("Field verification or session creation failed")
@@ -122,7 +135,8 @@ def create_cloud_transfer(case: CloudTransfer, user_id: str) -> dict:
         if parsed.scheme != "https" or parsed.hostname != host or parsed.port not in {None, 443} or parsed.username or parsed.password or "/live/" not in parsed.path:
             raise ValueError("Invalid viewer address")
         # Return only the expiring viewer link; never return API or reconnect keys.
-        return {"escrs_url": url, "verified": True, "session_limit_seconds": SESSION_SECONDS}
+        return {"escrs_url": url, "verified": True, "session_limit_seconds": total_seconds,
+                "viewer_limit_seconds": viewer_seconds}
     except Exception as exc:
         with _lock:
             _leases.pop(user_id, None)

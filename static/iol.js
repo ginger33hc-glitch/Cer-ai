@@ -127,6 +127,19 @@
     });
     calculationRoot.append(calculationHeading, $("lensThicknessField"), retryPowerButton, $("powerStatus"), $("powerResult"));
     document.getElementById("calculationPanels").appendChild(calculationRoot);
+    const notesRoot = document.createElement("section");
+    notesRoot.hidden = true;
+    const notesHeading = recommendationHeading.cloneNode(true);
+    const notesContent = document.createElement("div");
+    notesRoot.append(notesHeading, notesContent);
+    document.getElementById("calculationNotePanels").appendChild(notesRoot);
+    function showCalculationNotes(html = "") {
+      notesContent.innerHTML = html;
+      notesRoot.hidden = !html;
+      document.getElementById("calculationNotes").hidden =
+        ![...document.getElementById("calculationNotePanels").children].some(panel => !panel.hidden);
+    }
+
     // Posterior completion precedes lens selection and calculation.
     $("iolForm").appendChild($("backCompletion"));
   const kDifference = () => $("k1").value === "" || $("k2").value === "" ? NaN : Math.abs(Number($("k2").value) - Number($("k1").value));
@@ -283,6 +296,7 @@
     syncWorkflow();
     calculationRoot.hidden = false;
     $("powerResult").replaceChildren();
+    showCalculationNotes();
     const missingLens = !$("selectedLens").value;
     if (missingLens) {
       $("powerStatus").textContent = `${eye}: ${tr("Select a clinic lens.")}`;
@@ -315,8 +329,9 @@
       const response=await fetch("/iol/power/plan",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)}); const data=await response.json(); if(!response.ok) throw new Error(errorMessage(data)); if (requestVersion !== version) return false;
       powerPlans[eye] = data;
       const formula = data.spherical_formula === "T2" ? "T2" : "Cooke K6";
-      let html=`<div class="warning"><strong>${tr(data.calculator_name)}</strong><br>${tr(data.predictions?.length ? `${formula} calculation completed.` : data.message)}</div>`;
-      if (data.fallback_reason) html += `<div class="warning">${tr("Cooke K6 unavailable. Calculated locally with T2. You may transfer values to ESCRS for comparison.")}</div>`;
+      let notes=`<div class="warning"><strong>${tr(data.calculator_name)}</strong><br>${tr(data.predictions?.length ? `${formula} calculation completed.` : data.message)}</div>`;
+      let html = data.predictions?.length ? "" : `<div class="warning">${tr(data.message)}</div>`;
+      if (data.fallback_reason) notes += `<div class="warning">${tr("Cooke K6 unavailable. Calculated locally with T2. You may transfer values to ESCRS for comparison.")}</div>`;
       $("lensThicknessField").hidden = !data.required_inputs?.includes("lens_thickness_mm");
       retryPowerButton.hidden = $("lensThicknessField").hidden;
       if (data.required_inputs?.includes("lens_thickness_mm")) {
@@ -324,20 +339,20 @@
         $("lensThickness").focus();
       }
       html+=`<p><span>ACD target</span>: ${Number(data.target_refraction_d).toFixed(2)} D (<span>locked</span>)</p>`;
-      if(data.second_formula_required) html+=`<div class="warning"><span>Second modern formula verification required</span> (AL ${Number(data.inputs.axial_length_mm).toFixed(2)} mm). <span>Use ESCRS where available and verify all values manually.</span></div>`;
+      if(data.second_formula_required) notes+=`<div class="warning"><span>Second modern formula verification required</span> (AL ${Number(data.inputs.axial_length_mm).toFixed(2)} mm). <span>Use ESCRS where available and verify all values manually.</span></div>`;
       if(data.escrs_url) html+=`<button id="${eye}-escrsTransfer" class="external" type="button">Transfer biometry only to ESCRS</button>`;
       if(data.escrs_url) html+=`<button id="${eye}-escrsAutomatic" class="external" type="button">Open ESCRS with all values — no installation</button>`;
       const toricRoute = data.route === "MANUFACTURER_TORIC";
-      if(toricRoute && data.predictions?.length) html += `<div class="warning">${tr(data.message)}</div>`;
+      if(toricRoute && data.predictions?.length) notes += `<div class="warning">${tr(data.message)}</div>`;
       if(toricRoute && data.toric_candidates?.length) {
         const fmt = (value, digits = 2) => Number.isFinite(Number(value)) ? Number(value).toFixed(digits) : "—";
         const candidates = data.toric_candidates.filter(c => /^[A-Z0-9 .\/-]+$/.test(c.model));
         const reference = lensCatalog.find(lens => lens.id === data.selected_lens_id)?.manufacturer_reference;
         if (reference?.note) {
           const note = tr(reference.note).replace(/[&<>"']/g, char => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
-          html += `<p>${note}</p>`;
+          notes += `<p>${note}</p>`;
         }
-        html += `<div class="warning"><strong>TEST ONLY — unvalidated toric optical prototype.</strong> Independently check the source readings, model availability, implantation axis, and residual with the manufacturer's calculator before any clinical use.</div>`;
+        notes += `<div class="warning"><strong>TEST ONLY — unvalidated toric optical prototype.</strong> Independently check the source readings, model availability, implantation axis, and residual with the manufacturer's calculator before any clinical use.</div>`;
         html += `<h3>Embedded toric calculation — ${fmt(candidates[0]?.spherical_equivalent_iol_d)} D ${formula} <span>spherical equivalent</span></h3>`;
         html += `<div class="recommendation">${candidates[0]?.model ?? "—"} · ${fmt(candidates[0]?.marker_axis_deg, 1)}° marker axis</div>`;
         html += `<p>Predicted residual cylinder: ${fmt(candidates[0]?.residual_spectacle_cylinder_d)} D at ${fmt(candidates[0]?.residual_spectacle_axis_deg, 1)}° (prototype estimate).</p>`;
@@ -345,7 +360,7 @@
       } else if(toricRoute) html += `<div class="warning"><strong>No embedded toric model or axis available.</strong> ${data.toric_status === "INPUTS_INCOMPLETE" ? "Upload the same-eye Pentacam 4 Maps Refractive image and verify Pachy Vertex." : (data.toric_status === "UNSUPPORTED" ? "No validated embedded model series for this lens. Use the manufacturer calculator and ESCRS for independent verification." : "Review source measurements and the selected lens family.")}</div>`;
       if(data.predictions?.length){html+=`<h3>${tr(toricRoute ? `Stage 1 — ${formula} spherical power` : `${formula} power`)}</h3><table class="table"><thead><tr><th>IOL power</th><th>Predicted refraction</th><th>Selection</th></tr></thead><tbody>${data.predictions.map(p=>`<tr><td>${Number(p.IOL ?? p.iol_power).toFixed(2)}</td><td>${Number(p.Rx ?? p.predicted_refraction).toFixed(2)}</td><td>${p.IsBestOption ? tr("Closest to target") : ""}</td></tr>`).join("")}</tbody></table>`;}
       if(data.calculator_url) html+=`<a class="external" target="_blank" rel="noopener noreferrer" href="${data.calculator_url}">Optional manufacturer toric calculator comparison</a>`;
-      $("powerResult").innerHTML=html; status.textContent=tr(data.calculation_status.replaceAll("_"," "));
+      $("powerResult").innerHTML=html; showCalculationNotes(notes); status.textContent=tr(data.calculation_status.replaceAll("_"," "));
       if(data.escrs_url) $("powerResult").querySelector(`#${eye}-escrsAutomatic`).addEventListener("click", async () => {
         const button = $("powerResult").querySelector(`#${eye}-escrsAutomatic`);
         button.disabled = true; status.className = "status";
@@ -357,7 +372,7 @@
             sex:document.getElementById("biologicalSex").value
           });
           if (opened === false) return;
-          status.textContent = tr("Verified ESCRS cloud session opened. Review the form before calculating. Session limit: two minutes.");
+          status.textContent = tr("Verified ESCRS cloud session opened. Review the form before calculating. The session duration depends on the configured Browserless plan.");
         } catch (error) { status.textContent = tr(error.message); status.classList.add("error"); }
         finally { button.disabled = false; }
       });
@@ -388,6 +403,7 @@
       powerPlans[eye] = null;
       if ($("lensThicknessField").hidden) calculationRoot.hidden = true;
       $("powerResult").replaceChildren();
+      showCalculationNotes();
       $("powerStatus").textContent = "";
       if (category) {
         calculationRoot.hidden = true; retryPowerButton.hidden = true; $("lensThicknessField").hidden = true;

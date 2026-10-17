@@ -31,7 +31,7 @@ const fn=source.slice(start,source.indexOf('  $("recommendAll").addEventListener
   const calcEnd=source.indexOf('    const corneaBack =',calcStart);
   const calcPrefix=source.slice(calcStart,calcEnd)+'return true; }';
   const lens={value:'',reportValidity:()=>false}, powerStatus={};
-  const calcContext={version:0,eye:'OD',powerPlans:{OD:{}},syncWorkflow:()=>{},calculationRoot:{hidden:true},
+  const calcContext={version:0,eye:'OD',powerPlans:{OD:{}},syncWorkflow:()=>{},showCalculationNotes:()=>{},calculationRoot:{hidden:true},
     $:id=>id==='selectedLens'?lens:id==='powerStatus'?powerStatus:{replaceChildren:()=>{}},tr:x=>x};
   vm.createContext(calcContext);vm.runInContext(calcPrefix,calcContext);
   assert.equal(await calcContext.calculate(),false);

@@ -14,6 +14,21 @@ For clinicians evaluating software for ectasia assessment, the [product overview
 
 The public pages describe the workflow and evidence boundaries; they do not assess individual patients or establish external validation of the complete software.
 
+## v2.0.7 calculation notes and plan-gated five-minute ESCRS sessions
+
+General calculation/prototype notices appear in a separate bottom section, after
+results and report actions, with separate OD/OS labels. Lens-class warnings,
+eligibility parameters and missing-input errors stay at their decision points.
+
+`BROWSERLESS_SESSION_SECONDS=300` requests a five-minute viewer, matching
+reconnect keep-alive and a 125-second preparation allowance (425-second maximum
+browser lifetime). Activate only after upgrading the Browserless account to a
+plan allowing at least 425 seconds. Free accounts retain the existing default:
+120-second browser lifetime and a 90-second viewer, capped by remaining time.
+The configured runtime default is unchanged until the paid plan is verified.
+Unsupported duration values fail before contacting the provider. No plan purchase
+or automatic billing change is performed by this release.
+
 ## v2.0.6 ESCRS browser asset refresh
 
 IOL page script URLs now follow their content hashes, preventing an unchanged
