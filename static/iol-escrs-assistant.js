@@ -41,7 +41,15 @@
       const payload = buildPayload({...data,surgeon:identity.user?.display_name,modelNames:config.models});
       const response = await fetch("/iol/escrs-cloud-transfer",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({...payload,terms_accepted:true,data_transfer_accepted:true,consent_version:"ESCRS-BROWSERLESS-2026-10-17"})});
       const result = await response.json();
-      if (!response.ok) throw new Error(typeof result.detail === "string" ? result.detail : "ESCRS cloud transfer could not be verified.");
+      if (!response.ok) {
+        if (response.status === 422 && Array.isArray(result.detail)) {
+          const consentError = result.detail.some(item => (item.loc || []).some(field => ["terms_accepted","data_transfer_accepted","consent_version"].includes(field)));
+          throw new Error(tr(consentError
+            ? "This page is out of date. Reload CER-AI and accept the current ESCRS data-transfer disclosure."
+            : "Review the patient details and eye measurements before ESCRS transfer. The transfer was not started."));
+        }
+        throw new Error(typeof result.detail === "string" ? result.detail : tr("ESCRS cloud transfer could not be verified."));
+      }
       const url = new URL(result.escrs_url);
       if (url.protocol !== "https:" || !["production-sfo.browserless.io","production-ams.browserless.io","production-lon.browserless.io"].includes(url.hostname) || !url.pathname.includes("/live/")) throw new Error("Invalid ESCRS cloud session address.");
       if (target) target.location.replace(url.href); else window.location.assign(url.href);

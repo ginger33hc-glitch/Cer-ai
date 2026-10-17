@@ -14,6 +14,14 @@ For clinicians evaluating software for ectasia assessment, the [product overview
 
 The public pages describe the workflow and evidence boundaries; they do not assess individual patients or establish external validation of the complete software.
 
+## v2.0.6 ESCRS browser asset refresh
+
+IOL page script URLs now follow their content hashes, preventing an unchanged
+manual query version from reusing a pre-release transfer script after page reload.
+Transfer validation distinguishes outdated disclosure consent from invalid inputs.
+Server diagnostics log only allowlisted field names, never request values. Existing
+open pages must still be reloaded; no consent requirement is bypassed.
+
 ## v2.0.5 IOL source archive and report provenance
 
 Successful IOL extraction persists the uploaded sources and extracted data in the

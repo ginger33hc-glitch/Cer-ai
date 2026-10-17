@@ -109,7 +109,7 @@ def test_upstream_error_does_not_echo_secret_url():
     assert "test-secret" not in caught.value.detail
 
 
-def test_cloud_routes_require_login_and_use_server_doctor_identity():
+def test_cloud_routes_require_login_and_use_server_doctor_identity(caplog):
     from iol_module.web import install
     import operational_security
     events = []
@@ -119,6 +119,13 @@ def test_cloud_routes_require_login_and_use_server_doctor_identity():
         assert client.get("/iol/escrs-cloud-config").status_code == 401
         assert client.post("/iol/escrs-cloud-transfer", json=case()).status_code == 401
         with patch("user_access.require_current_principal", return_value=SimpleNamespace(user_id="doctor", display_name="Signed-in Surgeon")), patch("iol_module.escrs_cloud.create_cloud_transfer", return_value={"verified": True}) as transfer:
+            stale = case()
+            stale.pop("data_transfer_accepted")
+            stale.pop("consent_version")
+            assert client.post("/iol/escrs-cloud-transfer", json=stale).status_code == 422
+            transfer.assert_not_called()
+            assert "data_transfer_accepted" in caplog.text and "consent_version" in caplog.text
+            assert "Signed-in Surgeon" not in caplog.text and "test-secret" not in caplog.text
             response = client.post("/iol/escrs-cloud-transfer", json=case())
             assert response.status_code == 200
             assert transfer.call_args.args[0].surgeon == "Signed-in Surgeon"
@@ -148,7 +155,7 @@ def test_mobile_web_handoff_closes_failed_popups_and_requires_consent():
     script = r'''
 const fs=require('fs'),vm=require('vm'),assert=require('assert');
 const names=JSON.parse(fs.readFileSync('static/escrs-models.json','utf8'));
-let consent=true,fail=false,destination,closed=false,opens=0;
+let consent=true,fail=false,validation=null,destination,closed=false,opens=0;
 const ctx={URL,window:{confirm:message=>{assert(message.includes("Browserless"));assert(message.includes("initials"));assert(message.includes("ESCRS calculator terms"));return consent;},open:()=>{opens++;return {opener:{},document:{body:{}},location:{replace:u=>destination=u},close:()=>closed=true};}},fetch:async(url,options)=>{
  if(url==='/auth/me')return {ok:true,json:async()=>({user:{display_name:'Signed-in Doctor'}})};
  if(url==='/iol/escrs-cloud-config')return {ok:true,json:async()=>({enabled:true,models:names})};
@@ -156,7 +163,7 @@ const ctx={URL,window:{confirm:message=>{assert(message.includes("Browserless"))
  assert.equal(p.terms_accepted,true);assert.equal(p.data_transfer_accepted,true);assert.equal(p.consent_version,"ESCRS-BROWSERLESS-2026-10-17");assert.equal(p.surgeon,'Signed-in Doctor');
  assert.equal(p.eyes.OD.toric,true);assert.equal(p.eyes.OS.toric,false);
  assert.equal(p.initials,'CT');assert(!JSON.stringify(p).includes('Case Test'));
- return {ok:!fail,json:async()=>fail?{detail:'Verification failed'}:{escrs_url:'https://production-sfo.browserless.io/e/x/live/index.html?i=viewer'}};
+ return {ok:!fail&&!validation,status:validation?422:fail?502:200,json:async()=>validation?{detail:[{loc:[validation],input:"private-input"}]}:fail?{detail:'Verification failed'}:{escrs_url:'https://production-sfo.browserless.io/e/x/live/index.html?i=viewer'}};
 }};
 vm.createContext(ctx);vm.runInContext(fs.readFileSync('static/iol-escrs-assistant.js','utf8'),ctx);
 const eye=side=>({eye:side,biological_sex:'Female',axial_length_mm:23.5,acd_mm:3.1,k1_d:42.5,k2_d:44,k1_axis_deg:15,k2_axis_deg:105,cct_um:550,lens_thickness_mm:4.3,wtw_mm:11.8,incision_axis_deg:180,sia_d:.25,prior_corneal_surgery:'NONE'});
@@ -164,8 +171,25 @@ const data={patientName:'Case Test',age:61,sex:'Female',loadedEyes:['OD','OS'],c
 (async()=>{const transfer=ctx.window.CERAI_ESCRS_ASSISTANT.transfer;
  assert.equal(await transfer(data),true);assert(destination.includes('/live/'));
  fail=true;await assert.rejects(transfer(data),/Verification failed/);assert(closed);
+ fail=false;validation="consent_version";await assert.rejects(transfer(data),/Reload CER-AI/);
+ validation="eyes";await assert.rejects(transfer(data),/Review the patient details/);
  consent=false;const before=opens;assert.equal(await transfer(data),false);assert.equal(opens,before);
 })().catch(e=>{console.error(e);process.exitCode=1;});
 '''
     result = subprocess.run(["node", "-e", script], cwd=Path(__file__).resolve().parents[1], capture_output=True, text=True, timeout=15)
     assert result.returncode == 0, result.stderr
+
+
+def test_iol_page_changes_asset_url_when_transfer_script_changes(monkeypatch):
+    import re
+    from iol_module.ui import render_iol_html
+    before = render_iol_html()
+    read_bytes = Path.read_bytes
+    def changed(path):
+        content = read_bytes(path)
+        return content + b"\n// next release" if path.name == "iol-escrs-assistant.js" else content
+    monkeypatch.setattr(Path, "read_bytes", changed)
+    after = render_iol_html()
+    pattern = r'/static/iol-escrs-assistant.js\?v=[^" ]+'
+    assert re.search(pattern, before)[0] != re.search(pattern, after)[0]
+    assert '/static/iol-escrs-assistant.js?v=2"' not in before
