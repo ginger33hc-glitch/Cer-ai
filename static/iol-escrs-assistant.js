@@ -26,7 +26,7 @@
   }
   async function transfer(data) {
     const tr = text => window.CERAI_I18N?.translate ? window.CERAI_I18N.translate(text) : text;
-    if (!window.confirm(tr("I accept the ESCRS calculator terms for this calculation: https://iolcalculator.escrs.org/Resources/ESCRS_IOL_Calculator_Terms_of_Use.pdf"))) return false;
+    if (!window.confirm(tr("This transfer sends patient initials, age, biological sex, eye measurements, previous corneal surgery, selected lens, target refraction and the signed-in surgeon name to Browserless cloud browsers and the ESCRS IOL Calculator. These data remain potentially identifiable. Full patient names and source images are not sent. Continue only if authorized to disclose these data to both services.") + "\n\n" + tr("I accept the ESCRS calculator terms for this calculation: https://iolcalculator.escrs.org/Resources/ESCRS_IOL_Calculator_Terms_of_Use.pdf"))) return false;
     const target = window.open("about:blank", "_blank");
     if (target) { target.opener = null; target.document.body.textContent = tr("Preparing your ESCRS cloud session. Keep this page open."); }
     try {
@@ -39,7 +39,7 @@
       if (!configResponse.ok || !config.enabled) throw new Error("ESCRS cloud transfer is unavailable.");
       const identity = await identityResponse.json();
       const payload = buildPayload({...data,surgeon:identity.user?.display_name,modelNames:config.models});
-      const response = await fetch("/iol/escrs-cloud-transfer",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({...payload,terms_accepted:true})});
+      const response = await fetch("/iol/escrs-cloud-transfer",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({...payload,terms_accepted:true,data_transfer_accepted:true,consent_version:"ESCRS-BROWSERLESS-2026-10-17"})});
       const result = await response.json();
       if (!response.ok) throw new Error(typeof result.detail === "string" ? result.detail : "ESCRS cloud transfer could not be verified.");
       const url = new URL(result.escrs_url);
