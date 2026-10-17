@@ -58,9 +58,9 @@
         ? url.origin === window.location.origin && /^\/iol\/escrs-session\/[a-f0-9]{32}$/.test(url.pathname)
         : ["production-sfo.browserless.io","production-ams.browserless.io","production-lon.browserless.io"].includes(url.hostname) && url.pathname.includes("/live/");
       if (url.protocol !== "https:" || !valid) throw new Error("Invalid ESCRS cloud session address.");
-      if (target) target.location.replace(url.href); else window.location.assign(url.href);
+      if (target && !target.closed) target.location.replace(url.href); else window.location.assign(url.href);
       return true;
-    } catch(error) { if(target) target.close(); throw error; }
+    } catch(error) { if(target && !target.closed) target.close(); throw error; }
   }
   window.CERAI_ESCRS_ASSISTANT = {buildPayload,transfer};
 })();
