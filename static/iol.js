@@ -364,17 +364,34 @@
       if(data.escrs_url) $("powerResult").querySelector(`#${eye}-escrsAutomatic`).addEventListener("click", async () => {
         const button = $("powerResult").querySelector(`#${eye}-escrsAutomatic`);
         button.disabled = true; status.className = "status";
+        let feedback = document.getElementById(eye + "-escrsAutomaticFeedback");
+        if (!feedback) {
+          feedback = document.createElement("p");
+          feedback.id = eye + "-escrsAutomaticFeedback";
+          feedback.className = "status";
+          feedback.setAttribute("role", "status");
+          feedback.setAttribute("aria-live", "polite");
+          button.insertAdjacentElement("afterend", feedback);
+        }
+        feedback.className = "status";
+        feedback.textContent = tr("Preparing ESCRS automatic transfer. Please wait.");
         try {
+          if (!window.CERAI_ESCRS_ASSISTANT?.transfer) throw new Error("ESCRS automatic transfer module failed to load. Reload the page.");
           const opened = await window.CERAI_ESCRS_ASSISTANT.transfer({
             plans:JSON.parse(JSON.stringify(powerPlans)),loadedEyes:[...loadedEyes],catalog:lensCatalog,
             patientName:document.getElementById("patientName").value,
             age:Number(document.getElementById("patientAge").value),
             sex:document.getElementById("biologicalSex").value
           });
-          if (opened === false) return;
-          status.textContent = tr("Verified ESCRS cloud session opened. Review the form before calculating. The session duration depends on the configured Browserless plan.");
-        } catch (error) { status.textContent = tr(error.message); status.classList.add("error"); }
-        finally { button.disabled = false; }
+          if (opened === false) { feedback.textContent = tr("ESCRS transfer cancelled."); return; }
+          feedback.textContent = tr("ESCRS cloud session opened. Verify all imported values before calculating.");
+          status.textContent = feedback.textContent;
+        } catch (error) {
+          feedback.textContent = tr(error?.message || "ESCRS automatic transfer failed.");
+          feedback.classList.add("error");
+          status.textContent = feedback.textContent;
+          status.classList.add("error");
+        } finally { button.disabled = false; }
       });
       if(data.escrs_url) $("powerResult").querySelector(`#${eye}-escrsTransfer`).addEventListener("click", async () => {
         const button = $("powerResult").querySelector(`#${eye}-escrsTransfer`);
