@@ -382,7 +382,7 @@
             patientName:document.getElementById("patientName").value,
             age:Number(document.getElementById("patientAge").value),
             sex:document.getElementById("biologicalSex").value
-          });
+          }, message => { feedback.textContent = tr(message); });
           if (opened === false) { feedback.textContent = tr("ESCRS transfer cancelled."); return; }
           feedback.textContent = tr("ESCRS cloud session opened. Verify all imported values before calculating.");
           status.textContent = feedback.textContent;
