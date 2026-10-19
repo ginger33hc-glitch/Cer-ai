@@ -26,8 +26,6 @@
   }
   async function transfer(data) {
     const tr = text => window.CERAI_I18N?.translate ? window.CERAI_I18N.translate(text) : text;
-    const target = window.open("about:blank", "_blank");
-    if (target) { target.opener = null; target.document.body.textContent = tr("Preparing your ESCRS cloud session. Keep this page open."); }
     try {
       const [identityResponse,configResponse] = await Promise.all([
         fetch("/auth/me",{credentials:"same-origin",cache:"no-store"}),
@@ -40,7 +38,7 @@
       const provider = config.provider || "browserless";
       if (!["browserless","browserbase"].includes(provider)) throw new Error("Invalid ESCRS provider.");
       const disclosure = tr("This transfer sends patient initials, age, biological sex, eye measurements, previous corneal surgery, selected lens, target refraction and the signed-in surgeon name to {provider} cloud browsers and the ESCRS IOL Calculator. These data remain potentially identifiable. Full patient names and source images are not sent. Continue only if authorized to disclose these data to both services.").replace("{provider}",provider === "browserbase" ? "Browserbase" : "Browserless");
-      if (!window.confirm(disclosure + "\n\n" + tr("I accept the ESCRS calculator terms for this calculation: https://iolcalculator.escrs.org/Resources/ESCRS_IOL_Calculator_Terms_of_Use.pdf"))) { if(target)target.close(); return false; }
+      if (!window.confirm(disclosure + "\n\n" + tr("I accept the ESCRS calculator terms for this calculation: https://iolcalculator.escrs.org/Resources/ESCRS_IOL_Calculator_Terms_of_Use.pdf"))) { return false; }
       const payload = buildPayload({...data,surgeon:identity.user?.display_name,modelNames:config.models});
       const response = await fetch("/iol/escrs-cloud-transfer",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({...payload,terms_accepted:true,data_transfer_accepted:true,consent_version:"ESCRS-CLOUD-2026-10-17-V2",provider})});
       const result = await response.json();
@@ -58,9 +56,9 @@
         ? url.origin === window.location.origin && /^\/iol\/escrs-session\/[a-f0-9]{32}$/.test(url.pathname)
         : ["production-sfo.browserless.io","production-ams.browserless.io","production-lon.browserless.io"].includes(url.hostname) && url.pathname.includes("/live/");
       if (url.protocol !== "https:" || !valid) throw new Error("Invalid ESCRS cloud session address.");
-      if (target && !target.closed) target.location.replace(url.href); else window.location.assign(url.href);
+      window.location.assign(url.href);
       return true;
-    } catch(error) { if(target && !target.closed) target.close(); throw error; }
+    } catch(error) { throw error; }
   }
   window.CERAI_ESCRS_ASSISTANT = {buildPayload,transfer};
 })();
