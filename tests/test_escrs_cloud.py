@@ -151,17 +151,17 @@ def test_cloud_routes_require_login_and_use_server_doctor_identity(caplog):
     assert "/iol/escrs-cloud-transfer" in operational_security.PROTECTED_PATHS
 
 
-def test_mobile_web_handoff_closes_failed_popups_and_requires_consent():
+def test_mobile_web_handoff_navigates_only_after_verified_consent():
     if not shutil.which("node"):
         pytest.skip("Node unavailable")
     script = r'''
 const fs=require('fs'),vm=require('vm'),assert=require('assert');
 const names=JSON.parse(fs.readFileSync('static/escrs-models.json','utf8'));
-let provider="browserless",consent=true,fail=false,validation=null,destination,closed=false,opens=0;
-const ctx={URL,window:{location:{origin:"https://cer-ai.com"},confirm:message=>{assert(message.includes(provider==="browserbase"?"Browserbase":"Browserless"));assert(message.includes("initials"));assert(message.includes("ESCRS calculator terms"));return consent;},open:()=>{opens++;return {opener:{},document:{body:{}},location:{replace:u=>destination=u},close:()=>closed=true};}},fetch:async(url,options)=>{
+let provider="browserless",consent=true,fail=false,validation=null,destination,navigations=0,posts=0;
+const ctx={URL,window:{location:{origin:"https://cer-ai.com",assign:u=>{destination=u;navigations++;}},confirm:message=>{assert(message.includes(provider==="browserbase"?"Browserbase":"Browserless"));assert(message.includes("initials"));assert(message.includes("ESCRS calculator terms"));return consent;},open:()=>{throw new Error("Mobile transfer must not open a popup");}},fetch:async(url,options)=>{
  if(url==='/auth/me')return {ok:true,json:async()=>({user:{display_name:'Signed-in Doctor'}})};
  if(url==='/iol/escrs-cloud-config')return {ok:true,json:async()=>({enabled:true,models:names,provider})};
- assert.equal(url,'/iol/escrs-cloud-transfer');const p=JSON.parse(options.body);
+ assert.equal(url,'/iol/escrs-cloud-transfer');posts++;const p=JSON.parse(options.body);
  assert.equal(p.terms_accepted,true);assert.equal(p.data_transfer_accepted,true);assert.equal(p.consent_version,"ESCRS-CLOUD-2026-10-17-V2");assert.equal(p.provider,provider);assert.equal(p.surgeon,'Signed-in Doctor');
  assert.equal(p.eyes.OD.toric,true);assert.equal(p.eyes.OS.toric,false);
  assert.equal(p.initials,'CT');assert(!JSON.stringify(p).includes('Case Test'));
@@ -172,10 +172,10 @@ const eye=side=>({eye:side,biological_sex:'Female',axial_length_mm:23.5,acd_mm:3
 const data={patientName:'Case Test',age:61,sex:'Female',loadedEyes:['OD','OS'],catalog:[{id:'clareon-panoptix-toric-cnwtt3',manufacturer:'Alcon',subtype:'Toric'},{id:'tecnis-puresee-den00v',manufacturer:'Johnson & Johnson',subtype:null}],plans:{OD:{selected_lens_id:'clareon-panoptix-toric-cnwtt3',route:'MANUFACTURER_TORIC',inputs:eye('OD'),target_refraction_d:-.25,a_constant:119.1},OS:{selected_lens_id:'tecnis-puresee-den00v',route:'COOKE_K6',inputs:eye('OS'),target_refraction_d:-.5,a_constant:119.3}}};
 (async()=>{const transfer=ctx.window.CERAI_ESCRS_ASSISTANT.transfer;
  assert.equal(await transfer(data),true);assert(destination.includes('/live/'));
- fail=true;await assert.rejects(transfer(data),/Verification failed/);assert(closed);
+ const firstNavigation=navigations;fail=true;await assert.rejects(transfer(data),/Verification failed/);assert.equal(navigations,firstNavigation);
  fail=false;validation="consent_version";await assert.rejects(transfer(data),/Reload CER-AI/);
  validation="eyes";await assert.rejects(transfer(data),/Review the patient details/);
- consent=false;const before=opens;assert.equal(await transfer(data),false);assert.equal(opens,before+1);assert(closed);
+ consent=false;const before=posts;assert.equal(await transfer(data),false);assert.equal(posts,before);assert.equal(navigations,firstNavigation);
  consent=true;validation=null;provider="browserbase";assert.equal(await transfer(data),true);assert(destination.includes("/iol/escrs-session/"));
 })().catch(e=>{console.error(e);process.exitCode=1;});
 '''
