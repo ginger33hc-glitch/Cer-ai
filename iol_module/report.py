@@ -6,6 +6,7 @@ from html import escape
 from io import BytesIO
 from math import cos, sin, radians, isfinite
 from pathlib import Path
+import re
 from typing import Literal
 from zoneinfo import ZoneInfo
 
@@ -188,6 +189,9 @@ def build_iol_report(report: IOLReportInput, surgeon: str = "", *, report_date: 
             "iol", fontName="IOL-Bold" if bold else "IOL-Regular", fontSize=size,
             leading=size*1.32, textColor=color, splitLongWords=True))
 
+    def display_lens_name(value):
+        return re.sub(r"\\s*\\((?:DIU|DRT|DET|CNW|ZCT|HFY|PAD)[^)]*\\)", "", str(value), flags=re.I).strip()
+
     def row(label, value):
         return f"{label}: {value}"
 
@@ -195,7 +199,7 @@ def build_iol_report(report: IOLReportInput, surgeon: str = "", *, report_date: 
     for item in sorted(report.eyes, key=lambda item: item.eye):
         p, inp = item.plan, item.plan.inputs
         sphere, toric = selected_values(p)
-        lines = [row(tr("Lens family", "Lens ailesi"), p.selected_lens_name)]
+        lines = [row(tr("Lens family", "Lens ailesi"), display_lens_name(p.selected_lens_name))]
         lines.append(row(tr("Spherical equivalent" if p.route == "MANUFACTURER_TORIC" else "Spherical IOL power",
                             "Sferik eşdeğer" if p.route == "MANUFACTURER_TORIC" else "Sferik IOL gücü"), fmt(sphere["IOL"]) + " D" if sphere else tr("Not calculated", "Hesaplanmadı")))
         if toric:
@@ -261,7 +265,7 @@ def build_iol_report(report: IOLReportInput, surgeon: str = "", *, report_date: 
         else:
             raise ValueError("Report content does not fit one readable A4 page. Please review the report data.")
 
-        canvas.setFillColor(navy); canvas.setFont("IOL-Bold", 17)
+        canvas.setFillColor(navy); canvas.setFont("IOL-Bold", 18)
         canvas.drawString(left, height-42, tr("CER-AI | IOL surgical plan", "CER-AI | IOL cerrahi planı"))
         canvas.setFont("IOL-Regular", 8)
         canvas.drawRightString(width-left, height-58, (report_date or now.strftime("%d.%m.%Y %H:%M")) + " (UTC+03:00)")
@@ -269,14 +273,14 @@ def build_iol_report(report: IOLReportInput, surgeon: str = "", *, report_date: 
         top = height-87-header_height
         canvas.setStrokeColor(colors.HexColor("#c7d5de")); canvas.setLineWidth(.7)
         canvas.line(left, top, width-left, top)
-        canvas.setFont("IOL-Bold", 14); canvas.setFillColor(colors.HexColor("#147d52"))
+        canvas.setFont("IOL-Bold", 17); canvas.setFillColor(colors.HexColor("#147d52"))
         canvas.drawString(left, top-19, tr("RIGHT EYE - OD", "SAĞ GÖZ - OD") if item.eye == "OD" else tr("LEFT EYE - OS", "SOL GÖZ - OS"))
         if toric:
             canvas.setFont("IOL-Bold", 10)
             canvas.drawRightString(width-left, top-19, "TEST ONLY")
         if toric:
-            canvas.setFillColor(colors.HexColor("#147d52")); canvas.setFont("IOL-Bold", 14)
-            canvas.drawString(left, top-39, p.selected_lens_name[:62])
+            canvas.setFillColor(colors.HexColor("#147d52")); canvas.setFont("IOL-Bold", 17)
+            canvas.drawString(left, top-39, display_lens_name(p.selected_lens_name)[:62])
             # Three equally sized green surgical identifiers; never duplicate the axis.
             band_top = top - 45
             canvas.setFillColor(colors.HexColor("#edf8f1"))
