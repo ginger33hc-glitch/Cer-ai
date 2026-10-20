@@ -214,10 +214,10 @@ def build_iol_report(report: IOLReportInput, surgeon: str = "", *, report_date: 
         diagram_height = 2 * diagram_radius + 56
         for size in (12, 11, 10, 9):
             header = paragraph(row(tr("Patient", "Hasta"), report.patient_name) + "   |   " +
-                               row(tr("Age", "Yaş"), report.patient_age_years) + "\\n" +
+                               row(tr("Age", "Yaş"), report.patient_age_years) + "\n" +
                                row(tr("Surgeon", "Cerrah"), surgeon or tr("Not recorded", "Kaydedilmedi")), size)
             header_height = header.wrap(content_width, height)[1]
-            values = paragraph("\\n".join(lines), size+1, bold=True, color=navy)
+            values = paragraph("\n".join(lines), size+1, bold=True, color=navy)
             values_height = values.wrap(content_width, height)[1]
             bio = paragraph(measurements, size)
             bio_height = bio.wrap(content_width, height)[1]
@@ -251,8 +251,8 @@ def build_iol_report(report: IOLReportInput, surgeon: str = "", *, report_date: 
             canvas.setFillColor(colors.HexColor("#fff3da"))
             canvas.rect(left, warning_y-5, content_width, warning_height+10, stroke=0, fill=1)
             warning.drawOn(canvas, left+7, warning_y)
-        footer = paragraph(tr("Dashed line: toric marker axis. No line when no toric axis is available.\\nDecision support only. Final responsibility rests with the surgeon. Verify patient, eye, lens and axis before surgery.",
-                              "Kesikli çizgi: torik işaret aksı. Torik aks yoksa çizgi gösterilmez.\\nKarar desteğidir. Nihai sorumluluk cerrahtadır. Cerrahi öncesi hasta, göz, lens ve aksı doğrulayın."), 7.5)
+        footer = paragraph(tr("Dashed line: toric marker axis. No line when no toric axis is available.\nDecision support only. Final responsibility rests with the surgeon. Verify patient, eye, lens and axis before surgery.",
+                              "Kesikli çizgi: torik işaret aksı. Torik aks yoksa çizgi gösterilmez.\nKarar desteğidir. Nihai sorumluluk cerrahtadır. Cerrahi öncesi hasta, göz, lens ve aksı doğrulayın."), 7.5)
         footer.wrap(content_width, 55); footer.drawOn(canvas, left, 27)
         canvas.setFillColor(colors.HexColor("#34495e"))
         canvas.setFont("IOL-Regular", 5.8)
