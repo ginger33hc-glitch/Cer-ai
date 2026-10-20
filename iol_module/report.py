@@ -244,7 +244,7 @@ def build_iol_report(report: IOLReportInput, surgeon: str = "", *, report_date: 
         if toric:
             canvas.setFillColor(colors.HexColor("#147d52")); canvas.setFont("IOL-Bold", 14)
             canvas.drawString(left, top-39, p.selected_lens_name[:62])
-            canvas.drawString(left, top-57, fmt(toric["spherical_equivalent_iol_d"]) + " D  ·  " + toric["model"] + "  ·  " + fmt(toric["marker_axis_deg"], 1) + "°")
+            canvas.drawString(left, top-57, fmt(toric["spherical_equivalent_iol_d"]) + " D  ·  " + fmt(toric["marker_axis_deg"], 1) + "°")
         values.drawOn(canvas, left, top-(65 if toric else 27)-values_height)
         bio.drawOn(canvas, left, top-(74 if toric else 36)-values_height-bio_height)
         diagram_top = top-(84 if toric else 46)-values_height-bio_height
