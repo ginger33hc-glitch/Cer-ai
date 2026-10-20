@@ -115,7 +115,7 @@ def axis_endpoints(cx, cy, radius, axis):
     return cx - dx, cy - dy, cx + dx, cy + dy
 
 
-def draw_eye(canvas, eye, x, top, axis, tr, radius=105):
+def draw_eye(canvas, eye, x, top, axis, tr, radius=105, incision_axis=None):
     """Faint frontal eye and nasal landmark; 0/180 horizontal, 90 superior."""
     cx, cy = x, top-radius-12
     green = colors.HexColor("#17874b")
@@ -151,11 +151,20 @@ def draw_eye(canvas, eye, x, top, axis, tr, radius=105):
     canvas.drawCentredString(cx,cy-radius-23,"270°")
     canvas.drawRightString(cx-radius-15,cy-3,"180°")
     canvas.drawString(cx+radius+15,cy-3,"0°")
-    # Opposite toric marks; not a second axis line.
-    canvas.setStrokeColor(colors.HexColor("#66bc85"))
-    canvas.setLineWidth(5)
-    canvas.arc(cx-radius*.72,cy-radius*.72,cx+radius*.72,cy+radius*.72,112,23)
-    canvas.arc(cx-radius*.72,cy-radius*.72,cx+radius*.72,cy+radius*.72,292,23)
+    # Incision is independent of the toric alignment axis. Place it only
+    # at the explicitly selected incision meridian (0=right, 90=superior,
+    # 180=left), never at a hard-coded illustrative angle.
+    if incision_axis is not None:
+        incision_angle = float(incision_axis) % 360
+        canvas.setStrokeColor(colors.HexColor("#d48a37"))
+        canvas.setLineWidth(5)
+        canvas.arc(cx-radius*.94, cy-radius*.94,
+                   cx+radius*.94, cy+radius*.94, incision_angle-7, 14)
+        ix = cx + radius*1.13*cos(radians(incision_angle))
+        iy = cy + radius*1.13*sin(radians(incision_angle))
+        canvas.setFillColor(colors.HexColor("#9b5d21"))
+        canvas.setFont("IOL-Bold", 8)
+        canvas.drawCentredString(ix, iy-3, tr("INCISION", "KESİ") + " " + fmt(incision_angle, 0) + "°")
     if axis is not None:
         canvas.setStrokeColor(green);canvas.setLineWidth(1.5);canvas.setDash(6,5)
         canvas.line(*axis_endpoints(cx,cy,radius*1.1,axis));canvas.setDash()
@@ -298,7 +307,7 @@ def build_iol_report(report: IOLReportInput, surgeon: str = "", *, report_date: 
         values.drawOn(canvas, left, top-(91 if toric else 27)-values_height)
         bio.drawOn(canvas, left, top-(100 if toric else 36)-values_height-bio_height)
         diagram_top = top-(110 if toric else 46)-values_height-bio_height
-        draw_eye(canvas, item.eye, width/2, diagram_top, toric["marker_axis_deg"] if toric else None, tr, diagram_radius)
+        draw_eye(canvas, item.eye, width/2, diagram_top, toric["marker_axis_deg"] if toric else None, tr, diagram_radius, p.inputs.get("incision_axis_deg"))
         if warning:
             warning_y = diagram_top-diagram_height-warning_height-12
             canvas.setFillColor(colors.HexColor("#fff3da"))
