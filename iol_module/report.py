@@ -222,7 +222,7 @@ def build_iol_report(report: IOLReportInput, surgeon: str = "", *, report_date: 
             bio_height = bio.wrap(content_width, height)[1]
             warning = paragraph(warnings, size-1, color=colors.HexColor("#754600")) if warnings else None
             warning_height = warning.wrap(content_width-14, height)[1] if warning else 0
-            total = header_height + 87 + 27 + values_height + 9 + bio_height + 10 + diagram_height + warning_height + (18 if warning else 6) + 8
+            total = header_height + 87 + (65 if toric else 27) + values_height + 9 + bio_height + 10 + diagram_height + warning_height + (18 if warning else 6) + 8
             if total <= height-76:
                 break
         else:
@@ -236,14 +236,18 @@ def build_iol_report(report: IOLReportInput, surgeon: str = "", *, report_date: 
         top = height-87-header_height
         canvas.setStrokeColor(colors.HexColor("#c7d5de")); canvas.setLineWidth(.7)
         canvas.line(left, top, width-left, top)
-        canvas.setFont("IOL-Bold", 12); canvas.setFillColor(navy)
+        canvas.setFont("IOL-Bold", 14); canvas.setFillColor(colors.HexColor("#147d52"))
         canvas.drawString(left, top-19, tr("RIGHT EYE - OD", "SAĞ GÖZ - OD") if item.eye == "OD" else tr("LEFT EYE - OS", "SOL GÖZ - OS"))
         if toric:
             canvas.setFont("IOL-Bold", 10)
             canvas.drawRightString(width-left, top-19, "TEST ONLY")
-        values.drawOn(canvas, left, top-27-values_height)
-        bio.drawOn(canvas, left, top-36-values_height-bio_height)
-        diagram_top = top-46-values_height-bio_height
+        if toric:
+            canvas.setFillColor(colors.HexColor("#147d52")); canvas.setFont("IOL-Bold", 14)
+            canvas.drawString(left, top-39, p.selected_lens_name[:62])
+            canvas.drawString(left, top-57, fmt(toric["spherical_equivalent_iol_d"]) + " D  ·  " + toric["model"] + "  ·  " + fmt(toric["marker_axis_deg"], 1) + "°")
+        values.drawOn(canvas, left, top-(65 if toric else 27)-values_height)
+        bio.drawOn(canvas, left, top-(74 if toric else 36)-values_height-bio_height)
+        diagram_top = top-(84 if toric else 46)-values_height-bio_height
         draw_eye(canvas, item.eye, width/2, diagram_top, toric["marker_axis_deg"] if toric else None, tr, diagram_radius)
         if warning:
             warning_y = diagram_top-diagram_height-warning_height-12
