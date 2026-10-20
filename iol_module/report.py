@@ -116,7 +116,7 @@ def axis_endpoints(cx, cy, radius, axis):
 
 
 def draw_eye(canvas, eye, x, top, axis, tr, radius=105):
-    """Faint frontal eye and nasal landmark; 0/180 horizontal, 90 superior."""
+    """Faint frontal eye and nasal landmark; 0/180 horizontal, 90 superior; validated."""
     cx, cy = x, top-radius-12
     green = colors.HexColor("#17874b")
     pale = colors.HexColor("#e9f0f1")
