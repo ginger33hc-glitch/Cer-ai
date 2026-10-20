@@ -238,7 +238,7 @@ def build_iol_report(report: IOLReportInput, surgeon: str = "", *, report_date: 
             bio_height = bio.wrap(content_width, height)[1]
             warning = paragraph(warnings, size-1, color=colors.HexColor("#754600")) if warnings else None
             warning_height = warning.wrap(content_width-14, height)[1] if warning else 0
-            total = header_height + 87 + (65 if toric else 27) + values_height + 9 + bio_height + 10 + diagram_height + warning_height + (18 if warning else 6) + 8
+            total = header_height + 87 + (91 if toric else 27) + values_height + 9 + bio_height + 10 + diagram_height + warning_height + (18 if warning else 6) + 8
             if total <= height-76:
                 break
         else:
@@ -260,10 +260,22 @@ def build_iol_report(report: IOLReportInput, surgeon: str = "", *, report_date: 
         if toric:
             canvas.setFillColor(colors.HexColor("#147d52")); canvas.setFont("IOL-Bold", 14)
             canvas.drawString(left, top-39, p.selected_lens_name[:62])
-            canvas.drawString(left, top-57, toric["model"] + "   |   " + fmt(toric["spherical_equivalent_iol_d"]) + " D   |   " + fmt(toric["marker_axis_deg"], 1) + "°")
-        values.drawOn(canvas, left, top-(65 if toric else 27)-values_height)
-        bio.drawOn(canvas, left, top-(74 if toric else 36)-values_height-bio_height)
-        diagram_top = top-(84 if toric else 46)-values_height-bio_height
+            # Three equally sized green surgical identifiers; never duplicate the axis.
+            band_top = top - 45
+            canvas.setFillColor(colors.HexColor("#edf8f1"))
+            canvas.roundRect(left, band_top - 38, content_width, 33, 9, stroke=0, fill=1)
+            canvas.setFillColor(colors.HexColor("#147d52"))
+            cells = (str(toric["model"]), fmt(toric["spherical_equivalent_iol_d"]) + " D", fmt(toric["marker_axis_deg"], 1) + "°")
+            for idx, label in enumerate(cells):
+                canvas.setFont("IOL-Bold", 14)
+                canvas.drawCentredString(left + content_width * (idx + .5) / 3, band_top - 26, label)
+            canvas.setStrokeColor(colors.HexColor("#bdd6c9"))
+            for idx in (1, 2):
+                xx = left + content_width * idx / 3
+                canvas.line(xx, band_top - 32, xx, band_top - 11)
+        values.drawOn(canvas, left, top-(91 if toric else 27)-values_height)
+        bio.drawOn(canvas, left, top-(100 if toric else 36)-values_height-bio_height)
+        diagram_top = top-(110 if toric else 46)-values_height-bio_height
         draw_eye(canvas, item.eye, width/2, diagram_top, toric["marker_axis_deg"] if toric else None, tr, diagram_radius)
         if warning:
             warning_y = diagram_top-diagram_height-warning_height-12
