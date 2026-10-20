@@ -118,10 +118,16 @@ def draw_eye(canvas, eye, x, top, axis, tr, radius=105):
     """Large, centered anterior-view axis diagram below the written findings."""
     cx, cy = x, top - radius - 16
     canvas.setStrokeColor(colors.HexColor("#9babb6")); canvas.setLineWidth(1)
-    canvas.setFillColor(colors.HexColor("#f3f7fa"))
+    canvas.setFillColor(colors.HexColor("#f8fafb"))
     canvas.circle(cx, cy, radius, stroke=1, fill=1)
+    canvas.setStrokeColor(colors.HexColor("#dce5e8"))
     canvas.circle(cx, cy, radius * .62, stroke=1, fill=0)
     canvas.circle(cx, cy, radius * .32, stroke=1, fill=0)
+    # Pale iris and pupil; surgical axis remains prominent.
+    canvas.setFillColor(colors.HexColor("#edf2f3"))
+    canvas.circle(cx, cy, radius * .57, stroke=0, fill=1)
+    canvas.setFillColor(colors.HexColor("#dfe6e8"))
+    canvas.circle(cx, cy, radius * .22, stroke=0, fill=1)
     canvas.line(cx-radius, cy, cx+radius, cy)
     canvas.line(cx, cy-radius, cx, cy+radius)
     canvas.setFont("IOL-Regular", 9); canvas.setFillColor(colors.HexColor("#173b57"))
@@ -138,6 +144,15 @@ def draw_eye(canvas, eye, x, top, axis, tr, radius=105):
         x1, y1, x2, y2 = axis_endpoints(cx, cy, radius-7, axis)
         canvas.circle(x1, y1, 4, fill=1, stroke=0)
         canvas.circle(x2, y2, 4, fill=1, stroke=0)
+    # Subtle frontal half-nose on the nasal side, mirrored for OD/OS.
+    nasal = 1 if eye == "OD" else -1
+    nx = cx + nasal * (radius + 60)
+    canvas.setStrokeColor(colors.HexColor("#e6eaec")); canvas.setLineWidth(4)
+    nose = canvas.beginPath()
+    nose.moveTo(nx + nasal*10, cy + radius*.7)
+    nose.curveTo(nx + nasal*15, cy + radius*.15, nx + nasal*38, cy-radius*.12, nx + nasal*18, cy-radius*.40)
+    nose.curveTo(nx + nasal*8, cy-radius*.52, nx - nasal*10, cy-radius*.45, nx - nasal*13, cy-radius*.36)
+    canvas.drawPath(nose, stroke=1, fill=0)
     canvas.setFont("IOL-Regular", 9)
     canvas.drawCentredString(cx, cy-radius-32, tr("Anterior view", "Önden görünüm"))
 
@@ -210,6 +225,7 @@ def build_iol_report(report: IOLReportInput, surgeon: str = "", *, report_date: 
     canvas.setAuthor("CER-AI")
     now = datetime.now(ZoneInfo("Europe/Istanbul"))
     for item, toric, lines, measurements, warnings in sections:
+        p = item.plan
         for size, diagram_radius in ((12, 112), (11, 100), (10, 88), (9, 76), (8, 62), (7.5, 52), (7, 48), (6.5, 44)):
             diagram_height = 2 * diagram_radius + 56
             header = paragraph(row(tr("Patient", "Hasta"), report.patient_name) + "   |   " +
@@ -244,7 +260,7 @@ def build_iol_report(report: IOLReportInput, surgeon: str = "", *, report_date: 
         if toric:
             canvas.setFillColor(colors.HexColor("#147d52")); canvas.setFont("IOL-Bold", 14)
             canvas.drawString(left, top-39, p.selected_lens_name[:62])
-            canvas.drawString(left, top-57, fmt(toric["spherical_equivalent_iol_d"]) + " D  ·  " + fmt(toric["marker_axis_deg"], 1) + "°")
+            canvas.drawString(left, top-57, toric["model"] + "   |   " + fmt(toric["spherical_equivalent_iol_d"]) + " D   |   " + fmt(toric["marker_axis_deg"], 1) + "°")
         values.drawOn(canvas, left, top-(65 if toric else 27)-values_height)
         bio.drawOn(canvas, left, top-(74 if toric else 36)-values_height-bio_height)
         diagram_top = top-(84 if toric else 46)-values_height-bio_height
