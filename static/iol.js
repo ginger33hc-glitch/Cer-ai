@@ -364,6 +364,16 @@
       if(data.escrs_url) $("powerResult").querySelector(`#${eye}-escrsAutomatic`).addEventListener("click", async () => {
         const button = $("powerResult").querySelector(`#${eye}-escrsAutomatic`);
         button.disabled = true; status.className = "status";
+        // Obtain explicit consent synchronously from the tap, before opening a
+        // tab or awaiting network requests. Android browsers can suppress a
+        // confirm() shown after async work or after tab focus changes.
+        const consentText = tr("This transfer sends patient initials, age, biological sex, eye measurements, previous corneal surgery, selected lens, target refraction and the signed-in surgeon name to Browserless or Browserbase cloud browsers and the ESCRS IOL Calculator. These data may be identifiable. Full names and images are not sent. Continue only if authorized.");
+        const termsText = tr("I accept the ESCRS calculator terms for this calculation: https://iolcalculator.escrs.org/Resources/ESCRS_IOL_Calculator_Terms_of_Use.pdf");
+        if (!window.confirm(consentText + "\\n\\n" + termsText)) {
+          const oldFeedback = document.getElementById(eye + "-escrsAutomaticFeedback");
+          if (oldFeedback) oldFeedback.textContent = tr("ESCRS transfer was not authorized. No data was sent.");
+          return;
+        }
         const sessionWindow = window.open("about:blank", "_blank");
         if (sessionWindow) {
           sessionWindow.opener = null;
@@ -390,7 +400,7 @@
             patientName:document.getElementById("patientName").value,
             age:Number(document.getElementById("patientAge").value),
             sex:document.getElementById("biologicalSex").value
-          }, message => { feedback.textContent = tr(message); }, sessionWindow);
+          }, message => { feedback.textContent = tr(message); }, sessionWindow, true);
           if (opened === false) { feedback.textContent = tr("ESCRS data-transfer consent was not accepted. No data was sent. Your CER-AI calculation remains available; press the button again and choose OK on the consent dialog to proceed."); return; }
           feedback.textContent = tr("ESCRS cloud session opened. Verify all imported values before calculating.");
           status.textContent = feedback.textContent;
