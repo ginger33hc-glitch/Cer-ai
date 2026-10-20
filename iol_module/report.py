@@ -210,7 +210,7 @@ def build_iol_report(report: IOLReportInput, surgeon: str = "", *, report_date: 
     canvas.setAuthor("CER-AI")
     now = datetime.now(ZoneInfo("Europe/Istanbul"))
     for item, toric, lines, measurements, warnings in sections:
-        for size, diagram_radius in ((12, 112), (11, 100), (10, 88), (9, 76), (8, 62), (7.5, 52)):
+        for size, diagram_radius in ((12, 112), (11, 100), (10, 88), (9, 76), (8, 62), (7.5, 52), (7, 48), (6.5, 44)):
             diagram_height = 2 * diagram_radius + 56
             header = paragraph(row(tr("Patient", "Hasta"), report.patient_name) + "   |   " +
                                row(tr("Age", "Yaş"), report.patient_age_years) + "\n" +
