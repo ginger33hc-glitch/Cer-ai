@@ -172,7 +172,7 @@ def draw_eye(canvas, eye, x, top, axis, tr, radius=105):
     nose.curveTo(nx-nasal*17,cy-radius*.40,nx+nasal*1,cy-radius*.54,nx+nasal*22,cy-radius*.50)
     canvas.drawPath(nose,stroke=1,fill=0)
     canvas.setFont("IOL-Regular",9);canvas.setFillColor(colors.HexColor("#8998a2"))
-    canvas.drawCentredString(nx,cy-radius*.80,tr("Nasal","Nazal"))
+    canvas.drawCentredString(nx,cy-radius*.80,tr("NASAL","NAZAL"))
 
 
 def build_iol_report(report: IOLReportInput, surgeon: str = "", *, report_date: str | None = None,
