@@ -115,52 +115,63 @@ def axis_endpoints(cx, cy, radius, axis):
 
 
 def draw_eye(canvas, eye, x, top, axis, tr, radius=105):
-    """Large, centered anterior-view axis diagram below the written findings."""
-    cx, cy = x, top - radius - 16
-    canvas.setStrokeColor(colors.HexColor("#9babb6")); canvas.setLineWidth(1)
+    """Faint frontal eye and nasal landmark; 0/180 horizontal, 90 superior."""
+    cx, cy = x, top-radius-12
+    green = colors.HexColor("#17874b")
+    pale = colors.HexColor("#e9f0f1")
     canvas.setFillColor(colors.HexColor("#f8fafb"))
+    canvas.setStrokeColor(colors.HexColor("#d4dce0"))
+    canvas.setLineWidth(.7)
     canvas.circle(cx, cy, radius, stroke=1, fill=1)
-    canvas.setStrokeColor(colors.HexColor("#dce5e8"))
-    canvas.circle(cx, cy, radius * .62, stroke=1, fill=0)
-    canvas.circle(cx, cy, radius * .32, stroke=1, fill=0)
-    # Pale iris and pupil; surgical axis remains prominent.
-    # Low-contrast iris with radial texture instead of a target-like bullseye.
-    canvas.setFillColor(colors.HexColor("#f0f4f5"))
-    canvas.circle(cx, cy, radius * .57, stroke=0, fill=1)
-    canvas.setStrokeColor(colors.HexColor("#e2e9eb")); canvas.setLineWidth(.45)
-    for tick in range(0, 360, 10):
+    canvas.setFillColor(pale)
+    canvas.circle(cx, cy, radius*.79, stroke=0, fill=1)
+    # Radial iris texture at very low contrast, instead of target rings.
+    canvas.setStrokeColor(colors.HexColor("#dce6e8"))
+    canvas.setLineWidth(.42)
+    for tick in range(0, 360, 4):
         a = radians(tick)
-        canvas.line(cx + radius*.30*cos(a), cy + radius*.30*sin(a),
-                    cx + radius*.54*cos(a), cy + radius*.54*sin(a))
-    canvas.setFillColor(colors.HexColor("#dfe6e8"))
-    canvas.circle(cx, cy, radius * .22, stroke=0, fill=1)
-    canvas.line(cx-radius, cy, cx+radius, cy)
-    canvas.line(cx, cy-radius, cx, cy+radius)
-    canvas.setFont("IOL-Regular", 9); canvas.setFillColor(colors.HexColor("#173b57"))
-    canvas.drawCentredString(cx, cy+radius+11, tr("SUPERIOR", "ÜST") + " 90°")
-    canvas.drawCentredString(cx, cy-radius-16, tr("INFERIOR", "ALT"))
-    canvas.drawCentredString(cx-radius-39, cy+5, "TEMPORAL" if eye == "OD" else tr("NASAL", "NAZAL"))
-    canvas.drawCentredString(cx+radius+39, cy+5, tr("NASAL", "NAZAL") if eye == "OD" else "TEMPORAL")
-    canvas.drawCentredString(cx-radius-19, cy-12, "180°")
-    canvas.drawCentredString(cx+radius+19, cy-12, "0°")
+        canvas.line(cx + radius*.28*cos(a), cy + radius*.28*sin(a),
+                    cx + radius*.76*cos(a), cy + radius*.76*sin(a))
+    canvas.setFillColor(colors.HexColor("#d0d8dc"))
+    canvas.circle(cx, cy, radius*.27, stroke=0, fill=1)
+    canvas.setStrokeColor(colors.HexColor("#c5cfd4"))
+    canvas.setLineWidth(.45)
+    for tick in range(0, 360, 5):
+        a = radians(tick)
+        inner = radius*(1.025 if tick % 30 else 1.00)
+        outer = radius*(1.075 if tick % 30 else 1.115)
+        canvas.line(cx+inner*cos(a),cy+inner*sin(a),cx+outer*cos(a),cy+outer*sin(a))
+    canvas.setStrokeColor(colors.HexColor("#b9c6ce"))
+    canvas.line(cx-radius*1.07,cy,cx+radius*1.07,cy)
+    canvas.line(cx,cy-radius*1.07,cx,cy+radius*1.07)
+    canvas.setFillColor(colors.HexColor("#243f51"))
+    canvas.setFont("IOL-Regular", 10)
+    canvas.drawCentredString(cx,cy+radius+20,"90°")
+    canvas.drawCentredString(cx,cy-radius-23,"270°")
+    canvas.drawRightString(cx-radius-15,cy-3,"180°")
+    canvas.drawString(cx+radius+15,cy-3,"0°")
+    # Opposite toric marks; not a second axis line.
+    canvas.setStrokeColor(colors.HexColor("#66bc85"))
+    canvas.setLineWidth(5)
+    canvas.arc(cx-radius*.72,cy-radius*.72,cx+radius*.72,cy+radius*.72,112,23)
+    canvas.arc(cx-radius*.72,cy-radius*.72,cx+radius*.72,cy+radius*.72,292,23)
     if axis is not None:
-        canvas.setStrokeColor(colors.HexColor("#1f5e8c")); canvas.setLineWidth(3)
-        canvas.setDash(6, 4); canvas.line(*axis_endpoints(cx, cy, radius, axis)); canvas.setDash()
-        canvas.setFillColor(colors.HexColor("#1f5e8c"))
-        x1, y1, x2, y2 = axis_endpoints(cx, cy, radius-7, axis)
-        canvas.circle(x1, y1, 4, fill=1, stroke=0)
-        canvas.circle(x2, y2, 4, fill=1, stroke=0)
-    # Subtle frontal half-nose on the nasal side, mirrored for OD/OS.
+        canvas.setStrokeColor(green);canvas.setLineWidth(1.5);canvas.setDash(6,5)
+        canvas.line(*axis_endpoints(cx,cy,radius*1.1,axis));canvas.setDash()
+        canvas.setFillColor(green);canvas.setFont("IOL-Bold",12)
+        canvas.drawRightString(cx-radius-17,cy-radius*.29,fmt(axis,1)+"°")
+    # Large, low-contrast frontal half-nose, mirrored on OS.
     nasal = 1 if eye == "OD" else -1
-    nx = cx + nasal * (radius + 60)
-    canvas.setStrokeColor(colors.HexColor("#e6eaec")); canvas.setLineWidth(4)
+    nx = cx + nasal*(radius+58)
+    canvas.setStrokeColor(colors.HexColor("#e1e5e7"))
+    canvas.setLineWidth(8)
     nose = canvas.beginPath()
-    nose.moveTo(nx + nasal*10, cy + radius*.7)
-    nose.curveTo(nx + nasal*15, cy + radius*.15, nx + nasal*38, cy-radius*.12, nx + nasal*18, cy-radius*.40)
-    nose.curveTo(nx + nasal*8, cy-radius*.52, nx - nasal*10, cy-radius*.45, nx - nasal*13, cy-radius*.36)
-    canvas.drawPath(nose, stroke=1, fill=0)
-    canvas.setFont("IOL-Regular", 9)
-    canvas.drawCentredString(cx, cy-radius-32, tr("Anterior view", "Önden görünüm"))
+    nose.moveTo(nx+nasal*24,cy+radius*.95)
+    nose.curveTo(nx+nasal*19,cy+radius*.48,nx+nasal*5,cy+radius*.12,nx-nasal*5,cy-radius*.10)
+    nose.curveTo(nx-nasal*17,cy-radius*.40,nx+nasal*1,cy-radius*.54,nx+nasal*22,cy-radius*.50)
+    canvas.drawPath(nose,stroke=1,fill=0)
+    canvas.setFont("IOL-Regular",9);canvas.setFillColor(colors.HexColor("#8998a2"))
+    canvas.drawCentredString(nx,cy-radius*.80,tr("Nasal","Nazal"))
 
 
 def build_iol_report(report: IOLReportInput, surgeon: str = "", *, report_date: str | None = None,
