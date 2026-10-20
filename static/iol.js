@@ -51,6 +51,8 @@
     WARN_ALPHA_HIGH:"High angle alpha: multifocal IOL excluded.",
     WARN_PUPIL_TOO_SMALL:"Pupil diameter below 2.00 mm: multifocal IOL excluded.",
     WARN_PUPIL_TOO_LARGE:"Pupil diameter above 4.00 mm: multifocal IOL excluded.",
+    WARN_PUPIL_SMALL_SURGEON_REVIEW:"Pupil below 2.00 mm: surgeon review required; multifocal is not automatically excluded.",
+    WARN_PUPIL_LARGE_SURGEON_REVIEW:"Pupil above 4.00 mm: surgeon review required; multifocal is not automatically excluded.",
     WARN_IRREGULAR_ASTIGMATISM:"Irregular astigmatism: multifocal IOL excluded.",
   })[code] || code;
 
@@ -112,6 +114,22 @@
     const recommendationHeading = $("eyeHeading").cloneNode(true);
     recommendationHeading.removeAttribute("id");
     recommendationRoot.append(recommendationHeading, $("result"), $("powerSection"));
+    let assessmentPayload = null;
+    const pupilReview = document.createElement("div");
+    pupilReview.className = "warning"; pupilReview.hidden = true;
+    const pupilChoice = document.createElement("select");
+    pupilChoice.id = eye + "-pupilMultifocalChoice";
+    const pupilLabel = document.createElement("label");
+    pupilLabel.htmlFor = pupilChoice.id;
+    pupilLabel.textContent = tr("Pupil diameter is outside the 2–4 mm target. Visual performance may be affected. Do you still want a multifocal lens?");
+    for (const [value, label] of [["", "Select surgeon decision"], ["yes", "Yes — allow multifocal selection"], ["no", "No — continue with other eligible lenses"]]) {
+      const option = document.createElement("option"); option.value = value; option.textContent = tr(label); pupilChoice.appendChild(option);
+    }
+    pupilReview.append(pupilLabel, pupilChoice);
+    $("powerSection").prepend(pupilReview);
+    const pupilReviewRequired = () => Boolean(recommendation?.eligible_categories?.includes("MULTIFOCAL") &&
+      recommendation.warning_codes?.some(code => ["WARN_PUPIL_SMALL_SURGEON_REVIEW", "WARN_PUPIL_LARGE_SURGEON_REVIEW"].includes(code)));
+    pupilChoice.addEventListener("change", () => { invalidate(false); populateLenses(); });
     document.getElementById("recommendationPanels").appendChild(recommendationRoot);
     const calculationRoot = document.createElement("section");
     calculationRoot.hidden = true;
@@ -215,6 +233,8 @@
   $("k1").addEventListener("input", updateAstigmatism); $("k2").addEventListener("input", updateAstigmatism); $("k2Axis").addEventListener("input", updateAstigmatism);
   function populateLenses() {
     const eligible = new Set(recommendation.eligible_categories || []);
+    pupilReview.hidden = !pupilReviewRequired();
+    if (pupilReviewRequired() && pupilChoice.value !== "yes") eligible.delete("MULTIFOCAL");
     const toric = recommendation.toric_evaluation_required;
     const options = lensCatalog.filter(lens => eligible.has(lens.category) && (toric ? lens.subtype?.toLowerCase().includes("toric") : !lens.subtype?.toLowerCase().includes("toric")));
     $("selectedLens").innerHTML = `<option value="">Select an eligible lens</option>` + options.map(lens => {
@@ -266,6 +286,8 @@
     try {
       const response = await fetch("/iol/evaluate", {method:"POST", credentials:"same-origin", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload)});
       const data = await response.json(); if (!response.ok) throw new Error(errorMessage(data)); if (requestVersion !== version) return false; recommendation = data;
+      assessmentPayload = payload;
+      pupilChoice.value = "";
       $("warnings").innerHTML = (data.warning_codes || []).map(v => `<div class="warning">${tr(warningLabel(v))}</div>`).join("");
       $("reasons").replaceChildren(...(data.clinical_explanation || []).map(value => { const p=document.createElement("p"); p.className="reason"; p.textContent=tr(value); return p; }));
       $("legal").textContent = tr(data.legal_notice); $("result").hidden = false; $("recommendation").textContent = ""; $("eligible").replaceChildren();
@@ -305,6 +327,9 @@
       return false;
     }
     if (!recommendation || !recommendationShown) { $("powerStatus").textContent = tr("Evaluate this eye before calculating its lens power."); return false; }
+    if (pupilReviewRequired() && !pupilChoice.value) {
+      $("powerStatus").textContent = tr("Select surgeon decision"); pupilChoice.focus(); return false;
+    }
     if (!document.getElementById("patientForm").reportValidity() || !$("iolForm").reportValidity()) return false;
     const status = $("powerStatus"); status.className="status"; const difference = kDifference();
     const corneaBack = corneaBackByEye[$("eye").value];
@@ -322,7 +347,8 @@
     const payload = {patient_name:$("patientName").value, biological_sex:$("biologicalSex").value, eye:$("eye").value, selected_lens_id:$("selectedLens").value,
       axial_length_mm:Number($("al").value), acd_mm:Number($("acd").value), k1_d:Number($("k1").value), k1_axis_deg:Number($("k1Axis").value), k2_d:Number($("k2").value), k2_axis_deg:Number($("k2Axis").value), astigmatism_type:$("astigType").value || null,
       prior_corneal_surgery:$("priorSurgery").value, historical_data_available:$("historicalData").value === "true", incision_axis_deg:requiresRegularity(difference)?numberOrNull("incisionAxis"):null, sia_d:requiresRegularity(difference)?numberOrNull("sia"):null, sia_axis_deg:requiresRegularity(difference)?numberOrNull("siaAxis"):null,
-      cct_um:numberOrNull("cct"), lens_thickness_mm:numberOrNull("lensThickness"), wtw_mm:numberOrNull("wtw"), posterior_cornea:posteriorInput};
+      cct_um:numberOrNull("cct"), lens_thickness_mm:numberOrNull("lensThickness"), wtw_mm:numberOrNull("wtw"), posterior_cornea:posteriorInput,
+      clinical_assessment:assessmentPayload, pupil_multifocal_confirmed:pupilReviewRequired() && pupilChoice.value === "yes"};
     if (!payload.selected_lens_id) { status.textContent="Select a clinic lens."; status.classList.add("error"); return; }
     $("powerButton").disabled=true; status.textContent="Determining the canonical calculation route…";
     try {
@@ -442,6 +468,7 @@
       showCalculationNotes();
       $("powerStatus").textContent = "";
       if (category) {
+        assessmentPayload = null; pupilChoice.value = ""; pupilReview.hidden = true;
         calculationRoot.hidden = true; retryPowerButton.hidden = true; $("lensThicknessField").hidden = true;
         recommendation = null;
         recommendationShown = false;

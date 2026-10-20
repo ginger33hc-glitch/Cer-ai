@@ -62,6 +62,8 @@ class IOLReportInput(StrictModel):
 
 # Presentation labels only: thresholds and clinical decisions stay in engine.py.
 WARNINGS = {
+    "WARN_PUPIL_SMALL_SURGEON_REVIEW": ("Pupil <2 mm: surgeon review; multifocal requires confirmation", "Pupil <2 mm: cerrah değerlendirmesi; multifokal için onay gerekir"),
+    "WARN_PUPIL_LARGE_SURGEON_REVIEW": ("Pupil >4 mm: surgeon review; multifocal requires confirmation", "Pupil >4 mm: cerrah değerlendirmesi; multifokal için onay gerekir"),
     "WARN_RETINA_SIGNIFICANT": ("Significant retinal disease; multifocal excluded", "Belirgin retina hastalığı; multifokal dışlandı"),
     "WARN_RETINA_MILD": ("Mild retinal disease: review", "Hafif retina hastalığı: değerlendirin"),
     "WARN_MACULAR_PATHOLOGY": ("Macular pathology; multifocal excluded", "Makula patolojisi; multifokal dışlandı"),
@@ -247,6 +249,8 @@ def build_iol_report(report: IOLReportInput, surgeon: str = "", *, report_date: 
             warnings.append(tr("Independent verification with a second modern formula required (ESCRS).", "İkinci modern formülle bağımsız doğrulama gerekli (ESCRS)."))
         for code in item.recommendation.warning_codes:
             warnings.append(tr(*WARNINGS[code]) if code in WARNINGS else code)
+        if item.plan.lens_category == "MULTIFOCAL" and item.plan.inputs.get("pupil_multifocal_confirmed") is True:
+            warnings.append(tr("Surgeon confirmed multifocal selection after pupil warning.", "Pupilla uyarısı sonrası multifokal seçimi cerrah tarafından onaylandı."))
         sections.append((item, toric, lines, measurements, " · ".join(warnings)))
 
     # Every eye receives its own full A4 page, even in bilateral reports.

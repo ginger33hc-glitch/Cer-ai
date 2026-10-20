@@ -73,6 +73,9 @@ def _base_inputs(case: IOLPowerPlanInput) -> dict[str, object]:
     }.items():
         if value is not None:
             values[key] = value
+    if case.clinical_assessment is not None:
+        values["pentacam_pupil_3d_mm"] = case.clinical_assessment.pentacam_pupil_3d_mm
+        values["pupil_multifocal_confirmed"] = case.pupil_multifocal_confirmed
     if case.posterior_cornea is not None:
         values["posterior_cornea"] = case.posterior_cornea.model_dump(mode="json")
     return values
@@ -205,7 +208,20 @@ def plan_iol_power(case: IOLPowerPlanInput) -> IOLPowerPlan:
     lens = get_lens(case.selected_lens_id)
     if lens is None:
         raise ValueError("Selected lens is not in the clinic-approved catalog.")
-
+    if case.clinical_assessment is not None:
+        from .engine import evaluate_case
+        assessment = case.clinical_assessment
+        if (assessment.eye != case.eye or assessment.patient_name != case.patient_name
+                or assessment.active_k1_d != case.k1_d or assessment.active_k2_d != case.k2_d
+                or assessment.iolm500_k1_axis_deg != case.k1_axis_deg
+                or assessment.iolm500_k2_axis_deg != case.k2_axis_deg):
+            raise ValueError("Clinical assessment does not match the calculation eye or measurements.")
+        if lens.category not in evaluate_case(assessment).eligible_categories:
+            raise ValueError("Selected lens is excluded by the clinical assessment.")
+        if (lens.category == "MULTIFOCAL"
+                and not 2.0 <= assessment.pentacam_pupil_3d_mm <= 4.0
+                and not case.pupil_multifocal_confirmed):
+            raise ValueError("Multifocal selection outside the 2–4 mm pupil target requires surgeon confirmation.")
     toric = requires_astigmatism_classification(case.astigmatism_d) and case.astigmatism_type == AstigmatismType.REGULAR
     if case.prior_corneal_surgery in {
         PriorCornealSurgery.MYOPIC_LASIK_PRK,

@@ -13,7 +13,7 @@ from .models import (
     RetinaStatus,
 )
 
-ENGINE_VERSION = "IOL_CANONICAL_3.7"
+ENGINE_VERSION = "IOL_CANONICAL_3.8"
 LEGAL_NOTICE = (
     "This application provides clinical decision support only. "
     "Final responsibility rests with the surgeon at all times and under all circumstances."
@@ -82,11 +82,9 @@ def evaluate_case(case: IOLCaseInput) -> IOLRecommendation:
     if alpha_high:
         warnings.append("WARN_ALPHA_HIGH_SURGEON_REVIEW")
     if pupil_small:
-        exclusions.append("MF_EXCL_PUPIL_SMALL")
-        warnings.append("WARN_PUPIL_TOO_SMALL")
+        warnings.append("WARN_PUPIL_SMALL_SURGEON_REVIEW")
     if pupil_large:
-        exclusions.append("MF_EXCL_PUPIL_LARGE")
-        warnings.append("WARN_PUPIL_TOO_LARGE")
+        warnings.append("WARN_PUPIL_LARGE_SURGEON_REVIEW")
     if irregular:
         exclusions.append("MF_EXCL_IRREGULAR_ASTIG")
         warnings.append("WARN_IRREGULAR_ASTIGMATISM")
@@ -154,7 +152,7 @@ def evaluate_case(case: IOLCaseInput) -> IOLRecommendation:
         f"Total Corneal HOA (4 mm) is {case.total_corneal_hoa_4mm_um:.3f} µm ({hoa_class})."
     )
     explanation.append(
-        f"Pentacam Pupil Dia (3D) is {case.pentacam_pupil_3d_mm:.2f} mm; the multifocal permitted range is 2.00–4.00 mm inclusive."
+        f"Pentacam Pupil Dia (3D) is {case.pentacam_pupil_3d_mm:.2f} mm; the target range is 2.00–4.00 mm inclusive. Outside this range, multifocal selection requires surgeon confirmation, not automatic exclusion."
     )
     explanation.append(
         f"Angle kappa is {case.angle_kappa_mm:.2f} mm and angle alpha is {case.angle_alpha_mm:.2f} mm."

@@ -196,6 +196,8 @@ class PosteriorCorneaInput(StrictModel):
 
 
 class IOLPowerPlanInput(StrictModel):
+    clinical_assessment: IOLCaseInput | None = None
+    pupil_multifocal_confirmed: bool = Field(default=False, strict=True)
     patient_name: str = Field(min_length=1, max_length=200)
     biological_sex: Literal["Male", "Female"]
     eye: Literal["OD", "OS"]

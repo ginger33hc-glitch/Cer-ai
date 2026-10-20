@@ -66,9 +66,26 @@ def test_hoa_boundaries(hoa, main, warning):
     assert warning in recommendation.warning_codes
 
 
-@pytest.mark.parametrize("pupil,expected", [(1.999, "EDOF"), (2.0, "MULTIFOCAL"), (4.0, "MULTIFOCAL"), (4.001, "EDOF")])
-def test_pupil_3d_boundaries(pupil, expected):
-    assert result({"pentacam_pupil_3d_mm": pupil}).main_category == expected
+@pytest.mark.parametrize("pupil,warning", [(1.999, "WARN_PUPIL_SMALL_SURGEON_REVIEW"), (2.0, None), (4.0, None), (4.001, "WARN_PUPIL_LARGE_SURGEON_REVIEW")])
+def test_pupil_3d_boundaries(pupil, warning):
+    recommendation = result({"pentacam_pupil_3d_mm": pupil})
+    assert recommendation.main_category == "MULTIFOCAL"
+    assert recommendation.multifocal_eligible
+    assert "MULTIFOCAL" in recommendation.eligible_categories
+    assert not any("MF_EXCL_PUPIL" in code for code in recommendation.decisive_reason_codes)
+    assert [c for c in recommendation.warning_codes if "PUPIL" in c] == ([warning] if warning else [])
+
+
+@pytest.mark.parametrize("pupil", [1.9, 4.1])
+@pytest.mark.parametrize("other", [
+    {"macular_pathology_present": True}, {"glaucoma_status": "PRESENT"},
+    {"total_corneal_hoa_4mm_um": 0.51}, {"retina_status": "SIGNIFICANT"},
+    {"ocular_surface_status": "MODERATE"}, {"astigmatism_type": "IRREGULAR"},
+])
+def test_pupil_warning_does_not_remove_other_multifocal_exclusions(pupil, other):
+    recommendation = result({"pentacam_pupil_3d_mm": pupil, **other})
+    assert not recommendation.multifocal_eligible
+    assert "MULTIFOCAL" not in recommendation.eligible_categories
 
 
 def test_high_alpha_or_kappa_alone_warns_but_does_not_exclude_multifocal():

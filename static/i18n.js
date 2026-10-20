@@ -3,6 +3,14 @@
   const stored = (localStorage.getItem("cerai-language") || "en").toLowerCase();
   const locale = stored === "tr" ? "tr" : "en";
   const TR = {
+    "Pupil below 2.00 mm: surgeon review required; multifocal is not automatically excluded.":"Pupilla 2,00 mm'nin altında: cerrah değerlendirmesi gerekir; multifokal otomatik dışlanmaz.",
+    "Pupil above 4.00 mm: surgeon review required; multifocal is not automatically excluded.":"Pupilla 4,00 mm'nin üzerinde: cerrah değerlendirmesi gerekir; multifokal otomatik dışlanmaz.",
+    "Pupil diameter is outside the 2–4 mm target. Visual performance may be affected. Do you still want a multifocal lens?":"Pupilla çapı 2–4 mm hedef aralığı dışında. Görsel performans etkilenebilir. Yine de multifokal lens ister misiniz?",
+    "Select surgeon decision":"Cerrah kararını seçin",
+    "Yes — allow multifocal selection":"Evet — multifokal seçmek istiyorum",
+    "No — continue with other eligible lenses":"Hayır — diğer uygun lenslerle devam et",
+    "Multifocal selection outside the 2–4 mm pupil target requires surgeon confirmation.":"2–4 mm pupilla hedefi dışında multifokal seçimi için cerrah onayı gerekir.",
+    "Selected lens is excluded by the clinical assessment.":"Seçilen lens klinik değerlendirmede dışlanmıştır.",
     "Open ESCRS with all values — no installation":"ESCRS’yi tüm değerlerle aç — kurulum gerekmez",
     "Transfer biometry only to ESCRS":"ESCRS’ye yalnızca biyometri aktar",
     "Verified ESCRS cloud session opened. Review the form before calculating. Session limit: two minutes.":"Doğrulanmış ESCRS bulut oturumu açıldı. Hesaplamadan önce formu kontrol edin. Oturum sınırı: iki dakika.",
@@ -522,7 +530,7 @@
       .replace(/^Near-vision demand is (\w+) and halo\/glare tolerance is (\w+)\.$/,"Yakın görme gereksinimi $1 ve halo/kamaşma toleransı $2.")
       .replace(/^Night-driving requirement is (\w+)\.$/,"Gece araç kullanma gereksinimi $1.")
       .replace(/^Total Corneal HOA \(4 mm\) is ([\d.]+) µm \((\w+)\)\.$/,"Total Korneal HOA (4 mm) $1 µm ($2).")
-      .replace(/^Pentacam Pupil Dia \(3D\) is ([\d.]+) mm; the multifocal permitted range is 2\.00–4\.00 mm inclusive\.$/,"Pentacam Pupil Dia (3D) $1 mm'dir; izin verilen multifokal aralık 2,00–4,00 mm'dir (sınırlar dahil).")
+      .replace(/^Pentacam Pupil Dia \(3D\) is ([\d.]+) mm; the target range is 2\.00–4\.00 mm inclusive\. Outside this range, multifocal selection requires surgeon confirmation, not automatic exclusion\.$/,"Pentacam Pupil Dia (3D) $1 mm'dir; hedef aralık 2,00–4,00 mm'dir (sınırlar dahil). Aralık dışında multifokal otomatik dışlanmaz; seçim için cerrah onayı gerekir.")
       .replace(/^Angle kappa is ([\d.]+) mm and angle alpha is ([\d.]+) mm\.$/,"Kappa açısı $1 mm ve alfa açısı $2 mm'dir.")
       .replace(/^Retinal status is ([^;]+); macular pathology is ([^;]+); glaucoma status is ([^.]+)\.$/,"Retina durumu $1; maküler patoloji $2; glokom durumu $3.")
       .replace(/^Ocular-surface status is ([^.]+)\.$/,"Oküler yüzey durumu $1.")
