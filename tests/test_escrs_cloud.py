@@ -171,8 +171,10 @@ vm.createContext(ctx);vm.runInContext(fs.readFileSync('static/iol-escrs-assistan
 const eye=side=>({eye:side,biological_sex:'Female',axial_length_mm:23.5,acd_mm:3.1,k1_d:42.5,k2_d:44,k1_axis_deg:15,k2_axis_deg:105,cct_um:550,lens_thickness_mm:4.3,wtw_mm:11.8,incision_axis_deg:180,sia_d:.25,prior_corneal_surgery:'NONE'});
 const data={patientName:'Case Test',age:61,sex:'Female',loadedEyes:['OD','OS'],catalog:[{id:'clareon-panoptix-toric-cnwtt3',manufacturer:'Alcon',subtype:'Toric'},{id:'tecnis-puresee-den00v',manufacturer:'Johnson & Johnson',subtype:null}],plans:{OD:{selected_lens_id:'clareon-panoptix-toric-cnwtt3',route:'MANUFACTURER_TORIC',inputs:eye('OD'),target_refraction_d:-.25,a_constant:119.1},OS:{selected_lens_id:'tecnis-puresee-den00v',route:'COOKE_K6',inputs:eye('OS'),target_refraction_d:-.5,a_constant:119.3}}};
 (async()=>{const transfer=ctx.window.CERAI_ESCRS_ASSISTANT.transfer;
- assert.equal(await transfer(data),true);assert(destination.includes('/live/'));
- const firstNavigation=navigations;fail=true;await assert.rejects(transfer(data),/Verification failed/);assert.equal(navigations,firstNavigation);
+ const newTab=()=>({closed:false,location:{replace:u=>{destination=u;}},close(){this.closed=true;}});
+ const send=()=>transfer(data,undefined,newTab());
+ assert.equal(await send(),true);assert(destination.includes('/live/'));assert.equal(navigations,0);
+ const firstNavigation=navigations;fail=true;await assert.rejects(send(),/Verification failed/);assert.equal(navigations,firstNavigation);
  fail=false;validation="consent_version";await assert.rejects(transfer(data),/Reload CER-AI/);
  validation="eyes";await assert.rejects(transfer(data),/Review the patient details/);
  consent=false;const before=posts;assert.equal(await transfer(data),false);assert.equal(posts,before);assert.equal(navigations,firstNavigation);
