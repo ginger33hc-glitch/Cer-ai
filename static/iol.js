@@ -369,9 +369,10 @@
         // confirm() shown after async work or after tab focus changes.
         const consentText = tr("This transfer sends patient initials, age, biological sex, eye measurements, previous corneal surgery, selected lens, target refraction and the signed-in surgeon name to Browserless or Browserbase cloud browsers and the ESCRS IOL Calculator. These data may be identifiable. Full names and images are not sent. Continue only if authorized.");
         const termsText = tr("I accept the ESCRS calculator terms for this calculation: https://iolcalculator.escrs.org/Resources/ESCRS_IOL_Calculator_Terms_of_Use.pdf");
-        if (!window.confirm(consentText + "\\n\\n" + termsText)) {
+        if (!window.confirm(consentText + "\n\n" + termsText)) {
           const oldFeedback = document.getElementById(eye + "-escrsAutomaticFeedback");
           if (oldFeedback) oldFeedback.textContent = tr("ESCRS transfer was not authorized. No data was sent.");
+          button.disabled = false;
           return;
         }
         const sessionWindow = window.open("about:blank", "_blank");
