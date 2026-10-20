@@ -24,7 +24,7 @@
     }
     return payload;
   }
-  async function transfer(data, onProgress = () => {}, sessionWindow = null) {
+  async function transfer(data, onProgress = () => {}, sessionWindow = null, consentAlreadyAccepted = false) {
     const tr = text => window.CERAI_I18N?.translate ? window.CERAI_I18N.translate(text) : text;
     try {
       onProgress("Checking surgeon identity and ESCRS configuration…");
@@ -39,7 +39,7 @@
       const provider = config.provider || "browserless";
       if (!["browserless","browserbase"].includes(provider)) throw new Error("Invalid ESCRS provider.");
       const disclosure = tr("This transfer sends patient initials, age, biological sex, eye measurements, previous corneal surgery, selected lens, target refraction and the signed-in surgeon name to {provider} cloud browsers and the ESCRS IOL Calculator. These data remain potentially identifiable. Full patient names and source images are not sent. Continue only if authorized to disclose these data to both services.").replace("{provider}",provider === "browserbase" ? "Browserbase" : "Browserless");
-      if (!window.confirm(disclosure + "\n\n" + tr("I accept the ESCRS calculator terms for this calculation: https://iolcalculator.escrs.org/Resources/ESCRS_IOL_Calculator_Terms_of_Use.pdf"))) { if (sessionWindow && !sessionWindow.closed) sessionWindow.close(); return false; }
+      if (!consentAlreadyAccepted && !window.confirm(disclosure + "\n\n" + tr("I accept the ESCRS calculator terms for this calculation: https://iolcalculator.escrs.org/Resources/ESCRS_IOL_Calculator_Terms_of_Use.pdf"))) { if (sessionWindow && !sessionWindow.closed) sessionWindow.close(); return false; }
       onProgress("Validating completed IOL plans and lens mappings…");
       const payload = buildPayload({...data,surgeon:identity.user?.display_name,modelNames:config.models});
       onProgress("Starting ESCRS cloud transfer…");
