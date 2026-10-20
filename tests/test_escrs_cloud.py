@@ -151,7 +151,7 @@ def test_cloud_routes_require_login_and_use_server_doctor_identity(caplog):
     assert "/iol/escrs-cloud-transfer" in operational_security.PROTECTED_PATHS
 
 
-def test_mobile_web_handoff_navigates_only_after_verified_consent():
+def test_mobile_web_handoff_preserves_case_after_verified_consent():
     if not shutil.which("node"):
         pytest.skip("Node unavailable")
     script = r'''
