@@ -364,6 +364,9 @@
       if(data.escrs_url) $("powerResult").querySelector(`#${eye}-escrsAutomatic`).addEventListener("click", async () => {
         const button = $("powerResult").querySelector(`#${eye}-escrsAutomatic`);
         button.disabled = true; status.className = "status";
+        const originalButtonText = button.textContent;
+        button.textContent = tr("Lütfen bekleyin…");
+        button.setAttribute("aria-busy", "true");
         let feedback = document.getElementById(eye + "-escrsAutomaticFeedback");
         if (!feedback) {
           feedback = document.createElement("p");
@@ -391,7 +394,7 @@
           feedback.classList.add("error");
           status.textContent = feedback.textContent;
           status.classList.add("error");
-        } finally { button.disabled = false; }
+        } finally { button.disabled = false; button.textContent = originalButtonText; button.removeAttribute("aria-busy"); }
       });
       if(data.escrs_url) $("powerResult").querySelector(`#${eye}-escrsTransfer`).addEventListener("click", async () => {
         const button = $("powerResult").querySelector(`#${eye}-escrsTransfer`);
