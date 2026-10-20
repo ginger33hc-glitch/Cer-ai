@@ -12,7 +12,7 @@
     for (const side of loadedEyes) {
       const plan = plans[side], lens = catalog.find(item => item.id === plan.selected_lens_id);
       if (!lens || plan.inputs?.eye !== side || plan.inputs.biological_sex !== sex) throw new Error("The current patient and eye data differ from the calculation. Recalculate before transfer.");
-      if (!modelNames[lens.id]) throw new Error("This lens has no verified ESCRS model mapping. No substitute will be selected.");
+      if (!modelNames || !modelNames[lens.id]) throw new Error("This lens has no verified ESCRS model mapping. No substitute will be selected.");
       const toric = plan.route === "MANUFACTURER_TORIC";
       if (toric && !String(lens.subtype || "").toLowerCase().includes("toric")) throw new Error("Select the intended toric lens family and recalculate before automatic transfer.");
       const fields = ["axial_length_mm","acd_mm","k1_d","k2_d","k1_axis_deg","k2_axis_deg","cct_um","lens_thickness_mm","wtw_mm","incision_axis_deg","sia_d","prior_corneal_surgery"];
@@ -44,7 +44,7 @@
       const payload = buildPayload({...data,surgeon:identity.user?.display_name,modelNames:config.models});
       onProgress("Starting ESCRS cloud transfer…");
       const response = await fetch("/iol/escrs-cloud-transfer",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({...payload,terms_accepted:true,data_transfer_accepted:true,consent_version:"ESCRS-CLOUD-2026-10-17-V2",provider})});
-      const result = await response.json();
+      const result = await response.json().catch(() => ({}));
       if (!response.ok) {
         if (response.status === 422 && Array.isArray(result.detail)) {
           const consentError = result.detail.some(item => (item.loc || []).some(field => ["terms_accepted","data_transfer_accepted","consent_version"].includes(field)));
