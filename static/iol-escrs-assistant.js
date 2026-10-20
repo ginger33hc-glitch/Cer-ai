@@ -24,7 +24,7 @@
     }
     return payload;
   }
-  async function transfer(data, onProgress = () => {}) {
+  async function transfer(data, onProgress = () => {}, sessionWindow = null) {
     const tr = text => window.CERAI_I18N?.translate ? window.CERAI_I18N.translate(text) : text;
     try {
       onProgress("Checking surgeon identity and ESCRS configuration…");
@@ -39,7 +39,7 @@
       const provider = config.provider || "browserless";
       if (!["browserless","browserbase"].includes(provider)) throw new Error("Invalid ESCRS provider.");
       const disclosure = tr("This transfer sends patient initials, age, biological sex, eye measurements, previous corneal surgery, selected lens, target refraction and the signed-in surgeon name to {provider} cloud browsers and the ESCRS IOL Calculator. These data remain potentially identifiable. Full patient names and source images are not sent. Continue only if authorized to disclose these data to both services.").replace("{provider}",provider === "browserbase" ? "Browserbase" : "Browserless");
-      if (!window.confirm(disclosure + "\n\n" + tr("I accept the ESCRS calculator terms for this calculation: https://iolcalculator.escrs.org/Resources/ESCRS_IOL_Calculator_Terms_of_Use.pdf"))) { return false; }
+      if (!window.confirm(disclosure + "\n\n" + tr("I accept the ESCRS calculator terms for this calculation: https://iolcalculator.escrs.org/Resources/ESCRS_IOL_Calculator_Terms_of_Use.pdf"))) { if (sessionWindow && !sessionWindow.closed) sessionWindow.close(); return false; }
       onProgress("Validating completed IOL plans and lens mappings…");
       const payload = buildPayload({...data,surgeon:identity.user?.display_name,modelNames:config.models});
       onProgress("Starting ESCRS cloud transfer…");
@@ -60,9 +60,10 @@
         ? url.origin === window.location.origin && /^\/iol\/escrs-session\/[a-f0-9]{32}$/.test(url.pathname)
         : ["production-sfo.browserless.io","production-ams.browserless.io","production-lon.browserless.io"].includes(url.hostname) && url.pathname.includes("/live/");
       if (url.protocol !== "https:" || !valid) throw new Error("Invalid ESCRS cloud session address.");
-      window.location.assign(url.href);
+      if (!sessionWindow || sessionWindow.closed) throw new Error("ESCRS window was blocked or closed. Allow pop-ups for CER-AI and retry; your calculation remains open.");
+      sessionWindow.location.replace(url.href);
       return true;
-    } catch(error) { throw error; }
+    } catch(error) { if (sessionWindow && !sessionWindow.closed) sessionWindow.close(); throw error; }
   }
   window.CERAI_ESCRS_ASSISTANT = {buildPayload,transfer};
 })();
