@@ -124,8 +124,14 @@ def draw_eye(canvas, eye, x, top, axis, tr, radius=105):
     canvas.circle(cx, cy, radius * .62, stroke=1, fill=0)
     canvas.circle(cx, cy, radius * .32, stroke=1, fill=0)
     # Pale iris and pupil; surgical axis remains prominent.
-    canvas.setFillColor(colors.HexColor("#edf2f3"))
+    # Low-contrast iris with radial texture instead of a target-like bullseye.
+    canvas.setFillColor(colors.HexColor("#f0f4f5"))
     canvas.circle(cx, cy, radius * .57, stroke=0, fill=1)
+    canvas.setStrokeColor(colors.HexColor("#e2e9eb")); canvas.setLineWidth(.45)
+    for tick in range(0, 360, 10):
+        a = radians(tick)
+        canvas.line(cx + radius*.30*cos(a), cy + radius*.30*sin(a),
+                    cx + radius*.54*cos(a), cy + radius*.54*sin(a))
     canvas.setFillColor(colors.HexColor("#dfe6e8"))
     canvas.circle(cx, cy, radius * .22, stroke=0, fill=1)
     canvas.line(cx-radius, cy, cx+radius, cy)
