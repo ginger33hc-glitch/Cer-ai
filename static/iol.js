@@ -391,7 +391,7 @@
             age:Number(document.getElementById("patientAge").value),
             sex:document.getElementById("biologicalSex").value
           }, message => { feedback.textContent = tr(message); }, sessionWindow);
-          if (opened === false) { feedback.textContent = tr("ESCRS transfer cancelled."); return; }
+          if (opened === false) { feedback.textContent = tr("ESCRS data-transfer consent was not accepted. No data was sent. Your CER-AI calculation remains available; press the button again and choose OK on the consent dialog to proceed."); return; }
           feedback.textContent = tr("ESCRS cloud session opened. Verify all imported values before calculating.");
           status.textContent = feedback.textContent;
         } catch (error) {
