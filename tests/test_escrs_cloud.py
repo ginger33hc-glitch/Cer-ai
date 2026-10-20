@@ -176,9 +176,9 @@ const data={patientName:'Case Test',age:61,sex:'Female',loadedEyes:['OD','OS'],c
  assert.equal(await send(),true);assert(destination.includes('/live/'));assert.equal(navigations,0);
  const firstNavigation=navigations;fail=true;await assert.rejects(send(),/Verification failed/);assert.equal(navigations,firstNavigation);
  fail=false;validation="consent_version";await assert.rejects(send(),/Reload CER-AI/);
- validation="eyes";await assert.rejects(transfer(data),/Review the patient details/);
+ validation="eyes";await assert.rejects(send(),/Review the patient details/);
  consent=false;const before=posts;assert.equal(await send(),false);assert.equal(posts,before);assert.equal(navigations,firstNavigation);
- consent=true;validation=null;provider="browserbase";assert.equal(await transfer(data),true);assert(destination.includes("/iol/escrs-session/"));
+ consent=true;validation=null;provider="browserbase";assert.equal(await send(),true);assert(destination.includes("/iol/escrs-session/"));
 })().catch(e=>{console.error(e);process.exitCode=1;});
 '''
     result = subprocess.run(["node", "-e", script], cwd=Path(__file__).resolve().parents[1], capture_output=True, text=True, timeout=15)
