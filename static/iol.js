@@ -364,6 +364,11 @@
       if(data.escrs_url) $("powerResult").querySelector(`#${eye}-escrsAutomatic`).addEventListener("click", async () => {
         const button = $("powerResult").querySelector(`#${eye}-escrsAutomatic`);
         button.disabled = true; status.className = "status";
+        const sessionWindow = window.open("about:blank", "_blank");
+        if (sessionWindow) {
+          sessionWindow.opener = null;
+          sessionWindow.document.body.textContent = tr("Lütfen bekleyin… ESCRS oturumu hazırlanıyor.");
+        }
         const originalButtonText = button.textContent;
         button.textContent = tr("Lütfen bekleyin…");
         button.setAttribute("aria-busy", "true");
@@ -385,7 +390,7 @@
             patientName:document.getElementById("patientName").value,
             age:Number(document.getElementById("patientAge").value),
             sex:document.getElementById("biologicalSex").value
-          }, message => { feedback.textContent = tr(message); });
+          }, message => { feedback.textContent = tr(message); }, sessionWindow);
           if (opened === false) { feedback.textContent = tr("ESCRS transfer cancelled."); return; }
           feedback.textContent = tr("ESCRS cloud session opened. Verify all imported values before calculating.");
           status.textContent = feedback.textContent;
