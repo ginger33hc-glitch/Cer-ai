@@ -203,42 +203,38 @@ def build_iol_report(report: IOLReportInput, surgeon: str = "", *, report_date: 
             warnings.append(tr(*WARNINGS[code]) if code in WARNINGS else code)
         sections.append((item, toric, lines, measurements, " · ".join(warnings)))
 
-    # Full-width findings above the enlarged axis diagram; one A4 page for 1–2 eyes.
-    diagram_radius = 112 if len(sections) == 1 else 66
-    diagram_height = 2 * diagram_radius + 56
-    for size in ((12, 11, 10) if len(sections) == 1 else (10, 9, 8)):
-        header = paragraph(row(tr("Patient", "Hasta"), report.patient_name) + "   |   " + row(tr("Age", "Yaş"), report.patient_age_years)
-                           + "\n" + row(tr("Surgeon", "Cerrah"), surgeon or tr("Not recorded", "Kaydedilmedi")), size)
-        header_height = header.wrap(content_width, height)[1]
-        blocks = []
-        total = header_height + 78
-        for item, toric, lines, measurements, warnings in sections:
-            values = paragraph("\n".join(lines), size+1, bold=True, color=navy)
+    # Every eye receives its own full A4 page, even in bilateral reports.
+    buffer = BytesIO()
+    canvas = Canvas(buffer, pagesize=A4, invariant=1)
+    canvas.setTitle("CER-AI IOL report")
+    canvas.setAuthor("CER-AI")
+    now = datetime.now(ZoneInfo("Europe/Istanbul"))
+    for item, toric, lines, measurements, warnings in sections:
+        diagram_radius = 112
+        diagram_height = 2 * diagram_radius + 56
+        for size in (12, 11, 10, 9):
+            header = paragraph(row(tr("Patient", "Hasta"), report.patient_name) + "   |   " +
+                               row(tr("Age", "Yaş"), report.patient_age_years) + "\\n" +
+                               row(tr("Surgeon", "Cerrah"), surgeon or tr("Not recorded", "Kaydedilmedi")), size)
+            header_height = header.wrap(content_width, height)[1]
+            values = paragraph("\\n".join(lines), size+1, bold=True, color=navy)
             values_height = values.wrap(content_width, height)[1]
             bio = paragraph(measurements, size)
             bio_height = bio.wrap(content_width, height)[1]
             warning = paragraph(warnings, size-1, color=colors.HexColor("#754600")) if warnings else None
             warning_height = warning.wrap(content_width-14, height)[1] if warning else 0
-            block_height = 27 + values_height + 9 + bio_height + 10 + diagram_height + warning_height + (18 if warning else 6) + 8
-            blocks.append((item, toric, values, values_height, bio, bio_height, warning, warning_height, block_height))
-            total += block_height
-        if total <= height-76:
-            break
-    else:
-        raise ValueError("Report content does not fit one readable page. Please review the report data.")
+            total = header_height + 87 + 27 + values_height + 9 + bio_height + 10 + diagram_height + warning_height + (18 if warning else 6) + 8
+            if total <= height-76:
+                break
+        else:
+            raise ValueError("Report content does not fit one readable A4 page. Please review the report data.")
 
-    buffer = BytesIO()
-    canvas = Canvas(buffer, pagesize=A4, invariant=1)
-    canvas.setTitle("CER-AI IOL report")
-    canvas.setAuthor("CER-AI")
-    canvas.setFillColor(navy); canvas.setFont("IOL-Bold", 17)
-    canvas.drawString(left, height-42, tr("CER-AI | IOL surgical plan", "CER-AI | IOL cerrahi planı"))
-    canvas.setFont("IOL-Regular", 8)
-    now = datetime.now(ZoneInfo("Europe/Istanbul"))
-    canvas.drawRightString(width-left, height-58, (report_date or now.strftime("%d.%m.%Y %H:%M")) + " (UTC+03:00)")
-    header.drawOn(canvas, left, height-77-header_height)
-    top = height-87-header_height
-    for item, toric, values, values_height, bio, bio_height, warning, warning_height, block_height in blocks:
+        canvas.setFillColor(navy); canvas.setFont("IOL-Bold", 17)
+        canvas.drawString(left, height-42, tr("CER-AI | IOL surgical plan", "CER-AI | IOL cerrahi planı"))
+        canvas.setFont("IOL-Regular", 8)
+        canvas.drawRightString(width-left, height-58, (report_date or now.strftime("%d.%m.%Y %H:%M")) + " (UTC+03:00)")
+        header.drawOn(canvas, left, height-77-header_height)
+        top = height-87-header_height
         canvas.setStrokeColor(colors.HexColor("#c7d5de")); canvas.setLineWidth(.7)
         canvas.line(left, top, width-left, top)
         canvas.setFont("IOL-Bold", 12); canvas.setFillColor(navy)
@@ -255,15 +251,13 @@ def build_iol_report(report: IOLReportInput, surgeon: str = "", *, report_date: 
             canvas.setFillColor(colors.HexColor("#fff3da"))
             canvas.rect(left, warning_y-5, content_width, warning_height+10, stroke=0, fill=1)
             warning.drawOn(canvas, left+7, warning_y)
-        top -= block_height
-    footer = paragraph(tr("Dashed line: toric marker axis. No line when no toric axis is available.\nDecision support only. Final responsibility rests with the surgeon. Verify patient, eye, lens and axis before surgery.",
-                          "Kesikli çizgi: torik işaret aksı. Torik aks yoksa çizgi gösterilmez.\nKarar desteğidir. Nihai sorumluluk cerrahtadır. Cerrahi öncesi hasta, göz, lens ve aksı doğrulayın."), 7.5)
-    footer.wrap(content_width, 55); footer.drawOn(canvas, left, 27)
-    canvas.setFillColor(colors.HexColor("#34495e"))
-    canvas.setFont("IOL-Regular", 5.8)
-    canvas.drawString(left, 16,
-                     f"Software: {versions.get('software') or 'UNKNOWN'} | "
-                     f"IOL policy: {versions.get('clinical_policy') or 'UNKNOWN'}")
-    canvas.drawString(left, 8, f"Commit: {versions.get('deployment_sha') or 'UNKNOWN'}")
-    canvas.showPage(); canvas.save()
+        footer = paragraph(tr("Dashed line: toric marker axis. No line when no toric axis is available.\\nDecision support only. Final responsibility rests with the surgeon. Verify patient, eye, lens and axis before surgery.",
+                              "Kesikli çizgi: torik işaret aksı. Torik aks yoksa çizgi gösterilmez.\\nKarar desteğidir. Nihai sorumluluk cerrahtadır. Cerrahi öncesi hasta, göz, lens ve aksı doğrulayın."), 7.5)
+        footer.wrap(content_width, 55); footer.drawOn(canvas, left, 27)
+        canvas.setFillColor(colors.HexColor("#34495e"))
+        canvas.setFont("IOL-Regular", 5.8)
+        canvas.drawString(left, 16, f"Software: {versions.get('software') or 'UNKNOWN'} | IOL policy: {versions.get('clinical_policy') or 'UNKNOWN'}")
+        canvas.drawString(left, 8, f"Commit: {versions.get('deployment_sha') or 'UNKNOWN'}")
+        canvas.showPage()
+    canvas.save()
     return buffer.getvalue()
