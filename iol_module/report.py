@@ -114,30 +114,32 @@ def axis_endpoints(cx, cy, radius, axis):
     return cx - dx, cy - dy, cx + dx, cy + dy
 
 
-def draw_eye(canvas, eye, x, top, axis, tr):
-    cx, cy, radius = x + 90, top - 73, 47
-    canvas.setStrokeColor(colors.HexColor("#9babb6")); canvas.setLineWidth(.6)
+def draw_eye(canvas, eye, x, top, axis, tr, radius=105):
+    """Large, centered anterior-view axis diagram below the written findings."""
+    cx, cy = x, top - radius - 16
+    canvas.setStrokeColor(colors.HexColor("#9babb6")); canvas.setLineWidth(1)
     canvas.setFillColor(colors.HexColor("#f3f7fa"))
     canvas.circle(cx, cy, radius, stroke=1, fill=1)
-    canvas.circle(cx, cy, 29, stroke=1, fill=0)
-    canvas.circle(cx, cy, 15, stroke=1, fill=0)
+    canvas.circle(cx, cy, radius * .62, stroke=1, fill=0)
+    canvas.circle(cx, cy, radius * .32, stroke=1, fill=0)
     canvas.line(cx-radius, cy, cx+radius, cy)
     canvas.line(cx, cy-radius, cx, cy+radius)
-    canvas.setFont("IOL-Regular", 7.5); canvas.setFillColor(colors.HexColor("#173b57"))
-    canvas.drawCentredString(cx, cy+radius+10, tr("SUPERIOR", "ÜST") + " 90°")
-    canvas.drawCentredString(cx, cy-radius-13, tr("INFERIOR", "ALT"))
-    canvas.drawCentredString(x+18, cy+4, "TEMPORAL" if eye == "OD" else tr("NASAL", "NAZAL"))
-    canvas.drawCentredString(x+162, cy+4, (tr("NASAL", "NAZAL")) if eye == "OD" else "TEMPORAL")
-    canvas.drawCentredString(x+18, cy-9, "180°")
-    canvas.drawCentredString(x+162, cy-9, "0°")
+    canvas.setFont("IOL-Regular", 9); canvas.setFillColor(colors.HexColor("#173b57"))
+    canvas.drawCentredString(cx, cy+radius+11, tr("SUPERIOR", "ÜST") + " 90°")
+    canvas.drawCentredString(cx, cy-radius-16, tr("INFERIOR", "ALT"))
+    canvas.drawCentredString(cx-radius-39, cy+5, "TEMPORAL" if eye == "OD" else tr("NASAL", "NAZAL"))
+    canvas.drawCentredString(cx+radius+39, cy+5, tr("NASAL", "NAZAL") if eye == "OD" else "TEMPORAL")
+    canvas.drawCentredString(cx-radius-19, cy-12, "180°")
+    canvas.drawCentredString(cx+radius+19, cy-12, "0°")
     if axis is not None:
-        canvas.setStrokeColor(colors.HexColor("#1f5e8c")); canvas.setLineWidth(2)
-        canvas.setDash(5, 3); canvas.line(*axis_endpoints(cx, cy, radius, axis)); canvas.setDash()
+        canvas.setStrokeColor(colors.HexColor("#1f5e8c")); canvas.setLineWidth(3)
+        canvas.setDash(6, 4); canvas.line(*axis_endpoints(cx, cy, radius, axis)); canvas.setDash()
         canvas.setFillColor(colors.HexColor("#1f5e8c"))
-        x1, y1, x2, y2 = axis_endpoints(cx, cy, radius-6, axis)
-        canvas.circle(x1, y1, 2.5, fill=1, stroke=0); canvas.circle(x2, y2, 2.5, fill=1, stroke=0)
-    canvas.setFont("IOL-Regular", 7)
-    canvas.drawCentredString(cx, top-151, tr("Anterior view", "Önden görünüm"))
+        x1, y1, x2, y2 = axis_endpoints(cx, cy, radius-7, axis)
+        canvas.circle(x1, y1, 4, fill=1, stroke=0)
+        canvas.circle(x2, y2, 4, fill=1, stroke=0)
+    canvas.setFont("IOL-Regular", 9)
+    canvas.drawCentredString(cx, cy-radius-32, tr("Anterior view", "Önden görünüm"))
 
 
 def build_iol_report(report: IOLReportInput, surgeon: str = "", *, report_date: str | None = None,
@@ -201,8 +203,10 @@ def build_iol_report(report: IOLReportInput, surgeon: str = "", *, report_date: 
             warnings.append(tr(*WARNINGS[code]) if code in WARNINGS else code)
         sections.append((item, toric, lines, measurements, " · ".join(warnings)))
 
-    # Measure before drawing. Never clip a clinical warning or spill to page two.
-    for size in (9, 8.5, 8):
+    # Full-width findings above the enlarged axis diagram; one A4 page for 1–2 eyes.
+    diagram_radius = 112 if len(sections) == 1 else 66
+    diagram_height = 2 * diagram_radius + 56
+    for size in ((12, 11, 10) if len(sections) == 1 else (10, 9, 8)):
         header = paragraph(row(tr("Patient", "Hasta"), report.patient_name) + "   |   " + row(tr("Age", "Yaş"), report.patient_age_years)
                            + "\n" + row(tr("Surgeon", "Cerrah"), surgeon or tr("Not recorded", "Kaydedilmedi")), size)
         header_height = header.wrap(content_width, height)[1]
@@ -210,13 +214,13 @@ def build_iol_report(report: IOLReportInput, surgeon: str = "", *, report_date: 
         total = header_height + 78
         for item, toric, lines, measurements, warnings in sections:
             values = paragraph("\n".join(lines), size+1, bold=True, color=navy)
-            main_height = max(158, values.wrap(content_width-196, height)[1])
+            values_height = values.wrap(content_width, height)[1]
             bio = paragraph(measurements, size)
             bio_height = bio.wrap(content_width, height)[1]
-            warning = paragraph(warnings, size, color=colors.HexColor("#754600")) if warnings else None
+            warning = paragraph(warnings, size-1, color=colors.HexColor("#754600")) if warnings else None
             warning_height = warning.wrap(content_width-14, height)[1] if warning else 0
-            block_height = 27 + main_height + bio_height + warning_height + (18 if warning else 6) + 14
-            blocks.append((item, toric, values, main_height, bio, bio_height, warning, warning_height, block_height))
+            block_height = 27 + values_height + 9 + bio_height + 10 + diagram_height + warning_height + (18 if warning else 6) + 8
+            blocks.append((item, toric, values, values_height, bio, bio_height, warning, warning_height, block_height))
             total += block_height
         if total <= height-76:
             break
@@ -234,7 +238,7 @@ def build_iol_report(report: IOLReportInput, surgeon: str = "", *, report_date: 
     canvas.drawRightString(width-left, height-58, (report_date or now.strftime("%d.%m.%Y %H:%M")) + " (UTC+03:00)")
     header.drawOn(canvas, left, height-77-header_height)
     top = height-87-header_height
-    for item, toric, values, main_height, bio, bio_height, warning, warning_height, block_height in blocks:
+    for item, toric, values, values_height, bio, bio_height, warning, warning_height, block_height in blocks:
         canvas.setStrokeColor(colors.HexColor("#c7d5de")); canvas.setLineWidth(.7)
         canvas.line(left, top, width-left, top)
         canvas.setFont("IOL-Bold", 12); canvas.setFillColor(navy)
@@ -242,11 +246,12 @@ def build_iol_report(report: IOLReportInput, surgeon: str = "", *, report_date: 
         if toric:
             canvas.setFont("IOL-Bold", 10)
             canvas.drawRightString(width-left, top-19, "TEST ONLY")
-        draw_eye(canvas, item.eye, left, top-27, toric["marker_axis_deg"] if toric else None, tr)
-        values.drawOn(canvas, left+196, top-27-values.height)
-        bio.drawOn(canvas, left, top-27-main_height-bio_height)
+        values.drawOn(canvas, left, top-27-values_height)
+        bio.drawOn(canvas, left, top-36-values_height-bio_height)
+        diagram_top = top-46-values_height-bio_height
+        draw_eye(canvas, item.eye, width/2, diagram_top, toric["marker_axis_deg"] if toric else None, tr, diagram_radius)
         if warning:
-            warning_y = top-27-main_height-bio_height-warning_height-12
+            warning_y = diagram_top-diagram_height-warning_height-12
             canvas.setFillColor(colors.HexColor("#fff3da"))
             canvas.rect(left, warning_y-5, content_width, warning_height+10, stroke=0, fill=1)
             warning.drawOn(canvas, left+7, warning_y)
