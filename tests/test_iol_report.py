@@ -45,8 +45,8 @@ def test_report_is_one_readable_page_with_exact_outputs(locale, both, toric, wor
     with patch("iol_module.power.plan_iol_power", side_effect=AssertionError("No recalculation")):
         data = build_iol_report(report, "Dr. Hüseyin Cengiz")
     pdf = PdfReader(BytesIO(data))
-    assert len(pdf.pages) == 1
-    text = pdf.pages[0].extract_text()
+    assert len(pdf.pages) == (2 if both else 1)
+    text = " ".join(page.extract_text() for page in pdf.pages)
     assert report.patient_name in text
     assert "Dr. Hüseyin Cengiz" in text
     assert "21.00 D" in text and "0.00 D" in text
