@@ -401,13 +401,8 @@
           button.disabled = false;
           return;
         }
-        const sessionWindow = window.open("about:blank", "_blank");
-        if (sessionWindow) {
-          sessionWindow.opener = null;
-          sessionWindow.document.body.textContent = tr("Lütfen bekleyin… ESCRS oturumu hazırlanıyor.");
-        }
         const originalButtonText = button.textContent;
-        button.textContent = tr("Lütfen bekleyin…");
+        button.textContent = tr("Please wait, connecting…");
         button.setAttribute("aria-busy", "true");
         let feedback = document.getElementById(eye + "-escrsAutomaticFeedback");
         if (!feedback) {
@@ -427,7 +422,7 @@
             patientName:document.getElementById("patientName").value,
             age:Number(document.getElementById("patientAge").value),
             sex:document.getElementById("biologicalSex").value
-          }, message => { feedback.textContent = tr(message); }, sessionWindow, true);
+          }, message => { feedback.textContent = tr(message); }, null, true);
           if (opened === false) { feedback.textContent = tr("ESCRS data-transfer consent was not accepted. No data was sent. Your CER-AI calculation remains available; press the button again and choose OK on the consent dialog to proceed."); return; }
           feedback.textContent = tr("ESCRS cloud session opened. Verify all imported values before calculating.");
           status.textContent = feedback.textContent;

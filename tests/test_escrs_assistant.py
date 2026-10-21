@@ -60,3 +60,10 @@ def test_assistant_message_source_and_tab_binding():
         pytest.skip('Node is not available')
     result = subprocess.run(['node', 'tests/js/escrs_background_contract.cjs'], cwd=ROOT, capture_output=True, text=True, timeout=30)
     assert result.returncode == 0, result.stderr
+
+
+def test_escrs_keeps_calculation_visible_until_session_is_ready():
+    if not shutil.which('node'):
+        pytest.skip('Node is not available')
+    result = subprocess.run(['node', 'tests/js/escrs_navigation_contract.cjs'], cwd=ROOT, capture_output=True, text=True, timeout=30)
+    assert result.returncode == 0, result.stderr

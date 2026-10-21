@@ -60,8 +60,13 @@
         ? url.origin === window.location.origin && /^\/iol\/escrs-session\/[a-f0-9]{32}$/.test(url.pathname)
         : ["production-sfo.browserless.io","production-ams.browserless.io","production-lon.browserless.io"].includes(url.hostname) && url.pathname.includes("/live/");
       if (url.protocol !== "https:" || !valid) throw new Error("Invalid ESCRS cloud session address.");
-      if (!sessionWindow || sessionWindow.closed) throw new Error("ESCRS window was blocked or closed. Allow pop-ups for CER-AI and retry; your calculation remains open.");
-      sessionWindow.location.replace(url.href);
+      if (sessionWindow) {
+        if (sessionWindow.closed) throw new Error("ESCRS window was closed. Retry the transfer.");
+        sessionWindow.location.replace(url.href);
+      } else {
+        // Keep the calculation and busy button visible until a validated session is ready.
+        window.location.assign(url.href);
+      }
       return true;
     } catch(error) { if (sessionWindow && !sessionWindow.closed) sessionWindow.close(); throw error; }
   }

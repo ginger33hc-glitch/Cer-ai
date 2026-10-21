@@ -3,6 +3,7 @@
   const stored = (localStorage.getItem("cerai-language") || "en").toLowerCase();
   const locale = stored === "tr" ? "tr" : "en";
   const TR = {
+    "Please wait, connecting…":"Lütfen bekleyin, bağlanıyor…",
     "Pupil below 2.00 mm: surgeon review required; multifocal is not automatically excluded.":"Pupilla 2,00 mm'nin altında: cerrah değerlendirmesi gerekir; multifokal otomatik dışlanmaz.",
     "Pupil above 4.00 mm: surgeon review required; multifocal is not automatically excluded.":"Pupilla 4,00 mm'nin üzerinde: cerrah değerlendirmesi gerekir; multifokal otomatik dışlanmaz.",
     "Pupil diameter is outside the 2–4 mm target. Visual performance may be affected. Do you still want a multifocal lens?":"Pupilla çapı 2–4 mm hedef aralığı dışında. Görsel performans etkilenebilir. Yine de multifokal lens ister misiniz?",
