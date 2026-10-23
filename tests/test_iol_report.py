@@ -45,6 +45,7 @@ def test_report_is_one_readable_page_with_exact_outputs(locale, both, toric, wor
     with patch("iol_module.power.plan_iol_power", side_effect=AssertionError("No recalculation")):
         data = build_iol_report(report, "Dr. Hüseyin Cengiz")
     pdf = PdfReader(BytesIO(data))
+    # Bilateral plans must be printed on separate A4 pages.
     assert len(pdf.pages) == (2 if both else 1)
     text = " ".join(" ".join(page.extract_text().split()) for page in pdf.pages)
     assert report.patient_name in text
