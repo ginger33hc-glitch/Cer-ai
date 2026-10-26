@@ -24,7 +24,7 @@ const fn=source.slice(start,source.indexOf('  $("recommendAll").addEventListener
   const ui=new Map();
   for(const id of ['reviewStage','recommendAll','calculationActions','calculateAll','extractButton','sourceImages']) ui.set(id,{});
   controllers.forEach(c=>{c.recommendationShown=()=>true;});
-  const syncContext={...context,$:id=>ui.get(id),window:{},powerPlans:{OD:null,OS:null}};
+  const syncContext={...context,$:id=>ui.get(id),window:{},updateWorkflowRequirements:()=>{},powerPlans:{OD:null,OS:null}};
   vm.createContext(syncContext);vm.runInContext(sync+';syncWorkflow();',syncContext);
   assert.equal(ui.get('calculateAll').disabled,false);
   const calcStart=source.indexOf('  async function calculate()');
