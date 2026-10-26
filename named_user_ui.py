@@ -130,7 +130,7 @@ def install(core: Any) -> None:
             return FileResponse(
                 LOGIN_HTML,
                 media_type="text/html",
-                headers={"Cache-Control": "no-store"},
+                headers={"Cache-Control": "no-store", "X-Robots-Tag": "noindex,nofollow"},
             )
 
         @core.app.get("/archive-ui", include_in_schema=False)

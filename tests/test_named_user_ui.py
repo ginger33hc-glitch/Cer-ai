@@ -1,6 +1,9 @@
 import logging
+from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
+
+import pytest
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -105,6 +108,33 @@ def test_module_selector_precedes_login_and_preserves_module_destination():
     assert 'href="/app"' in response.text
     assert 'href="/iol"' in response.text
     assert response.headers["cache-control"] == "no-store"
+
+
+@pytest.mark.parametrize("signed_in", (False, True))
+def test_module_selector_does_not_claim_an_authentication_state(signed_in):
+    client, _core = make_client()
+    if signed_in:
+        client.cookies.set("cer_ai_session", "valid")
+    response = client.get("/clinical-modules")
+    assert response.status_code == 200
+    assert "Choose the surgical workflow to continue. Sign in if prompted." in response.text
+    assert "You are signed in" not in response.text
+    assert 'href="/app"' in response.text
+    assert 'href="/iol"' in response.text
+    translations = Path("static/i18n.js").read_text(encoding="utf-8")
+    assert '"Choose the surgical workflow to continue. Sign in if prompted.":"Devam etmek için cerrahi iş akışını seçin. İstenirse giriş yapın."' in translations
+
+
+@pytest.mark.parametrize("path", (
+    "/clinical-modules", "/auth/login-page", "/auth/login-page?next=/iol",
+))
+def test_module_selection_and_login_are_explicitly_not_indexable(path):
+    client, _core = make_client()
+    response = client.get(path)
+    assert response.status_code == 200
+    assert response.headers["cache-control"] == "no-store"
+    assert response.headers["x-robots-tag"] == "noindex,nofollow"
+    assert '<meta name="robots" content="noindex,nofollow">' in response.text
 
 
 def test_unauthenticated_iol_redirects_to_login_and_authenticated_iol_is_separate():
