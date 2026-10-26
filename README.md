@@ -409,3 +409,24 @@ CER-AI is actively used at Vizyon Eye Hospital in Mersin, Türkiye, during patie
 CER-AI, Mersin Vizyon Göz Hastanesi’nde hastaların muayenelerinde ve ameliyat planlamasında aktif olarak kullanılmaktadır. Refraktif cerrahi (göz çizdirme) için yapay zekâ destekli değerlendirmeye ve katarakt ameliyatlarında göz içi mercek (akıllı mercek) seçimine karar desteği sunar. Klinik kararlar, nihai mercek seçimi ve ameliyat göz cerrahının sorumluluğundadır.
 
 [Vizyon Eye Hospital, Mersin — official website](https://vizyongozhastanesi.com/)
+
+## Simplified IOL review scope
+
+The current IOL form leaves ocular pathology assessment to the surgeon. New
+assessments explicitly record `ocular_findings_assessment=NOT_ASSESSED`, with
+retinal, macular, glaucoma, ocular-surface and post-treatment stability findings
+stored as null, not as absent. Lens candidates are labeled optical-only; the
+same limitation remains visible in EN/TR reports and archived snapshots.
+Legacy explicit surgeon-reported findings and their exclusions remain supported.
+
+Regularity remains mandatory only when the active IOLMaster K difference is
+strictly greater than 1.00 D. The form highlights the unresolved field, directs
+the surgeon to it after extraction or a committed K-field change, and lists
+incomplete fields by eye without choosing a clinical answer. Prior LASIK/PRK/RK
+remains available in a visible optional section and preserves external
+post-refractive calculation routes. No calculation thresholds changed.
+
+`tests/test_iol_workflow_guidance.py` exercises the form with intercepted local
+requests and synthetic source data only. The IOL Workflow UI CI job requires
+Chromium and runs EN/TR, bilateral, boundary, reset and prior-surgery route checks;
+it never submits a case to production or a real external calculator.

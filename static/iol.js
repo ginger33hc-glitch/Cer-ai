@@ -18,6 +18,36 @@
   let loadedEyes = [];
   let caseVersion = 0;
   let workflowBusy = false;
+  function incompleteFields(form) {
+    return [...form.elements].filter(field => field.willValidate && !field.validity.valid);
+  }
+  function revealRequiredField(field) {
+    for (let parent = field.parentElement; parent; parent = parent.parentElement) {
+      if (parent.tagName === "DETAILS") parent.open = true;
+    }
+    field.classList.add("field-attention");
+    field.scrollIntoView({block:"center", behavior:window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth"});
+    field.focus({preventScroll:true});
+  }
+  function updateWorkflowRequirements(eyes) {
+    const panel = $("workflowRequirements");
+    const fields = eyes.length ? [
+      ...incompleteFields($("patientForm")).map(field => ({field, eye:null})),
+      ...loadedEyes.flatMap(eye => controllers.get(eye).incompleteFields().map(field => ({field, eye})))
+    ] : [];
+    panel.hidden = !fields.length;
+    const list = $("workflowRequirementList");
+    list.replaceChildren();
+    fields.forEach(({field, eye}) => {
+      const item = document.createElement("li");
+      const button = document.createElement("button");
+      button.type = "button"; button.className = "requirement-link";
+      const label = tr(field.labels?.[0]?.textContent || "Required information is incomplete or invalid.");
+      button.textContent = `${eye ? eye + " — " : ""}${label}`;
+      button.addEventListener("click", () => revealRequiredField(field));
+      item.appendChild(button); list.appendChild(item);
+    });
+  }
   function syncWorkflow() {
     const eyes = loadedEyes.map(eye => controllers.get(eye));
     $("reviewStage").hidden = !eyes.length;
@@ -27,6 +57,7 @@
     $("calculateAll").disabled = workflowBusy || !recommended;
     $("extractButton").disabled = workflowBusy;
     $("sourceImages").disabled = workflowBusy;
+    updateWorkflowRequirements(eyes);
     window.CERAI_IOL_REPORT?.setCase(!workflowBusy && loadedEyes.length && loadedEyes.every(eye => powerPlans[eye]) ? {
       assessment_request_id: iolAssessmentRequestId,
       patient_name: $("patientName").value.trim(), patient_age_years: Number($("patientAge").value),
@@ -37,6 +68,7 @@
   let iolAssessmentRequestId = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
   const tr = value => window.CERAI_I18N?.translate(value) ?? String(value ?? "");
   const warningLabel = code => ({
+    WARN_OCULAR_FINDINGS_NOT_ASSESSED:"Ocular pathology was not assessed by CER-AI; left to surgeon assessment. Lens categories reflect optical measurements and preferences only, not clinical suitability.",
     WARN_RETINA_SIGNIFICANT:"Significant retinal disease: multifocal IOL excluded.",
     WARN_RETINA_MILD:"Mild retinal disease requires surgeon review.",
     WARN_MACULAR_PATHOLOGY:"Macular pathology: multifocal IOL excluded.",
@@ -105,6 +137,7 @@
     let recommendation = null;
     let recommendationShown = false;
     let version = 0;
+    let regularityAttentionPending = false;
     $("eye").value = eye;
     $("eyeHeading").textContent = tr(eye === "OD" ? "OD — Right eye" : "OS — Left eye");
     root.hidden = true;
@@ -166,10 +199,21 @@
     const difference = kDifference();
     $("kDifference").value = Number.isFinite(difference) ? `${difference.toFixed(2)} D` : "";
     const required = requiresRegularity(difference);
+    const becameRequired = required && !$("astigType").required;
     $("astigTypeField").hidden = !required;
     $("incisionAdvice").hidden = !Number.isFinite(difference) || required;
     if (!required && $("astigType").value !== "IRREGULAR") $("astigType").value = "";
     $("astigType").required = required;
+    const unresolved = required && !$("astigType").value;
+    if (becameRequired && unresolved) regularityAttentionPending = true;
+    if (!unresolved) regularityAttentionPending = false;
+    $("astigTypeField").classList.toggle("required-attention", unresolved);
+    $("astigType").setAttribute("aria-invalid", String(unresolved));
+    $("astigType").setAttribute("aria-describedby", $("astigTypeHelp").id);
+    $("astigTypeHelp").hidden = !unresolved;
+    $("astigTypeHelp").textContent = unresolved ? tr("K difference: {difference} D (> {threshold} D). Select regular or irregular astigmatism to continue.")
+      .replace("{difference}", difference.toFixed(2)).replace("{threshold}", astigmatismThreshold.toFixed(2)) : "";
+    if (!unresolved) $("astigType").classList.remove("field-attention");
     $("incisionField").hidden = !required;
     $("siaField").hidden = !required;
     $("siaAxisField").hidden = !required;
@@ -180,6 +224,12 @@
       $("siaAxis").value = $("incisionAxis").value;
       $("sia").value = "0.25";
     }
+  }
+  function focusMissingRegularity() {
+    if (!$("astigType").required || $("astigType").value) return false;
+    regularityAttentionPending = false;
+    revealRequiredField($("astigType"));
+    return true;
   }
 
   function populateEye() {
@@ -228,16 +278,23 @@
   }));
   posteriorFields.forEach(key => $("back_"+key).addEventListener("input", () => $("powerResult").replaceChildren()));
 
-  $("surface").addEventListener("change", () => { $("stableField").hidden = $("surface").value !== "RESOLVED_AFTER_TREATMENT"; });
-  $("priorSurgery").addEventListener("change", () => { $("historyField").hidden = !["MYOPIC_LASIK_PRK","HYPEROPIC_LASIK_PRK"].includes($("priorSurgery").value); });
+  $("priorSurgery").addEventListener("change", () => {
+    $("historyField").hidden = !["MYOPIC_LASIK_PRK","HYPEROPIC_LASIK_PRK"].includes($("priorSurgery").value);
+    $("priorSurgerySummary").textContent = tr("Previous corneal surgery (LASIK/PRK/RK)") + ($("priorSurgery").value === "NONE" ? "" : ` — ${$("priorSurgery").selectedOptions[0].textContent}`);
+  });
   $("k1").addEventListener("input", updateAstigmatism); $("k2").addEventListener("input", updateAstigmatism); $("k2Axis").addEventListener("input", updateAstigmatism);
+  ["k1", "k2"].forEach(id => $(id).addEventListener("change", () => {
+    if (regularityAttentionPending) focusMissingRegularity();
+  }));
+  $("astigType").addEventListener("change", updateAstigmatism);
   function populateLenses() {
     const eligible = new Set(recommendation.eligible_categories || []);
     pupilReview.hidden = !pupilReviewRequired();
     if (pupilReviewRequired() && pupilChoice.value !== "yes") eligible.delete("MULTIFOCAL");
     const toric = recommendation.toric_evaluation_required;
     const options = lensCatalog.filter(lens => eligible.has(lens.category) && (toric ? lens.subtype?.toLowerCase().includes("toric") : !lens.subtype?.toLowerCase().includes("toric")));
-    $("selectedLens").innerHTML = `<option value="">Select an eligible lens</option>` + options.map(lens => {
+    const lensPrompt = recommendation.recommendation_scope === "OPTICAL_ONLY" ? "Select an optical candidate for surgeon review" : "Select an eligible lens";
+    $("selectedLens").innerHTML = `<option value="">${tr(lensPrompt)}</option>` + options.map(lens => {
       const route = toric ? (lens.embedded_toric_supported ? " — embedded prototype (TEST ONLY)" : " — external toric verification required") : "";
       return `<option value="${lens.id}">${lens.name} — ${lens.category} — A ${lens.a_constant.toFixed(1)}${route}</option>`;
     }).join("");
@@ -279,8 +336,9 @@
       iolm500_k1_d: originalK1, iolm500_k1_axis_deg: Number($("k1Axis").value), iolm500_k2_d: originalK2, iolm500_k2_axis_deg: Number($("k2Axis").value),
       iolm500_measurement_source: source ? "IOLMASTER_500_EXTRACTED" : "SURGEON_ENTERED_UNREADABLE",
       surgeon_k1_d: Number($("k1").value) === originalK1 ? null : Number($("k1").value), surgeon_k2_d: Number($("k2").value) === originalK2 ? null : Number($("k2").value),
-      astigmatism_type: $("astigType").value || null, retina_status: $("retina").value, macular_pathology_present: $("macular").value === "true", glaucoma_status: $("glaucoma").value, ocular_surface_status: $("surface").value,
-      post_treatment_measurements_stable: $("surface").value === "RESOLVED_AFTER_TREATMENT" ? $("stable").value === "true" : null
+      astigmatism_type: $("astigType").value || null, ocular_findings_assessment: "NOT_ASSESSED",
+      retina_status: null, macular_pathology_present: null, glaucoma_status: null, ocular_surface_status: null,
+      post_treatment_measurements_stable: null
     };
     $("evaluateButton").disabled = true; status.textContent = "Applying canonical IOL rules…";
     try {
@@ -302,8 +360,11 @@
     if (!recommendation) return false;
     const data = recommendation;
     try {
-      $("recommendation").textContent = tr(`Recommended IOL: ${data.formatted_recommendation}`);
-      $("eligible").innerHTML = (data.eligible_categories || []).map(v => `<span class="pill">${tr(`Eligible: ${v}`)}</span>`).join("");
+      const opticalOnly = data.recommendation_scope === "OPTICAL_ONLY";
+      $("recommendation").textContent = opticalOnly
+        ? `${tr("Optical IOL candidate — surgeon assessment required")}: ${tr(data.formatted_recommendation)}`
+        : tr(`Recommended IOL: ${data.formatted_recommendation}`);
+      $("eligible").innerHTML = (data.eligible_categories || []).map(v => `<span class="pill">${opticalOnly ? `${tr("Optical candidate")}: ${tr(v)}` : tr(`Eligible: ${v}`)}</span>`).join("");
       if (!lensCatalog.length) { const lenses = await fetch("/iol/lenses", {credentials:"same-origin"}); const body = await lenses.json(); if (!lenses.ok) throw new Error(errorMessage(body)); lensCatalog = body.lenses || []; }
       if (requestVersion !== version) return false; recommendationShown = true; recommendationRoot.hidden = false; populateLenses(); $("powerSection").hidden = false; updateAstigmatism(); status.textContent = "Recommendation generated. Select the lens for Stage 2."; return true;
     } catch (error) {
@@ -476,7 +537,10 @@
       }
       syncWorkflow();
     }
-    const invalidateFromEvent = event => invalidate(!$("powerSection").contains(event.target) && !$("backCompletion").contains(event.target) && !$("lensThicknessField").contains(event.target));
+    const invalidateFromEvent = event => {
+      if (event.target.validity?.valid) event.target.classList.remove("field-attention");
+      invalidate(!$("powerSection").contains(event.target) && !$("backCompletion").contains(event.target) && !$("lensThicknessField").contains(event.target));
+    };
     [root, recommendationRoot, calculationRoot].forEach(panel => {
       panel.addEventListener("input", invalidateFromEvent);
       panel.addEventListener("change", invalidateFromEvent);
@@ -488,6 +552,8 @@
       evaluated: () => recommendation !== null,
       recommendationShown: () => recommendationShown,
       readyToRecommend: () => $("iolForm").checkValidity(),
+      incompleteFields: () => incompleteFields($("iolForm")),
+      focusMissingRegularity,
       readyToCalculate: () => recommendationShown && Boolean($("selectedLens").value),
       reportSnapshot: () => ({eye, plan: powerPlans[eye], recommendation}),
       reset() {
@@ -499,7 +565,14 @@
         ["kDifference", "sia", "siaAxis"].forEach(id => { $(id).readOnly = true; });
         $("selectedLens").replaceChildren();
         $("priorSurgery").value = "NONE"; $("historicalData").value = "false";
-        $("stableField").hidden = true; $("historyField").hidden = true;
+        $("historyField").hidden = true; $("priorSurgeryPanel").open = false;
+        $("priorSurgerySummary").textContent = tr("Previous corneal surgery (LASIK/PRK/RK)");
+        regularityAttentionPending = false;
+        $("astigType").required = false;
+        $("astigType").removeAttribute("aria-invalid");
+        $("astigTypeHelp").hidden = true;
+        $("astigTypeField").classList.remove("required-attention");
+        root.querySelectorAll(".field-attention").forEach(field => field.classList.remove("field-attention"));
         $("backCompletion").hidden = true;
         $("lensThicknessField").hidden = true; $("lensThickness").value = "";
         $("alMarker").textContent = "";
@@ -521,9 +594,11 @@
   ["OD", "OS"].forEach(eye => controllers.set(eye, createEyeController(eye)));
   $("patientForm").addEventListener("submit", event => event.preventDefault());
   $("patientForm").addEventListener("input", event => {
+    if (event.target.validity?.valid) event.target.classList.remove("field-attention");
     if (event.target.id !== "sourceImages") controllers.forEach(controller => controller.invalidate());
   });
   $("patientForm").addEventListener("change", event => {
+    if (event.target.validity?.valid) event.target.classList.remove("field-attention");
     if (event.target.id !== "sourceImages") controllers.forEach(controller => controller.invalidate());
   });
   $("sourceImages").addEventListener("change", () => {
@@ -571,7 +646,11 @@
       const nameReview = data.identity.source_name_review_required ? tr(" The surgeon-entered patient name was retained. Check the patient names printed on the source reports.") : "";
       status.textContent = tr("Images read. Complete any missing fields, then continue to lens recommendation.") + nameReview + (unreadable.length ? " " + unreadable.join(", ") : "");
     } catch (error) { clearSourceCase(); status.textContent = error.message || tr("Image transcription failed."); status.classList.add("error"); }
-    finally { workflowBusy = false; syncWorkflow(); $("patientName").readOnly = false; }
+    finally {
+      workflowBusy = false; $("patientName").readOnly = false; syncWorkflow();
+      // Focus the first unresolved eye once, after all source panels are ready.
+      loadedEyes.some(eye => controllers.get(eye).focusMissingRegularity());
+    }
   });
   async function runLoadedEyes(method) {
     const requestCaseVersion = caseVersion;

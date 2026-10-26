@@ -9,11 +9,12 @@ from .models import (
     GlaucomaStatus,
     IOLCaseInput,
     IOLRecommendation,
+    OcularFindingsAssessment,
     OcularSurfaceStatus,
     RetinaStatus,
 )
 
-ENGINE_VERSION = "IOL_CANONICAL_3.8"
+ENGINE_VERSION = "IOL_CANONICAL_3.9"
 LEGAL_NOTICE = (
     "This application provides clinical decision support only. "
     "Final responsibility rests with the surgeon at all times and under all circumstances."
@@ -36,6 +37,9 @@ def evaluate_case(case: IOLCaseInput) -> IOLRecommendation:
     exclusions: list[str] = []
     decisive: list[str] = []
     explanation: list[str] = []
+    unassessed = case.ocular_findings_assessment == OcularFindingsAssessment.NOT_ASSESSED
+    if unassessed:
+        warnings.append("WARN_OCULAR_FINDINGS_NOT_ASSESSED")
 
     hoa_low = case.total_corneal_hoa_4mm_um < 0.300
     hoa_moderate = 0.300 <= case.total_corneal_hoa_4mm_um < 0.510
@@ -127,7 +131,7 @@ def evaluate_case(case: IOLCaseInput) -> IOLRecommendation:
         alternative = "MONOFOCAL"
     else:
         main = "MULTIFOCAL"
-        decisive.append("MF_BALANCED_POSITIVE_PROFILE")
+        decisive.append("MF_OPTICAL_PROFILE_ONLY" if unassessed else "MF_BALANCED_POSITIVE_PROFILE")
         eligible = ["MULTIFOCAL", "EDOF", "MONOFOCAL"]
         alternative = "EDOF"
 
@@ -157,12 +161,18 @@ def evaluate_case(case: IOLCaseInput) -> IOLRecommendation:
     explanation.append(
         f"Angle kappa is {case.angle_kappa_mm:.2f} mm and angle alpha is {case.angle_alpha_mm:.2f} mm."
     )
-    explanation.append(
-        f"Retinal status is {case.retina_status.value.lower()}; macular pathology is {'present' if case.macular_pathology_present else 'absent'}; glaucoma status is {case.glaucoma_status.value.lower()}."
-    )
-    explanation.append(
-        f"Ocular-surface status is {case.ocular_surface_status.value.lower().replace('_', ' ')}."
-    )
+    if unassessed:
+        explanation.append(
+            "Ocular pathology was not assessed by CER-AI; left to surgeon assessment. "
+            "Lens categories reflect optical measurements and preferences only, not clinical suitability."
+        )
+    else:
+        explanation.append(
+            f"Retinal status is {case.retina_status.value.lower()}; macular pathology is {'present' if case.macular_pathology_present else 'absent'}; glaucoma status is {case.glaucoma_status.value.lower()}."
+        )
+        explanation.append(
+            f"Ocular-surface status is {case.ocular_surface_status.value.lower().replace('_', ' ')}."
+        )
     astig_type = case.astigmatism_type.value.lower() if case.astigmatism_type else "not required at or below threshold"
     explanation.append(
         f"Active IOLMaster 500 K difference is {case.active_astigmatism_d:.2f} D "
@@ -197,4 +207,6 @@ def evaluate_case(case: IOLCaseInput) -> IOLRecommendation:
         ),
         clinical_explanation=explanation,
         legal_notice=LEGAL_NOTICE,
+        ocular_findings_assessment=case.ocular_findings_assessment,
+        recommendation_scope=case.recommendation_scope,
     )

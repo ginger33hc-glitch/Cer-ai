@@ -59,7 +59,7 @@ const choice={value:''},review={},select={innerHTML:''};
 const ctx={recommendation:{eligible_categories:['MULTIFOCAL','EDOF','MONOFOCAL']},
  pupilReview:review,pupilChoice:choice,pupilReviewRequired:()=>true,
  lensCatalog:[{id:'mf',name:'MF',category:'MULTIFOCAL',a_constant:119},
- {id:'edof',name:'EDOF',category:'EDOF',a_constant:119}],$:()=>select};
+ {id:'edof',name:'EDOF',category:'EDOF',a_constant:119}],$:()=>select,tr:x=>x};
 vm.createContext(ctx);vm.runInContext(fn,ctx);
 ctx.populateLenses();assert(!select.innerHTML.includes('value="mf"'));assert(!review.hidden);
 choice.value='yes';ctx.populateLenses();assert(select.innerHTML.includes('value="mf"'));

@@ -1,0 +1,51 @@
+name: IOL Workflow UI
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'static/iol.html'
+      - 'static/iol.js'
+      - 'static/i18n.js'
+      - 'iol_module/**'
+      - 'tests/test_iol_workflow_guidance.py'
+      - '.github/workflows/iol-workflow-ui.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'static/iol.html'
+      - 'static/iol.js'
+      - 'static/i18n.js'
+      - 'iol_module/**'
+      - 'tests/test_iol_workflow_guidance.py'
+      - '.github/workflows/iol-workflow-ui.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  synthetic-browser-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PYTHONPATH: ${{ github.workspace }}
+      OPENAI_API_KEY: test-key-for-import-only
+      CERAI_IOL_BROWSER_REQUIRED: '1'
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+          cache: pip
+      - run: pip install --require-hashes -r requirements-dev.txt
+      - name: Ensure a browser is available
+        shell: bash
+        run: |
+          if command -v chromium >/dev/null || command -v google-chrome >/dev/null; then
+            echo "Using the runner's installed browser (also used by the full regression suite)."
+          else
+            python -m playwright install --with-deps chromium
+          fi
+      - name: Synthetic EN/TR IOL workflow and route regression
+        run: python -m pytest -q tests/test_iol_workflow_guidance.py

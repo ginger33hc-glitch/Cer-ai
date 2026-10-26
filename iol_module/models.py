@@ -58,6 +58,11 @@ class OcularSurfaceStatus(str, Enum):
     RESOLVED_AFTER_TREATMENT = "RESOLVED_AFTER_TREATMENT"
 
 
+class OcularFindingsAssessment(str, Enum):
+    SURGEON_REPORTED = "SURGEON_REPORTED"
+    NOT_ASSESSED = "NOT_ASSESSED"
+
+
 class BiometrySource(str, Enum):
     IOLMASTER_500_EXTRACTED = "IOLMASTER_500_EXTRACTED"
     SURGEON_ENTERED_UNREADABLE = "SURGEON_ENTERED_UNREADABLE"
@@ -93,14 +98,24 @@ class IOLCaseInput(StrictModel):
     surgeon_k2_d: float | None = Field(default=None, ge=30, le=60)
     astigmatism_type: AstigmatismType | None = None
 
-    retina_status: RetinaStatus
-    macular_pathology_present: bool
-    glaucoma_status: GlaucomaStatus
-    ocular_surface_status: OcularSurfaceStatus
+    # Legacy callers still supply explicit findings. The simplified workflow
+    # must explicitly opt into NOT_ASSESSED; missing data never means absent.
+    ocular_findings_assessment: OcularFindingsAssessment = OcularFindingsAssessment.SURGEON_REPORTED
+    retina_status: RetinaStatus | None = None
+    macular_pathology_present: bool | None = None
+    glaucoma_status: GlaucomaStatus | None = None
+    ocular_surface_status: OcularSurfaceStatus | None = None
     post_treatment_measurements_stable: bool | None = None
 
     @model_validator(mode="after")
     def validate_conditional_fields(self):
+        findings = (self.retina_status, self.macular_pathology_present,
+                    self.glaucoma_status, self.ocular_surface_status)
+        if self.ocular_findings_assessment == OcularFindingsAssessment.NOT_ASSESSED:
+            if any(value is not None for value in (*findings, self.post_treatment_measurements_stable)):
+                raise ValueError("Unassessed ocular findings must remain null, not recorded as absent or present.")
+        elif any(value is None for value in findings):
+            raise ValueError("Surgeon-reported ocular findings require explicit retinal, macular, glaucoma and ocular-surface findings.")
         if requires_astigmatism_classification(self.active_astigmatism_d) and self.astigmatism_type is None:
             raise ValueError(
                 "Surgeon-classified regularity is required when the active IOLMaster K difference is greater than 1.00 D."
@@ -127,6 +142,11 @@ class IOLCaseInput(StrictModel):
     def active_astigmatism_d(self) -> float:
         return abs(self.active_k2_d - self.active_k1_d)
 
+    @property
+    def recommendation_scope(self) -> Literal["CLINICAL_AND_OPTICAL", "OPTICAL_ONLY"]:
+        return ("OPTICAL_ONLY" if self.ocular_findings_assessment == OcularFindingsAssessment.NOT_ASSESSED
+                else "CLINICAL_AND_OPTICAL")
+
 
 class IOLRecommendation(StrictModel):
     engine_version: str
@@ -149,6 +169,20 @@ class IOLRecommendation(StrictModel):
     toric_evaluation_required: bool
     clinical_explanation: list[str]
     legal_notice: str
+    # None preserves historical snapshots that did not record these markers.
+    ocular_findings_assessment: OcularFindingsAssessment | None = None
+    recommendation_scope: Literal["CLINICAL_AND_OPTICAL", "OPTICAL_ONLY"] | None = None
+
+    @model_validator(mode="after")
+    def consistent_assessment_scope(self):
+        expected = {
+            OcularFindingsAssessment.NOT_ASSESSED: "OPTICAL_ONLY",
+            OcularFindingsAssessment.SURGEON_REPORTED: "CLINICAL_AND_OPTICAL",
+            None: None,
+        }[self.ocular_findings_assessment]
+        if self.recommendation_scope != expected:
+            raise ValueError("Recommendation scope must match the recorded ocular-findings assessment.")
+        return self
 
 
 def complete_posterior_axes(values):
