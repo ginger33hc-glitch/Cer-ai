@@ -20,7 +20,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen.canvas import Canvas
 from reportlab.platypus import Paragraph
 
-from .models import IOLPowerPlan, IOLRecommendation, StrictModel
+from .models import IOLPowerPlan, IOLRecommendation, OcularFindingsAssessment, StrictModel
 
 for name, filename in (("IOL-Regular", "Vera.ttf"), ("IOL-Bold", "VeraBd.ttf")):
     pdfmetrics.registerFont(TTFont(name, str(Path(reportlab.__file__).parent / "fonts" / filename)))
@@ -42,6 +42,17 @@ class ReportEye(StrictModel):
                            ("k2_axis_deg", self.recommendation.k2_axis_deg)):
             if self.plan.inputs.get(key) != value:
                 raise ValueError("Report measurements do not match the recommendation.")
+        assessment = self.recommendation.ocular_findings_assessment
+        recorded_assessment = self.plan.inputs.get("ocular_findings_assessment")
+        if (recorded_assessment is not None or assessment == OcularFindingsAssessment.NOT_ASSESSED):
+            if recorded_assessment != assessment or self.plan.inputs.get("recommendation_scope") != self.recommendation.recommendation_scope:
+                raise ValueError("Report ocular-findings assessment does not match the calculation.")
+        if recorded_assessment == OcularFindingsAssessment.NOT_ASSESSED:
+            findings = self.plan.inputs.get("ocular_findings")
+            fields = {"retina_status", "macular_pathology_present", "glaucoma_status",
+                      "ocular_surface_status", "post_treatment_measurements_stable"}
+            if not isinstance(findings, dict) or set(findings) != fields or any(value is not None for value in findings.values()):
+                raise ValueError("Unassessed report findings must remain explicitly null.")
         return self
 
 
@@ -62,6 +73,7 @@ class IOLReportInput(StrictModel):
 
 # Presentation labels only: thresholds and clinical decisions stay in engine.py.
 WARNINGS = {
+    "WARN_OCULAR_FINDINGS_NOT_ASSESSED": ("Ocular pathology not assessed by CER-AI; left to surgeon assessment. Optical candidates only, not confirmed clinical suitability.", "Oküler patoloji CER-AI tarafından değerlendirilmedi; cerrah değerlendirmesine bırakıldı. Yalnız optik adaylar; klinik uygunluk doğrulanmadı."),
     "WARN_PUPIL_SMALL_SURGEON_REVIEW": ("Pupil <2 mm: surgeon review; multifocal requires confirmation", "Pupil <2 mm: cerrah değerlendirmesi; multifokal için onay gerekir"),
     "WARN_PUPIL_LARGE_SURGEON_REVIEW": ("Pupil >4 mm: surgeon review; multifocal requires confirmation", "Pupil >4 mm: cerrah değerlendirmesi; multifokal için onay gerekir"),
     "WARN_RETINA_SIGNIFICANT": ("Significant retinal disease; multifocal excluded", "Belirgin retina hastalığı; multifokal dışlandı"),
@@ -194,6 +206,8 @@ def build_iol_report(report: IOLReportInput, surgeon: str = "", *, report_date: 
     tr = lambda en, turkish: turkish if report.locale == "tr" else en
     width, height = A4
     left, content_width = 34, width-68
+    # The upper 90-degree label extends above the diagram's nominal top.
+    diagram_gap = 22
     ink, navy = colors.HexColor("#17212b"), colors.HexColor("#173b57")
 
     def paragraph(text, size=9, bold=False, color=ink):
@@ -247,7 +261,13 @@ def build_iol_report(report: IOLReportInput, surgeon: str = "", *, report_date: 
             warnings.append(tr("Cooke K6 unavailable; local T2 fallback used.", "Cooke K6 kullanılamadı; yerel T2 ile hesaplandı."))
         if p.second_formula_required:
             warnings.append(tr("Independent verification with a second modern formula required (ESCRS).", "İkinci modern formülle bağımsız doğrulama gerekli (ESCRS)."))
-        for code in item.recommendation.warning_codes:
+        warning_codes = list(item.recommendation.warning_codes)
+        if item.recommendation.ocular_findings_assessment == OcularFindingsAssessment.NOT_ASSESSED:
+            # The explicit snapshot state, not a removable warning code, is
+            # authoritative for retaining this limitation in every report.
+            if "WARN_OCULAR_FINDINGS_NOT_ASSESSED" not in warning_codes:
+                warning_codes.insert(0, "WARN_OCULAR_FINDINGS_NOT_ASSESSED")
+        for code in warning_codes:
             warnings.append(tr(*WARNINGS[code]) if code in WARNINGS else code)
         if item.plan.lens_category == "MULTIFOCAL" and item.plan.inputs.get("pupil_multifocal_confirmed") is True:
             warnings.append(tr("Surgeon confirmed multifocal selection after pupil warning.", "Pupilla uyarısı sonrası multifokal seçimi cerrah tarafından onaylandı."))
@@ -273,7 +293,7 @@ def build_iol_report(report: IOLReportInput, surgeon: str = "", *, report_date: 
             bio_height = bio.wrap(content_width, height)[1]
             warning = paragraph(warnings, size-1, color=colors.HexColor("#754600")) if warnings else None
             warning_height = warning.wrap(content_width-14, height)[1] if warning else 0
-            total = header_height + 87 + (91 if toric else 27) + values_height + 9 + bio_height + 10 + diagram_height + warning_height + (18 if warning else 6) + 8
+            total = header_height + 87 + (91 if toric else 27) + values_height + 9 + bio_height + diagram_gap + diagram_height + warning_height + (18 if warning else 6) + 8
             if total <= height-76:
                 break
         else:
@@ -310,7 +330,7 @@ def build_iol_report(report: IOLReportInput, surgeon: str = "", *, report_date: 
                 canvas.line(xx, band_top - 32, xx, band_top - 11)
         values.drawOn(canvas, left, top-(91 if toric else 27)-values_height)
         bio.drawOn(canvas, left, top-(100 if toric else 36)-values_height-bio_height)
-        diagram_top = top-(110 if toric else 46)-values_height-bio_height
+        diagram_top = top-(100 if toric else 36)-values_height-bio_height-diagram_gap
         draw_eye(canvas, item.eye, width/2, diagram_top, toric["marker_axis_deg"] if toric else None, tr, diagram_radius, p.inputs.get("incision_axis_deg"))
         if warning:
             warning_y = diagram_top-diagram_height-warning_height-12

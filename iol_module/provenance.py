@@ -1,7 +1,7 @@
 """Operational provenance only; never changes IOL calculations."""
 from release_identity import SOFTWARE_VERSION, deployment_sha
 
-IOL_POLICY_VERSION = "CER-AI-IOL-2026-10-17-SOURCE-ARCHIVE-V1"
+IOL_POLICY_VERSION = "CER-AI-IOL-2026-10-26-UNASSESSED-FINDINGS-V2"
 
 
 def current_versions() -> dict:

@@ -74,8 +74,15 @@ def _base_inputs(case: IOLPowerPlanInput) -> dict[str, object]:
         if value is not None:
             values[key] = value
     if case.clinical_assessment is not None:
-        values["pentacam_pupil_3d_mm"] = case.clinical_assessment.pentacam_pupil_3d_mm
+        assessment = case.clinical_assessment
+        values["pentacam_pupil_3d_mm"] = assessment.pentacam_pupil_3d_mm
         values["pupil_multifocal_confirmed"] = case.pupil_multifocal_confirmed
+        values["ocular_findings_assessment"] = assessment.ocular_findings_assessment.value
+        values["recommendation_scope"] = assessment.recommendation_scope
+        values["ocular_findings"] = assessment.model_dump(mode="json", include={
+            "retina_status", "macular_pathology_present", "glaucoma_status",
+            "ocular_surface_status", "post_treatment_measurements_stable",
+        })
     if case.posterior_cornea is not None:
         values["posterior_cornea"] = case.posterior_cornea.model_dump(mode="json")
     return values
