@@ -338,6 +338,43 @@ def test_product_page_discovery_schema_points_to_canonical_software(public_app):
     assert "independently interpretable pathways" in software["description"]
 
 
+@pytest.mark.parametrize("path", (
+    "/clinical-evidence", "/references", "/about/huseyin-cengiz", "/editorial-policy",
+))
+def test_english_only_pages_do_not_advertise_a_nonexistent_translation(public_app, path):
+    with TestClient(public_app, base_url="https://cer-ai.com") as client:
+        response = client.get(path)
+    assert response.status_code == 200
+    assert response.headers["x-robots-tag"].startswith("index,follow")
+    structure = PageStructure(response.text)
+    assert structure.attributes("html")[0]["lang"] == "en"
+    assert {
+        (link["hreflang"], link["href"])
+        for link in structure.attributes("link")
+        if link.get("rel") == "alternate"
+    } == {("en", f"https://cer-ai.com{path}")}
+
+
+@pytest.mark.parametrize("path,metadata", [
+    (path, metadata) for path, metadata in public_site._PUBLIC_PAGE_METADATA.items()
+    if metadata.get("alternate_path")
+])
+def test_explicit_translations_keep_distinct_reciprocal_hreflang(public_app, path, metadata):
+    counterpart = metadata["alternate_path"]
+    assert counterpart != path
+    assert public_site._PUBLIC_PAGE_METADATA[counterpart]["alternate_path"] == path
+    language = metadata.get("in_language", "en")
+    other_language = "tr" if language == "en" else "en"
+    with TestClient(public_app, base_url="https://cer-ai.com") as client:
+        response = client.get(path)
+    assert response.status_code == 200
+    assert {
+        (link["hreflang"], link["href"])
+        for link in PageStructure(response.text).attributes("link")
+        if link.get("rel") == "alternate"
+    } == {(language, f"https://cer-ai.com{path}"), (other_language, f"https://cer-ai.com{counterpart}")}
+
+
 def test_product_page_serves_physician_ectasia_intent_without_topography_repositioning(
     public_app,
 ):

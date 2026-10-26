@@ -851,6 +851,19 @@ def _public_page_discovery_head(base: str, canonical_path: str) -> str:
             '\n  <script id="cerai-software-identity" '
             f'type="application/ld+json">{encoded_software}</script>'
         )
+    language = metadata.get("in_language", "en")
+    language_alternates = (
+        f'<link rel="alternate" hreflang="{language}" href="{canonical}">'
+    )
+    alternate_path = metadata.get("alternate_path")
+    # A monolingual page is not its own translation. Only advertise a second
+    # language when this page has an explicitly configured, distinct route.
+    if alternate_path and alternate_path != canonical_path:
+        alternate_language = "tr" if language == "en" else "en"
+        language_alternates += (
+            f'\n  <link rel="alternate" hreflang="{alternate_language}" '
+            f'href="{base}{alternate_path}">'
+        )
     return f"""
   <meta name="author" content="Hüseyin Cengiz, M.D.">
   <meta property="og:type" content="website">
@@ -862,8 +875,7 @@ def _public_page_discovery_head(base: str, canonical_path: str) -> str:
   <meta name="twitter:title" content="{escape(title, quote=True)}">
   <meta name="twitter:description" content="{escape(description, quote=True)}">
   <link rel="author" href="{base}/about/huseyin-cengiz">
-  <link rel="alternate" hreflang="{metadata.get('in_language', 'en')}" href="{canonical}">
-  <link rel="alternate" hreflang="{'tr' if metadata.get('in_language', 'en') == 'en' else 'en'}" href="{base}{metadata.get('alternate_path', canonical_path)}">
+  {language_alternates}
   <script id="cerai-page-discovery" type="application/ld+json">{encoded_schema}</script>{software_identity}
 """
 

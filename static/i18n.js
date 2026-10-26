@@ -276,7 +276,7 @@
     "IOL Calculation Surgery · Secure sign-in":"IOL Hesaplama Cerrahisi · Güvenli giriş",
     "Refractive Surgery · Secure sign-in":"Refraktif Cerrahi · Güvenli giriş",
     "CER-AI Clinical Modules":"CER-AI Klinik Modülleri","Choose a clinical module":"Bir klinik modül seçin",
-    "You are signed in. Choose the surgical workflow to continue.":"Giriş yaptınız. Devam etmek için cerrahi iş akışını seçin.",
+    "Choose the surgical workflow to continue. Sign in if prompted.":"Devam etmek için cerrahi iş akışını seçin. İstenirse giriş yapın.",
     "Refractive Surgery":"Refraktif Cerrahi","Corneal ectasia risk assessment and refractive-surgery planning.":"Korneal ektazi risk değerlendirmesi ve refraktif cerrahi planlaması.",
     "IOL Calculation Surgery":"IOL Hesaplama Cerrahisi","Pentacam, surgeon-defined parameters, and IOL category recommendation.":"Pentacam, cerrah tarafından tanımlanan parametreler ve IOL kategori önerisi.",
     "Open module →":"Modülü aç →","CER-AI provides clinical decision support only. Final treatment and lens selection remain the evaluating surgeon’s responsibility.":"CER-AI yalnızca klinik karar desteği sağlar. Nihai tedavi ve lens seçimi değerlendiren cerrahın sorumluluğundadır.",

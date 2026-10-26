@@ -18,7 +18,7 @@ def install(core: Any) -> None:
         return FileResponse(
             MODULE_SELECTOR_HTML,
             media_type="text/html",
-            headers={"Cache-Control": "no-store"},
+            headers={"Cache-Control": "no-store", "X-Robots-Tag": "noindex,nofollow"},
         )
 
     core._cerai_clinical_entry_installed = True
