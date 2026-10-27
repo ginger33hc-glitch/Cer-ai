@@ -16,6 +16,12 @@ def test_real_escrs_transfer_and_retention():
     try:
         assert result['verified'] and result['viewer_limit_seconds']==900
         assert len(local._request(record,{'kind':'frame'})) > 1000
+        fields=local._request(record,{'kind':'fields'})
+        surgeon=next(item for item in fields if item['value']=='CER-AI SYNTHETIC TEST')
+        local._request(record,{'kind':'edit','field':surgeon['id'],'text':'CER-AI UI TEST'})
+        assert any(item['value']=='CER-AI UI TEST' for item in local._request(record,{'kind':'fields'}))
+        local._request(record,{'kind':'edit','field':surgeon['id'],'text':'CER-AI SYNTHETIC TEST'})
+        local._request(record,{'kind':'scroll','delta':400})
         sleep(125)
         assert local._owned(record.view_id,'synthetic-test') is record
         assert len(local._request(record,{'kind':'frame'})) > 1000

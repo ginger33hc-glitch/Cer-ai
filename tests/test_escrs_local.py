@@ -54,7 +54,7 @@ def test_frame_pdf_and_controls_require_session_owner(record):
         for identity, code in [(HTTPException(401,'Sign in'),401),(SimpleNamespace(user_id='other'),403)]:
             kwargs={'side_effect':identity} if isinstance(identity,Exception) else {'return_value':identity}
             with patch('user_access.require_current_principal',**kwargs):
-                for path in ('','/status','/frame','/pdf'):
+                for path in ('','/status','/frame','/pdf','/fields'):
                     assert client.get(base+path).status_code == code
                 for path in ('/input','/close'):
                     assert client.post(base+path,json={'kind':'text','text':'1'}).status_code == code
@@ -105,3 +105,9 @@ def test_local_paths_bind_named_user_in_real_middleware(record):
         assert response.status_code==200
         assert response.headers['cache-control']=='no-store'
         assert client.post(base+'/close',json={}).status_code==200
+
+
+def test_inline_field_edit_validation():
+    assert local._input({'kind':'edit','field':'12','text':''})=={'kind':'edit','field':'12','text':''}
+    for payload in ({'kind':'edit','field':'1]','text':'x'}, {'kind':'edit','field':'2','text':'x'*501}):
+        with pytest.raises(HTTPException): local._input(payload)
