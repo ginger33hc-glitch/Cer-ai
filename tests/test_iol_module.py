@@ -406,7 +406,8 @@ def test_iol_ui_keeps_surgeon_name_and_shows_nonblocking_source_name_review():
     html = Path("static/iol.html").read_text(encoding="utf-8")
     script = Path("static/iol.js").read_text(encoding="utf-8")
     translations = Path("static/i18n.js").read_text(encoding="utf-8")
-    assert 'form.append("patient_name", surgeonPatientName)' in script
+    assert 'patientName:surgeonPatientName' in script
+    assert 'patient_name:patientName' in Path("static/iol-jobs.js").read_text(encoding="utf-8")
     assert '$("patientName").value = surgeonPatientName' in script
     assert "source_name_review_required" in script
     assert "Check the patient names printed on the source reports." in script

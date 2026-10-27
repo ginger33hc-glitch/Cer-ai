@@ -62,12 +62,17 @@ def open_workflow(browser, differences, locale="en", width=1440):
         path = urlparse(route.request.url).path
         if path == "/iol":
             route.fulfill(content_type="text/html", body=(ROOT / "static/iol.html").read_text().replace("__ASTIGMATISM_THRESHOLD_D__", "1.0"))
-        elif path in ("/static/iol.js", "/static/i18n.js"):
+        elif path in ("/static/iol.js", "/static/i18n.js", "/static/iol-jobs.js"):
             route.fulfill(content_type="application/javascript", body=(ROOT / path.lstrip("/")).read_text())
         elif path.startswith("/static/"):
             route.fulfill(content_type="application/javascript", body="")
-        elif path == "/iol/extract":
-            route.fulfill(json=source_bundle(differences))
+        elif path == "/iol/jobs":
+            count = len(route.request.post_data_json["files"])
+            route.fulfill(status=202, json={"job_id":"synthetic-job", "status":"UPLOADING", "offsets":[0]*count})
+        elif path.startswith("/iol/jobs/synthetic-job/images/"):
+            route.fulfill(json={"offset":len(route.request.post_data_buffer)})
+        elif path == "/iol/jobs/synthetic-job/start":
+            route.fulfill(status=202, json={"status":"COMPLETED", "result":source_bundle(differences)})
         elif path == "/iol/evaluate":
             payload = route.request.post_data_json
             requests.append((path, payload))
@@ -84,7 +89,7 @@ def open_workflow(browser, differences, locale="en", width=1440):
             raise AssertionError(f"Unexpected request: {path}")
 
     page.route("**/*", route_request)
-    page.goto("http://iol.test/iol")
+    page.goto("https://iol.test/iol")
     page.locator("#patientName").fill("SYNTHETIC QA")
     page.locator("#patientAge").fill("66")
     page.locator("#biologicalSex").select_option("Female")
