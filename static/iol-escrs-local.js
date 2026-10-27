@@ -32,8 +32,8 @@
   if(typeof module!=='undefined' && module.exports){module.exports=InputQueue;return;}
   const base='/iol/escrs-local/'+document.body.dataset.session;
   const screen=document.getElementById('screen'), status=document.getElementById('status');
-  const viewport=document.getElementById('viewport'), fields=document.getElementById('fields');
-  let ended=false, frameURL=null, editing=false, pointer=null, refreshTimer=null, refreshing=false, lastAction=0;
+  const viewport=document.getElementById('viewport');
+  let ended=false, frameURL=null, pointer=null, refreshTimer=null, refreshing=false, lastAction=0;
   async function request(path,body) {
     const response=await fetch(base+path,{method:body===undefined?'GET':'POST',credentials:'same-origin',cache:'no-store',headers:body===undefined?{}:{'Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body)});
     if(!response.ok){if([401,403,410].includes(response.status))finish();throw new Error('Bağlantı tamamlanamadı ('+response.status+')');}
@@ -50,21 +50,6 @@
     return inputQueue.send(body).catch(error=>{status.textContent=error.message;throw error;});
   }
   function enqueue(body){send(body).catch(()=>{});}
-  function showFields(items){
-    if(editing)return;
-    fields.replaceChildren();
-    for(const f of items){
-      const input=document.createElement('input');input.className='field';input.value=f.value;
-      input.setAttribute('aria-label','ESCRS form alanı');input.autocomplete='off';
-      input.inputMode=f.type==='number'?'decimal':'text';
-      Object.assign(input.style,{left:(f.x/420*100)+'%',top:(f.y/820*100)+'%',width:(f.width/420*100)+'%',height:(f.height/820*100)+'%'});
-      input.onfocus=()=>{editing=true;};
-      input.oninput=()=>enqueue({kind:'edit',field:f.id,text:input.value});
-      input.onblur=()=>{inputQueue.drain().catch(()=>{}).finally(()=>{editing=false;wake();});};
-      input.onkeydown=event=>{if(event.key==='Enter'){event.preventDefault();enqueue({kind:'key',key:'Enter'});input.blur();}};
-      fields.appendChild(input);
-    }
-  }
   async function refresh(){
     if(ended || refreshing)return;
     refreshing=true;
@@ -73,25 +58,24 @@
       if(ended)return;
       const next=URL.createObjectURL(blob), previous=frameURL;
       screen.src=next;frameURL=next;if(previous)URL.revokeObjectURL(previous);
-      if(!editing && !inputQueue.busy){const data=await (await request('/fields')).json();if(!inputQueue.busy)showFields(data);}
       status.textContent='';
     }catch(error){status.textContent=error.message;}
     refreshing=false;
     if(!ended)refreshTimer=setTimeout(refresh,Date.now()-lastAction<1200?80:800);
   }
   viewport.addEventListener('pointerdown',event=>{
-    pointer={id:event.pointerId,x:event.clientX,y:event.clientY,lastY:event.clientY,moved:false,field:event.target.classList.contains('field')};
-    if(!pointer.field)viewport.setPointerCapture(event.pointerId);
+    pointer={id:event.pointerId,x:event.clientX,y:event.clientY,lastY:event.clientY,moved:false};
+    viewport.setPointerCapture(event.pointerId);
   });
   viewport.addEventListener('pointermove',event=>{
     if(!pointer||pointer.id!==event.pointerId)return;
     const delta=(pointer.lastY-event.clientY)*420/viewport.clientWidth;
-    if(Math.abs(event.clientY-pointer.y)>6){pointer.moved=true;if(document.activeElement?.classList.contains('field'))document.activeElement.blur();viewport.setPointerCapture(event.pointerId);}
+    if(Math.abs(event.clientY-pointer.y)>6){pointer.moved=true;viewport.setPointerCapture(event.pointerId);}
     if(pointer.moved&&Math.abs(delta)>8){enqueue({kind:'scroll',delta:Math.max(-1600,Math.min(1600,delta))});pointer.lastY=event.clientY;}
   });
   viewport.addEventListener('pointerup',event=>{
     if(!pointer||pointer.id!==event.pointerId)return;
-    if(!pointer.moved&&!pointer.field){const r=screen.getBoundingClientRect();enqueue({kind:'click',x:(event.clientX-r.left)*420/r.width,y:(event.clientY-r.top)*820/r.height});}
+    if(!pointer.moved){const r=screen.getBoundingClientRect();enqueue({kind:'click',x:(event.clientX-r.left)*420/r.width,y:(event.clientY-r.top)*820/r.height});}
     pointer=null;
   });
   viewport.addEventListener('pointercancel',()=>{pointer=null;});

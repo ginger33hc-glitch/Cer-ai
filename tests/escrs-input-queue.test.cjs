@@ -43,16 +43,17 @@ const InputQueue=require('../static/iol-escrs-local.js');
 
 (async()=>{
   const vm=require('node:vm'),fs=require('node:fs');
-  const timers=[],events={},elements={};let frames=0,releaseInput;
+  const timers=[],events={},elements={};let frames=0,releaseInput;const requests=[];
   for(const id of ['screen','status','viewport','fields','pdf','close','timer'])elements[id]={
     dataset:{},addEventListener:(event,fn)=>{events[event]=fn;},
-    replaceChildren(){},appendChild(){},getBoundingClientRect:()=>({left:0,top:0,width:420,height:820})
+    setPointerCapture(){},replaceChildren(){},appendChild(){},getBoundingClientRect:()=>({left:0,top:0,width:420,height:820})
   };
   const context={Date,Promise,console,
     document:{body:{dataset:{session:'synthetic'}},getElementById:id=>elements[id]},
     window:{addEventListener(){}},URL:{createObjectURL:()=>'/frame',revokeObjectURL(){}},
     setTimeout:fn=>{timers.push(fn);return timers.length;},clearTimeout(){},setInterval(){},clearInterval(){},
-    fetch:async(url)=>{
+    fetch:async(url,options)=>{
+      requests.push({url,body:options.body?JSON.parse(options.body):null});
       if(url.endsWith('/input'))await new Promise(resolve=>{releaseInput=resolve;});
       if(url.endsWith('/frame'))frames++;
       return {ok:true,json:async()=>url.endsWith('/status')?{seconds_remaining:900}:[],blob:async()=>({})};
@@ -66,5 +67,10 @@ const InputQueue=require('../static/iol-escrs-local.js');
   await timers.shift()();await tick();
   assert.equal(frames,2,'screen refresh must not wait behind slow input');
   releaseInput();await tick();
-  console.log('PASS: frame refresh continues while an input request is delayed');
+  events.pointerdown({pointerId:1,clientX:140,clientY:250});
+  events.pointerup({pointerId:1,clientX:140,clientY:250});await tick();
+  assert.deepEqual(requests.at(-1).body,{kind:'click',x:140,y:250});
+  releaseInput();await tick();
+  assert(!requests.some(r=>r.url.endsWith('/fields')),'viewer must not request form overlays');
+  console.log('PASS: refresh during slow input, direct image clicks, no form overlays');
 })().catch(error=>{console.error(error);process.exitCode=1;});
