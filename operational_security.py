@@ -159,7 +159,7 @@ def _access_key_valid(request: Request) -> bool:
 
 
 def _is_protected_path(path: str) -> bool:
-    return path.startswith("/iol/escrs-session/") or path in PROTECTED_PATHS or any(path.startswith(prefix) for prefix in PROTECTED_PREFIXES)
+    return path.startswith(("/iol/escrs-session/", "/iol/escrs-local/")) or path in PROTECTED_PATHS or any(path.startswith(prefix) for prefix in PROTECTED_PREFIXES)
 
 
 def _request_limit(path: str) -> int:
