@@ -143,7 +143,9 @@ def install(core: Any) -> None:
         require_current_principal()
         provider = cloud_provider()
         key = 'BROWSERBASE_API_KEY' if provider == 'browserbase' else 'BROWSERLESS_TOKEN'
-        return {"enabled": bool(os.environ.get(key, "").strip()), "models": model_names(), 'provider':provider}
+        from .escrs_local import executable
+        enabled = bool(executable()) if provider == "local" else bool(os.environ.get(key, "").strip())
+        return {"enabled": enabled, "models": model_names(), 'provider':provider}
 
     @core.app.post("/iol/escrs-cloud-transfer")
     def iol_escrs_cloud_transfer(payload: dict[str, Any] = Body(...)):
@@ -160,7 +162,7 @@ def install(core: Any) -> None:
             logging.getLogger(__name__).warning('ESCRS transfer validation rejected fields: %s', ','.join(fields))
             raise HTTPException(422, detail=json.loads(exc.json(include_url=False))) from exc
         provider = cloud_provider()
-        if case.provider != provider or (provider == 'browserbase' and case.consent_version != 'ESCRS-CLOUD-2026-10-17-V2'):
+        if case.provider != provider or (provider in {'browserbase', 'local'} and case.consent_version != 'ESCRS-CLOUD-2026-10-17-V2'):
             raise HTTPException(409, 'The ESCRS provider changed. Reload CER-AI and accept the current disclosure.')
         audit = getattr(core, '_cerai_audit_event', None)
         if not callable(audit):
@@ -168,11 +170,14 @@ def install(core: Any) -> None:
         # Fixed metadata only: never include the request, measurements or viewer URL.
         receipt = audit('ESCRS_TRANSFER_CONSENT', actor=principal,
               details={'consent_version': case.consent_version,
-                       'recipients': ['Browserbase' if provider == 'browserbase' else 'Browserless', 'ESCRS IOL Calculator']})
+                       'recipients': (['ESCRS IOL Calculator'] if provider == 'local' else ['Browserbase' if provider == 'browserbase' else 'Browserless', 'ESCRS IOL Calculator'])})
         if receipt is None:
             raise HTTPException(503, 'Transfer consent could not be recorded. Please retry.')
         try:
-            if provider == 'browserbase':
+            if provider == 'local':
+                from .escrs_local import create_local_transfer
+                result = create_local_transfer(case, principal.user_id)
+            elif provider == 'browserbase':
                 from .escrs_browserbase import create_browserbase_transfer
                 result = create_browserbase_transfer(case, principal.user_id)
             else:
@@ -186,4 +191,6 @@ def install(core: Any) -> None:
 
     from .escrs_browserbase import install as install_browserbase_sessions
     install_browserbase_sessions(core)
+    from .escrs_local import install as install_local_sessions
+    install_local_sessions(core)
     core._cerai_iol_module_installed = True

@@ -30,6 +30,11 @@ jobs:
         env:
           OPENAI_API_KEY: test-key-for-import-only
         run: python -c "import canonical_engine; assert canonical_engine.runtime_invariants()"
+      - name: Local Chromium ESCRS synthetic transfer and retention
+        env:
+          CERAI_CHROMIUM_EXECUTABLE: google-chrome
+          CERAI_ESCRS_LIVE_TEST: '1'
+        run: python -m pytest -q tests/test_escrs_local_live.py
       - name: Complete application regression suite
         env:
           OPENAI_API_KEY: test-key-for-import-only

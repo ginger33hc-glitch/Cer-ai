@@ -40,7 +40,7 @@ def model_names() -> dict[str, str]:
 
 def cloud_provider() -> str:
     provider = os.environ.get('CERAI_ESCRS_PROVIDER', 'browserless').strip().lower()
-    if provider not in {'browserless', 'browserbase'}:
+    if provider not in {'browserless', 'browserbase', 'local'}:
         raise HTTPException(503, 'Invalid ESCRS cloud provider configuration.')
     return provider
 
@@ -82,7 +82,7 @@ class CloudTransfer(StrictModel):
     terms_accepted: Literal[True]
     data_transfer_accepted: Literal[True]
     consent_version: Literal["ESCRS-BROWSERLESS-2026-10-17", "ESCRS-CLOUD-2026-10-17-V2"]
-    provider: Literal["browserless", "browserbase"] = "browserless"
+    provider: Literal["browserless", "browserbase", "local"] = "browserless"
     eyes: dict[Literal["OD", "OS"], CloudEye] = Field(min_length=1, max_length=2)
 
     @model_validator(mode="after")

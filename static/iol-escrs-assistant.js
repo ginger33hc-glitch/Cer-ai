@@ -37,8 +37,8 @@
       if (!configResponse.ok || !config.enabled) throw new Error("ESCRS cloud transfer is unavailable.");
       const identity = await identityResponse.json();
       const provider = config.provider || "browserless";
-      if (!["browserless","browserbase"].includes(provider)) throw new Error("Invalid ESCRS provider.");
-      const disclosure = tr("This transfer sends patient initials, age, biological sex, eye measurements, previous corneal surgery, selected lens, target refraction and the signed-in surgeon name to {provider} cloud browsers and the ESCRS IOL Calculator. These data remain potentially identifiable. Full patient names and source images are not sent. Continue only if authorized to disclose these data to both services.").replace("{provider}",provider === "browserbase" ? "Browserbase" : "Browserless");
+      if (!["browserless","browserbase","local"].includes(provider)) throw new Error("Invalid ESCRS provider.");
+      const disclosure = provider === "local" ? tr("This transfer sends patient initials, age, biological sex, eye measurements, selected lens, target refraction and surgeon name to the ESCRS IOL Calculator through CER-AI. Full patient names and source images are not sent.") : tr("This transfer sends patient initials, age, biological sex, eye measurements, previous corneal surgery, selected lens, target refraction and the signed-in surgeon name to {provider} cloud browsers and the ESCRS IOL Calculator. These data remain potentially identifiable. Full patient names and source images are not sent. Continue only if authorized to disclose these data to both services.").replace("{provider}",provider === "browserbase" ? "Browserbase" : "Browserless");
       if (!consentAlreadyAccepted && !window.confirm(disclosure + "\n\n" + tr("I accept the ESCRS calculator terms for this calculation: https://iolcalculator.escrs.org/Resources/ESCRS_IOL_Calculator_Terms_of_Use.pdf"))) { if (sessionWindow && !sessionWindow.closed) sessionWindow.close(); return false; }
       onProgress("Validating completed IOL plans and lens mappings…");
       const payload = buildPayload({...data,surgeon:identity.user?.display_name,modelNames:config.models});
@@ -56,7 +56,9 @@
       }
       onProgress("ESCRS session created. Opening the session…");
       const url = new URL(result.escrs_url, window.location?.origin || "https://cer-ai.com");
-      const valid = provider === "browserbase"
+      const valid = provider === "local"
+        ? url.origin === window.location.origin && /^\/iol\/escrs-local\/[a-f0-9]{32}$/.test(url.pathname)
+        : provider === "browserbase"
         ? url.origin === window.location.origin && /^\/iol\/escrs-session\/[a-f0-9]{32}$/.test(url.pathname)
         : ["production-sfo.browserless.io","production-ams.browserless.io","production-lon.browserless.io"].includes(url.hostname) && url.pathname.includes("/live/");
       if (url.protocol !== "https:" || !valid) throw new Error("Invalid ESCRS cloud session address.");
