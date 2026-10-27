@@ -54,7 +54,7 @@ def test_frontend_pupil_decision_filters_lenses_and_resets_selection():
 const fs=require('fs'),vm=require('vm'),assert=require('assert');
 const source=fs.readFileSync('static/iol.js','utf8');
 const start=source.indexOf('  function populateLenses()');
-const fn=source.slice(start,source.indexOf('  function escrsEyePayload',start));
+const fn=source.slice(start,source.indexOf('  async function evaluate',start));
 const choice={value:''},review={},select={innerHTML:''};
 const ctx={recommendation:{eligible_categories:['MULTIFOCAL','EDOF','MONOFOCAL']},
  pupilReview:review,pupilChoice:choice,pupilReviewRequired:()=>true,

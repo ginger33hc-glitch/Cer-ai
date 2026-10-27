@@ -8,7 +8,7 @@ def test_partial_selection_and_stage_specific_completion():
 const fs=require('fs'), vm=require('vm'), assert=require('assert');
 const source=fs.readFileSync('static/iol.js','utf8');
 const start=source.indexOf('  async function runLoadedEyes(method)');
-const fn=source.slice(start,source.indexOf('  $("recommendAll").addEventListener',start));
+const fn=source.slice(start,source.indexOf('  $("escrsTransferAll").addEventListener',start));
 (async()=>{
   const status={textContent:''}, calls=[];
   let selected={OD:false,OS:true};
@@ -22,7 +22,7 @@ const fn=source.slice(start,source.indexOf('  $("recommendAll").addEventListener
   const syncStart=source.indexOf('  function syncWorkflow()');
   const sync=source.slice(syncStart,source.indexOf('  let lensCatalog',syncStart));
   const ui=new Map();
-  for(const id of ['reviewStage','recommendAll','calculationActions','calculateAll','extractButton','sourceImages']) ui.set(id,{});
+  for(const id of ['reviewStage','recommendAll','calculationActions','calculateAll','extractButton','sourceImages','escrsTransferAll']) ui.set(id,{});
   controllers.forEach(c=>{c.recommendationShown=()=>true;});
   const syncContext={...context,$:id=>ui.get(id),window:{},updateWorkflowRequirements:()=>{},powerPlans:{OD:null,OS:null}};
   vm.createContext(syncContext);vm.runInContext(sync+';syncWorkflow();',syncContext);
