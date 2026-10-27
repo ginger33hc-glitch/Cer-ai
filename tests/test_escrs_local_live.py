@@ -10,7 +10,7 @@ from test_escrs_cloud import case
 @pytest.mark.skipif(os.environ.get('CERAI_ESCRS_LIVE_TEST') != '1', reason='Explicit synthetic live check only')
 def test_real_escrs_transfer_and_retention():
     payload=case()
-    payload.update(initials='TEST',surgeon='CERAI SYNTHETIC TEST',provider='local',consent_version='ESCRS-CLOUD-2026-10-17-V2')
+    payload.update(initials='TEST',surgeon='CER-AI SYNTHETIC TEST',provider='local',consent_version='ESCRS-CLOUD-2026-10-17-V2')
     result=local.create_local_transfer(CloudTransfer.model_validate(payload),'synthetic-test')
     record=local._owned(result['escrs_url'].rsplit('/',1)[1],'synthetic-test')
     try:
