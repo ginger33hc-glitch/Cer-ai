@@ -428,7 +428,6 @@
       html+=`<p><span>ACD target</span>: ${Number(data.target_refraction_d).toFixed(2)} D (<span>locked</span>)</p>`;
       if(data.second_formula_required) notes+=`<div class="warning"><span>Second modern formula verification required</span> (AL ${Number(data.inputs.axial_length_mm).toFixed(2)} mm). <span>Use ESCRS where available and verify all values manually.</span></div>`;
       if(data.escrs_url) html+=`<button id="${eye}-escrsTransfer" class="external" type="button">Transfer biometry only to ESCRS</button>`;
-      if(data.escrs_url) html+=`<button id="${eye}-escrsAutomatic" class="external" type="button">Open ESCRS with all values — no installation</button>`;
       const toricRoute = data.route === "MANUFACTURER_TORIC";
       if(toricRoute && data.predictions?.length) notes += `<div class="warning">${tr(data.message)}</div>`;
       if(toricRoute && data.toric_candidates?.length) {
@@ -448,54 +447,6 @@
       if(data.predictions?.length){html+=`<h3>${tr(toricRoute ? `Stage 1 — ${formula} spherical power` : `${formula} power`)}</h3><table class="table"><thead><tr><th>IOL power</th><th>Predicted refraction</th><th>Selection</th></tr></thead><tbody>${data.predictions.map(p=>`<tr><td>${Number(p.IOL ?? p.iol_power).toFixed(2)}</td><td>${Number(p.Rx ?? p.predicted_refraction).toFixed(2)}</td><td>${p.IsBestOption ? tr("Closest to target") : ""}</td></tr>`).join("")}</tbody></table>`;}
       if(data.calculator_url) html+=`<a class="external" target="_blank" rel="noopener noreferrer" href="${data.calculator_url}">Optional manufacturer toric calculator comparison</a>`;
       $("powerResult").innerHTML=html; showCalculationNotes(notes); status.textContent=tr(data.calculation_status.replaceAll("_"," "));
-      if(data.escrs_url) $("powerResult").querySelector(`#${eye}-escrsAutomatic`).addEventListener("click", async () => {
-        const button = $("powerResult").querySelector(`#${eye}-escrsAutomatic`);
-        button.disabled = true; status.className = "status";
-        // Obtain explicit consent synchronously from the tap, before opening a
-        // tab or awaiting network requests. Android browsers can suppress a
-        // confirm() shown after async work or after tab focus changes.
-        const consentText = tr("This transfer sends patient initials, age, biological sex, eye measurements, previous corneal surgery, selected lens, target refraction and the signed-in surgeon name to the ESCRS IOL Calculator through the configured CER-AI transfer service. These data may be identifiable. Full names and images are not sent. Continue only if authorized.");
-        const termsText = tr("I accept the ESCRS calculator terms for this calculation: https://iolcalculator.escrs.org/Resources/ESCRS_IOL_Calculator_Terms_of_Use.pdf");
-        if (!window.confirm(consentText + "\n\n" + termsText)) {
-          const oldFeedback = document.getElementById(eye + "-escrsAutomaticFeedback");
-          if (oldFeedback) oldFeedback.textContent = tr("ESCRS transfer was not authorized. No data was sent.");
-          button.disabled = false;
-          return;
-        }
-        const sessionWindow = window.open("about:blank", "_blank");
-        if (sessionWindow) sessionWindow.document.body.textContent = tr("Please wait, connecting to ESCRS…");
-        const originalButtonText = button.textContent;
-        button.textContent = tr("Please wait, connecting…");
-        button.setAttribute("aria-busy", "true");
-        let feedback = document.getElementById(eye + "-escrsAutomaticFeedback");
-        if (!feedback) {
-          feedback = document.createElement("p");
-          feedback.id = eye + "-escrsAutomaticFeedback";
-          feedback.className = "status";
-          feedback.setAttribute("role", "status");
-          feedback.setAttribute("aria-live", "polite");
-          button.insertAdjacentElement("afterend", feedback);
-        }
-        feedback.className = "status";
-        feedback.textContent = tr("Preparing ESCRS automatic transfer. Please wait.");
-        try {
-          if (!window.CERAI_ESCRS_ASSISTANT?.transfer) throw new Error("ESCRS automatic transfer module failed to load. Reload the page.");
-          const opened = await window.CERAI_ESCRS_ASSISTANT.transfer({
-            plans:JSON.parse(JSON.stringify(powerPlans)),loadedEyes:[...loadedEyes],catalog:lensCatalog,
-            patientName:document.getElementById("patientName").value,
-            age:Number(document.getElementById("patientAge").value),
-            sex:document.getElementById("biologicalSex").value
-          }, message => { feedback.textContent = tr(message); }, sessionWindow, true);
-          if (opened === false) { feedback.textContent = tr("ESCRS data-transfer consent was not accepted. No data was sent. Your CER-AI calculation remains available; press the button again and choose OK on the consent dialog to proceed."); return; }
-          feedback.textContent = tr("ESCRS cloud session opened. Verify all imported values before calculating.");
-          status.textContent = feedback.textContent;
-        } catch (error) {
-          feedback.textContent = tr(error?.message || "ESCRS automatic transfer failed.");
-          feedback.classList.add("error");
-          status.textContent = feedback.textContent;
-          status.classList.add("error");
-        } finally { button.disabled = false; button.textContent = originalButtonText; button.removeAttribute("aria-busy"); }
-      });
       if(data.escrs_url) $("powerResult").querySelector(`#${eye}-escrsTransfer`).addEventListener("click", async () => {
         const button = $("powerResult").querySelector(`#${eye}-escrsTransfer`);
         const escrsWindow = window.open("about:blank", "_blank");
