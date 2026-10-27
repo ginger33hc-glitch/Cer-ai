@@ -27,6 +27,8 @@ const fn=source.slice(start,source.indexOf('  $("escrsTransferAll").addEventList
   const syncContext={...context,$:id=>ui.get(id),window:{},updateWorkflowRequirements:()=>{},powerPlans:{OD:null,OS:null}};
   vm.createContext(syncContext);vm.runInContext(sync+';syncWorkflow();',syncContext);
   assert.equal(ui.get('calculateAll').disabled,false);
+  assert.equal(ui.get('escrsTransferAll').hidden,false);
+  assert.equal(ui.get('escrsTransferAll').disabled,false);
   const calcStart=source.indexOf('  async function calculate()');
   const calcEnd=source.indexOf('    const corneaBack =',calcStart);
   const calcPrefix=source.slice(calcStart,calcEnd)+'return true; }';

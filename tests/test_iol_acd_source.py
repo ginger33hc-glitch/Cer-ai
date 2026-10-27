@@ -7,7 +7,8 @@ from pathlib import Path
 def test_iolmaster_acd_wins_for_each_eye_and_missing_stays_missing():
     source = Path("static/iol.js").read_text()
     function = source[source.index("  function populateEye() {"):source.index('  $("incisionAxis").addEventListener')]
-    script = """
+    helper = source[source.index("  function posteriorAxesConflict"):source.index("  function syncWorkflow")]
+    script = helper + """
 const assert = require('node:assert/strict');
 const fields = {};
 const $ = id => fields[id] ||= {value: '', readOnly: false};

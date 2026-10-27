@@ -54,3 +54,30 @@ const binding = source.slice(start, source.indexOf('  $("recommendAll").addEvent
         ["node", "-e", script], cwd=Path(__file__).resolve().parents[1],
         check=True, capture_output=True, text=True,
     )
+
+
+def test_transfer_uses_current_measurements_without_any_power_plan():
+    script = r'''
+const fs=require('fs'), vm=require('vm'), assert=require('assert');
+const source=fs.readFileSync('static/iol.js','utf8');
+const start=source.indexOf('  function escrsTransferPayload()');
+const end=source.indexOf('  function syncWorkflow()',start);
+let current={OD:{axial_length_mm:23.1},OS:{axial_length_mm:25.2}};
+const context={loadedEyes:['OD','OS'],controllers:new Map(['OD','OS'].map(eye=>[eye,{transferMeasurements:()=>current[eye]}])), $:()=>({value:'Female'})};
+vm.createContext(context);vm.runInContext(source.slice(start,end),context);
+let payload=context.escrsTransferPayload();
+assert.equal(payload.right_eye.axial_length_mm,23.1);
+assert.equal(payload.left_eye.axial_length_mm,25.2);
+current.OS.axial_length_mm=25.5;
+assert.equal(context.escrsTransferPayload().left_eye.axial_length_mm,25.5);
+context.loadedEyes=['OS'];
+assert.equal(context.escrsTransferPayload().right_eye,null);
+assert.equal(context.escrsTransferPayload().left_eye.axial_length_mm,25.5);
+context.loadedEyes=[];assert.throws(()=>context.escrsTransferPayload());
+assert.equal(context.posteriorAxesConflict({k1_axis_deg:5,k2_axis_deg:95}),false);
+assert.equal(context.posteriorAxesConflict({k1_axis_deg:180,k2_axis_deg:90}),false);
+assert.equal(context.posteriorAxesConflict({k1_axis_deg:90,k2_axis_deg:180}),false);
+assert.equal(context.posteriorAxesConflict({k1_axis_deg:5,k2_axis_deg:5}),true);
+assert.equal(context.posteriorAxesConflict({k1_axis_deg:null,k2_axis_deg:95}),false);
+'''
+    subprocess.run(["node", "-e", script], cwd=Path(__file__).resolve().parents[1], check=True, capture_output=True, text=True)

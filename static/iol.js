@@ -48,27 +48,20 @@
       item.appendChild(button); list.appendChild(item);
     });
   }
-  function escrsEyePayload(data) {
-    const inputs = data.inputs;
+  function escrsTransferPayload() {
+    if (!loadedEyes.length) throw new Error("Read the source images before transferring to ESCRS.");
+    const measurements = Object.fromEntries(loadedEyes.map(eye => [eye, controllers.get(eye).transferMeasurements()]));
     return {
-      axial_length_mm: inputs.axial_length_mm, acd_mm: inputs.acd_mm,
-      k1_d: inputs.k1_d, k2_d: inputs.k2_d,
-      k1_axis_deg: inputs.k1_axis_deg ?? null, k2_axis_deg: inputs.k2_axis_deg ?? null,
-      prior_corneal_surgery: inputs.prior_corneal_surgery ?? null,
-      cct_um: inputs.cct_um ?? null, lens_thickness_mm: inputs.lens_thickness_mm ?? null,
-      wtw_mm: inputs.wtw_mm ?? null
+      biological_sex: $("biologicalSex").value,
+      right_eye: measurements.OD || null,
+      left_eye: measurements.OS || null
     };
   }
 
-  function escrsTransferPayload(data) {
-    if (loadedEyes.length === 2 && (!powerPlans.OD || !powerPlans.OS)) {
-      throw new Error("Calculate both eyes before transferring a bilateral case to ESCRS.");
-    }
-    return {
-      biological_sex: data.inputs.biological_sex,
-      right_eye: powerPlans.OD ? escrsEyePayload(powerPlans.OD) : null,
-      left_eye: powerPlans.OS ? escrsEyePayload(powerPlans.OS) : null
-    };
+  function posteriorAxesConflict(back) {
+    return Number.isFinite(back?.k1_axis_deg) && Number.isFinite(back?.k2_axis_deg) &&
+      (back.k1_axis_deg < 0 || back.k1_axis_deg > 180 || back.k2_axis_deg < 0 || back.k2_axis_deg > 180 ||
+       Math.abs(((back.k2_axis_deg - back.k1_axis_deg + 180) % 180) - 90) > 5);
   }
 
   function syncWorkflow() {
@@ -78,7 +71,7 @@
     const recommended = eyes.length && eyes.every(controller => controller.recommendationShown());
     $("calculationActions").hidden = !recommended;
     $("calculateAll").disabled = workflowBusy || !recommended;
-    $("escrsTransferAll").hidden = !loadedEyes.length || !loadedEyes.every(eye => powerPlans[eye]);
+    $("escrsTransferAll").hidden = !loadedEyes.length;
     $("escrsTransferAll").disabled = workflowBusy;
     $("extractButton").disabled = workflowBusy;
     $("sourceImages").disabled = workflowBusy;
@@ -277,16 +270,18 @@
       $("cct").readOnly = Number.isFinite(pentacam.cct_pachy_vertex_um); $("wtw").readOnly = Number.isFinite(pentacam.hwtw_mm);
     }
     const back = corneaBackByEye[eye];
+    const conflict = posteriorAxesConflict(back);
     let missing = false;
     posteriorFields.forEach(key => {
       const otherAxis = key === "k1_axis_deg" ? "k2_axis_deg" : "k1_axis_deg";
       const unread = !Number.isFinite(back?.[key]) &&
         (!key.endsWith("axis_deg") || (!Number.isFinite(back?.[otherAxis]) && key === "k2_axis_deg"));
-      $("back_field_"+key).hidden = !unread;
+      $("back_field_"+key).hidden = !(unread || conflict);
       $("back_"+key).value = Number.isFinite(back?.[key]) ? back[key] : "";
       missing ||= unread;
     });
-    $("backCompletion").hidden = !back || !missing;
+    $("backCompletion").hidden = !back || !(missing || conflict);
+    $("backReviewStatus").textContent = conflict ? tr("Cornea Back K axes must be approximately orthogonal.") : "";
     updateAstigmatism();
   }
 
@@ -416,7 +411,16 @@
     if (!payload.selected_lens_id) { status.textContent="Select a clinic lens."; status.classList.add("error"); return; }
     $("powerButton").disabled=true; status.textContent="Determining the canonical calculation route…";
     try {
-      const response=await fetch("/iol/power/plan",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)}); const data=await response.json(); if(!response.ok) throw new Error(errorMessage(data)); if (requestVersion !== version) return false;
+      const response=await fetch("/iol/power/plan",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)}); const data=await response.json(); if (requestVersion !== version) return false;
+      if (!response.ok) {
+        if (Array.isArray(data.detail) && data.detail.some(error => error.loc?.includes("posterior_cornea"))) {
+          $("backCompletion").hidden = false;
+          posteriorFields.forEach(key => {$("back_field_"+key).hidden = false;});
+          $("backReviewStatus").textContent = errorMessage(data);
+          $("backCompletion").scrollIntoView({block:"center"});
+        }
+        throw new Error(errorMessage(data));
+      }
       powerPlans[eye] = data;
       const formula = data.spherical_formula === "T2" ? "T2" : "Cooke K6";
       let notes=`<div class="warning"><strong>${tr(data.calculator_name)}</strong><br>${tr(data.predictions?.length ? `${formula} calculation completed.` : data.message)}</div>`;
@@ -491,6 +495,13 @@
       incompleteFields: () => incompleteFields($("iolForm")),
       focusMissingRegularity,
       readyToCalculate: () => recommendationShown && Boolean($("selectedLens").value),
+      transferMeasurements: () => ({
+        axial_length_mm:numberOrNull("al"), acd_mm:numberOrNull("acd"),
+        k1_d:numberOrNull("k1"), k2_d:numberOrNull("k2"),
+        k1_axis_deg:numberOrNull("k1Axis"), k2_axis_deg:numberOrNull("k2Axis"),
+        prior_corneal_surgery:$("priorSurgery").value || null,
+        cct_um:numberOrNull("cct"), lens_thickness_mm:numberOrNull("lensThickness"), wtw_mm:numberOrNull("wtw")
+      }),
       reportSnapshot: () => ({eye, plan: powerPlans[eye], recommendation}),
       reset() {
         invalidate();
@@ -610,7 +621,7 @@
   $("escrsTransferAll").addEventListener("click", async () => {
     const button = $("escrsTransferAll"), status = $("escrsTransferStatus");
     let payload;
-    try { payload = escrsTransferPayload(powerPlans[loadedEyes[0]]); }
+    try { payload = escrsTransferPayload(); }
     catch (error) {status.textContent = tr(error.message);return;}
     const tab = window.open("about:blank", "_blank");
     if (tab) tab.opener = null;

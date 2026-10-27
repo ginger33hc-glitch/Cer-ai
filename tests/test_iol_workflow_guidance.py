@@ -50,7 +50,7 @@ def browser():
         instance.close()
 
 
-def open_workflow(browser, differences, locale="en", width=1440):
+def open_workflow(browser, differences, locale="en", width=1440, posterior_override=None):
     context = browser.new_context(viewport={"width": width, "height": 900}, reduced_motion="reduce")
     context.add_init_script("localStorage.setItem('cerai-language'," + json.dumps(locale) + ");"
                             "window.scrolledFields=[]; const nativeScroll=Element.prototype.scrollIntoView; Element.prototype.scrollIntoView=function(options){window.scrolledFields.push(this.id); nativeScroll.call(this,options)};")
@@ -72,7 +72,12 @@ def open_workflow(browser, differences, locale="en", width=1440):
         elif path.startswith("/iol/jobs/synthetic-job/images/"):
             route.fulfill(json={"offset":len(route.request.post_data_buffer)})
         elif path == "/iol/jobs/synthetic-job/start":
-            route.fulfill(status=202, json={"status":"COMPLETED", "result":source_bundle(differences)})
+            bundle = source_bundle(differences)
+            if posterior_override:
+                for source in bundle["sources"]:
+                    if source["extraction"].get("cornea_back"):
+                        source["extraction"]["cornea_back"].update(posterior_override)
+            route.fulfill(status=202, json={"status":"COMPLETED", "result":bundle})
         elif path == "/iol/evaluate":
             payload = route.request.post_data_json
             requests.append((path, payload))
@@ -202,6 +207,38 @@ def test_optional_prior_surgery_panel_preserves_external_routes(browser, surgery
         power = [payload for path, payload in requests if path == "/iol/power/plan"][-1]
         assert power["prior_corneal_surgery"] == surgery
         assert power["clinical_assessment"]["ocular_findings_assessment"] == "NOT_ASSESSED"
+        assert not errors, errors
+    finally:
+        context.close()
+
+
+@pytest.mark.parametrize("locale,width", [("en", 1440), ("tr", 390)])
+def test_shared_transfer_survives_invalid_posterior_axes_and_exposes_correction(browser, locale, width):
+    context, page, requests, errors, _ = open_workflow(
+        browser, {"OD": 1.25, "OS": 1.5}, locale, width,
+        posterior_override={"k1_axis_deg": 20, "k2_axis_deg": 20})
+    try:
+        expect(page.locator("#escrsTransferAll")).to_be_visible()
+        expect(page.locator("#escrsTransferAll")).to_be_enabled()
+        expect(page.locator("#escrsTransferAll")).to_have_count(1)
+        for eye in ("OD", "OS"):
+            expect(page.locator(f"#{eye}-backCompletion")).to_be_visible()
+            expect(page.locator(f"#{eye}-back_k1_axis_deg")).to_have_value("20")
+            expect(page.locator(f"#{eye}-back_k2_axis_deg")).to_have_value("20")
+            if locale == "tr":
+                expect(page.locator(f"#{eye}-backReviewStatus")).to_contain_text("90°")
+        transfers = []
+        def transfer(route):
+            transfers.append(route.request.post_data_json)
+            route.fulfill(status=503, json={"detail":"Synthetic transfer response"})
+        page.route("**/iol/escrs-transfer", transfer)
+        page.locator("#escrsTransferAll").click()
+        expect(page.locator("#escrsTransferStatus")).to_have_text("Synthetic transfer response")
+        assert len(transfers) == 1
+        assert transfers[0]["right_eye"]["axial_length_mm"] == 24
+        assert transfers[0]["left_eye"]["k2_d"] == 43.5
+        assert "posterior_cornea" not in transfers[0]["left_eye"]
+        assert not any(path == "/iol/power/plan" for path, _ in requests)
         assert not errors, errors
     finally:
         context.close()
