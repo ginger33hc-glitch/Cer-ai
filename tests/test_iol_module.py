@@ -292,9 +292,8 @@ def test_short_eye_ui_allows_optional_biometry_and_keeps_escrs():
     assert 'id="lensThicknessField" hidden' in html
     assert 'missingBiometryEscrs' not in html
     assert 'Go to ESCRS Calculator' not in script
-    assert 'Open ESCRS with all values — no installation' not in script
     assert 'escrsAutomatic' not in script
-    assert 'Transfer biometry only to ESCRS' in script
+    assert 'escrsTransferAll' in script
     assert 'id="calculateAll" type="button" disabled>Calculate</button>' in html
 
 
@@ -419,7 +418,7 @@ def test_escrs_transfer_is_deidentified_and_kane_is_removed():
     html = Path("static/iol.html").read_text(encoding="utf-8")
     script = Path("static/iol.js").read_text(encoding="utf-8")
     power = Path("iol_module/power.py").read_text(encoding="utf-8")
-    transfer = script[script.index("function escrsTransferPayload"):script.index("async function evaluate")]
+    transfer = script[script.index("function escrsTransferPayload"):script.index("function syncWorkflow")]
     assert '<select id="biologicalSex" required>' in html
     assert "patient_name" not in transfer and "patient_id" not in transfer
     assert 'fetch("/iol/escrs-transfer"' in script
@@ -650,3 +649,20 @@ def test_low_astigmatism_skips_regularity_and_recommends_incision_management(dif
 def test_above_one_diopter_requires_regularity_for_power_plan():
     with pytest.raises(ValidationError, match="regularity"):
         power_payload(k2_d=43.01)
+
+
+@pytest.mark.parametrize("lens_id,target", [("clareon-panoptix-cnwtt0", 0.0), ("tecnis-puresee-toric-det150", -0.25)])
+@pytest.mark.parametrize("acd", [2.4, 3.0, 3.8])
+def test_lens_category_target_and_nearest_prediction(lens_id, target, acd):
+    from iol_module.power import _k6_payload, _base_inputs, _spherical_predictions
+    case = power_payload(selected_lens_id=lens_id, acd_mm=acd)
+    rows = [{"IOL":20.0,"Rx":0.05,"IsBestOption":False},
+            {"IOL":20.5,"Rx":-0.22,"IsBestOption":False},
+            {"IOL":21.0,"Rx":-0.55,"IsBestOption":True}]
+    assert _k6_payload(case,119.1)["Eyes"][0]["TgtRx"] == target
+    assert _base_inputs(case)["target_refraction_d"] == target
+    with patch("iol_module.power._call_k6",return_value=rows):
+        result, _, _ = _spherical_predictions(case,119.1)
+    chosen = [r for r in result if r["IsBestOption"]]
+    assert len(chosen) == 1
+    assert chosen[0]["Rx"] == (0.05 if target == 0 else -0.22)

@@ -125,13 +125,13 @@ def test_unassessed_does_not_change_prior_surgery_routing(surgery, route):
 
 @pytest.mark.parametrize("locale,phrase", [("en", "left to surgeon assessment"),
                                            ("tr", "cerrah değerlendirmesine bırakıldı")])
-def test_report_keeps_unassessed_notice_even_if_warning_code_missing(locale, phrase):
+def test_report_omits_generic_unassessed_notice(locale, phrase):
     report = unassessed_report(locale)
     report.eyes[0].recommendation.warning_codes = []
     pdf = PdfReader(BytesIO(build_iol_report(report)))
     assert len(pdf.pages) == 1
     text = " ".join(pdf.pages[0].extract_text().split())
-    assert phrase in text
+    assert phrase not in text
     assert "21.00 D" in text
 
 
@@ -170,7 +170,7 @@ def test_bilateral_report_keeps_unassessed_scope_eye_specific():
     report.eyes[0] = unassessed_report(patient_name=report.patient_name).eyes[0]
     pdf = PdfReader(BytesIO(build_iol_report(report)))
     assert len(pdf.pages) == 2
-    assert "left to surgeon assessment" in " ".join(pdf.pages[0].extract_text().split())
+    assert "left to surgeon assessment" not in " ".join(pdf.pages[0].extract_text().split())
     assert "left to surgeon assessment" not in " ".join(pdf.pages[1].extract_text().split())
     assert report.eyes[1].recommendation.ocular_findings_assessment == "SURGEON_REPORTED"
 
@@ -220,4 +220,4 @@ def test_api_and_encrypted_archive_roundtrip_preserve_explicit_null_findings():
     for locale, phrase in (("en", "left to surgeon assessment"), ("tr", "cerrah değerlendirmesine bırakıldı")):
         pdf = client.get(base + "?locale=" + locale)
         assert pdf.status_code == 200
-        assert phrase in " ".join(PdfReader(BytesIO(pdf.content)).pages[0].extract_text().split())
+        assert phrase not in " ".join(PdfReader(BytesIO(pdf.content)).pages[0].extract_text().split())

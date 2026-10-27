@@ -262,11 +262,7 @@ def build_iol_report(report: IOLReportInput, surgeon: str = "", *, report_date: 
         if p.second_formula_required:
             warnings.append(tr("Independent verification with a second modern formula required (ESCRS).", "İkinci modern formülle bağımsız doğrulama gerekli (ESCRS)."))
         warning_codes = list(item.recommendation.warning_codes)
-        if item.recommendation.ocular_findings_assessment == OcularFindingsAssessment.NOT_ASSESSED:
-            # The explicit snapshot state, not a removable warning code, is
-            # authoritative for retaining this limitation in every report.
-            if "WARN_OCULAR_FINDINGS_NOT_ASSESSED" not in warning_codes:
-                warning_codes.insert(0, "WARN_OCULAR_FINDINGS_NOT_ASSESSED")
+        warning_codes = [code for code in warning_codes if code != "WARN_OCULAR_FINDINGS_NOT_ASSESSED"]
         for code in warning_codes:
             warnings.append(tr(*WARNINGS[code]) if code in WARNINGS else code)
         if item.plan.lens_category == "MULTIFOCAL" and item.plan.inputs.get("pupil_multifocal_confirmed") is True:

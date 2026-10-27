@@ -45,6 +45,25 @@ def _target_from_acd(acd_mm: float) -> float:
     return -0.25
 
 
+def _target_for_case(case: IOLPowerPlanInput) -> float:
+    lens = get_lens(case.selected_lens_id)
+    if lens and lens.category == "MULTIFOCAL":
+        return 0.0
+    if lens and lens.category == "EDOF":
+        return -0.25
+    return _target_from_acd(case.acd_mm)
+
+
+def _select_target_prediction(case, rows):
+    lens = get_lens(case.selected_lens_id)
+    if lens and lens.category in {"MULTIFOCAL", "EDOF"}:
+        if not rows or any(type(row.get("Rx")) not in (int, float) or not isfinite(row["Rx"]) for row in rows):
+            raise ValueError("No finite refraction predictions.")
+        best = min(range(len(rows)), key=lambda i: abs(rows[i]["Rx"] - _target_for_case(case)))
+        return [dict(row, IsBestOption=(i == best)) for i, row in enumerate(rows)]
+    return rows
+
+
 def _second_formula_required(al_mm: float) -> bool:
     return al_mm < 22.0 or al_mm > 26.0
 
@@ -60,7 +79,7 @@ def _base_inputs(case: IOLPowerPlanInput) -> dict[str, object]:
         "k2_d": case.k2_d,
         "k2_axis_deg": case.k2_axis_deg,
         "astigmatism_d": case.astigmatism_d,
-        "target_refraction_d": _target_from_acd(case.acd_mm),
+        "target_refraction_d": _target_for_case(case),
         "prior_corneal_surgery": case.prior_corneal_surgery.value,
     }
     for key, value in {
@@ -97,7 +116,7 @@ def _external_plan(case: IOLPowerPlanInput, lens, *, route: str, name: str, url:
         selected_lens_name=lens.name,
         lens_category=lens.category,
         a_constant=lens.a_constant,
-        target_refraction_d=_target_from_acd(case.acd_mm),
+        target_refraction_d=_target_for_case(case),
         target_locked=True,
         target_warning=None,
         second_formula_required=_second_formula_required(case.axial_length_mm),
@@ -113,7 +132,7 @@ def _external_plan(case: IOLPowerPlanInput, lens, *, route: str, name: str, url:
 def _k6_payload(case: IOLPowerPlanInput, a_constant: float) -> dict[str, object]:
     eye: dict[str, object] = {
         "SpecialSituation": "None",
-        "TgtRx": _target_from_acd(case.acd_mm),
+        "TgtRx": _target_for_case(case),
         "K1": case.k1_d,
         "K2": case.k2_d,
         "Biometer": "Other",
@@ -195,7 +214,7 @@ def _call_k6(case: IOLPowerPlanInput, a_constant: float) -> list[dict[str, objec
 def _spherical_predictions(case: IOLPowerPlanInput, a_constant: float):
     """K6 first; local T2 only for service/response failures, not validation errors."""
     try:
-        return _call_k6(case, a_constant), "Cooke K6", None
+        return _select_target_prediction(case, _call_k6(case, a_constant)), "Cooke K6", None
     except (HTTPError, URLError, TimeoutError, ValueError, UnicodeDecodeError) as exc:
         if isinstance(exc, LensThicknessRequired):
             raise
@@ -204,11 +223,11 @@ def _spherical_predictions(case: IOLPowerPlanInput, a_constant: float):
         reason = _k6_failure_reason(exc)
         try:
             rows = t2_predictions(case.axial_length_mm, case.k1_d, case.k2_d,
-                                  a_constant, _target_from_acd(case.acd_mm))
+                                  a_constant, _target_for_case(case))
         except ValueError as t2_error:
             raise ValueError(f"{reason} T2 unavailable: {t2_error}") from t2_error
         logger.info("t2_fallback eye=%s predictions=%s", case.eye, len(rows))
-        return rows, "T2", reason
+        return _select_target_prediction(case, rows), "T2", reason
 
 
 def plan_iol_power(case: IOLPowerPlanInput) -> IOLPowerPlan:
@@ -255,7 +274,7 @@ def plan_iol_power(case: IOLPowerPlanInput) -> IOLPowerPlan:
                 route="MANUFACTURER_TORIC", calculation_status="CALCULATION_UNAVAILABLE",
                 selected_lens_id=lens.id, selected_lens_name=lens.name,
                 lens_category=lens.category, a_constant=lens.a_constant,
-                target_refraction_d=_target_from_acd(case.acd_mm), target_locked=True,
+                target_refraction_d=_target_for_case(case), target_locked=True,
                 target_warning=None, second_formula_required=_second_formula_required(case.axial_length_mm),
                 calculator_name="Cooke K6 spherical power", calculator_url=lens.toric_calculator_url,
                 escrs_url=ESCRS_URL, inputs=inputs, predictions=[],
@@ -324,7 +343,7 @@ def plan_iol_power(case: IOLPowerPlanInput) -> IOLPowerPlan:
             calculation_status="TEST_ONLY" if candidates else "CALCULATION_UNAVAILABLE",
             selected_lens_id=lens.id, selected_lens_name=lens.name,
             lens_category=lens.category, a_constant=lens.a_constant,
-            target_refraction_d=_target_from_acd(case.acd_mm), target_locked=True,
+            target_refraction_d=_target_for_case(case), target_locked=True,
             target_warning=None, second_formula_required=_second_formula_required(case.axial_length_mm),
             calculator_name=f"{formula} spherical power", calculator_url=lens.toric_calculator_url,
             spherical_formula=formula, fallback_reason=fallback_reason,
@@ -341,7 +360,7 @@ def plan_iol_power(case: IOLPowerPlanInput) -> IOLPowerPlan:
             route="COOKE_K6", calculation_status="CALCULATION_UNAVAILABLE",
             selected_lens_id=lens.id, selected_lens_name=lens.name,
             lens_category=lens.category, a_constant=lens.a_constant,
-            target_refraction_d=_target_from_acd(case.acd_mm), target_locked=True,
+            target_refraction_d=_target_for_case(case), target_locked=True,
             target_warning=None, second_formula_required=_second_formula_required(case.axial_length_mm), calculator_name="Cooke K6", calculator_url=None,
             escrs_url=ESCRS_URL, inputs=inputs, predictions=[],
             required_inputs=["lens_thickness_mm"] if isinstance(exc, LensThicknessRequired) else [],
@@ -351,7 +370,7 @@ def plan_iol_power(case: IOLPowerPlanInput) -> IOLPowerPlan:
         route="T2" if formula == "T2" else "COOKE_K6", calculation_status="COMPLETED",
         selected_lens_id=lens.id, selected_lens_name=lens.name,
         lens_category=lens.category, a_constant=lens.a_constant,
-        target_refraction_d=_target_from_acd(case.acd_mm), target_locked=True,
+        target_refraction_d=_target_for_case(case), target_locked=True,
         target_warning=None, second_formula_required=_second_formula_required(case.axial_length_mm), calculator_name=formula, calculator_url=None,
         spherical_formula=formula, fallback_reason=fallback_reason,
         escrs_url=ESCRS_URL, inputs=inputs, predictions=predictions,

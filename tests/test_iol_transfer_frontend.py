@@ -1,4 +1,4 @@
-"""Exercise transfer binding after results move outside the eye review panel."""
+"""Exercise the single shared ESCRS transfer button."""
 from pathlib import Path
 import shutil
 import subprocess
@@ -12,8 +12,8 @@ def test_escrs_button_binds_in_moved_results_and_handles_transfer_failure():
     script = r'''
 const fs = require('fs'), vm = require('vm'), assert = require('assert');
 const source = fs.readFileSync('static/iol.js', 'utf8');
-const start = source.indexOf('      if(data.escrs_url) $("powerResult").querySelector(`#${eye}-escrsTransfer`)');
-const binding = source.slice(start, source.indexOf('      return true;', start));
+const start = source.indexOf('  $("escrsTransferAll").addEventListener');
+const binding = source.slice(start, source.indexOf('  $("recommendAll").addEventListener', start));
 (async () => {
   for (const eye of ['OD', 'OS']) {
     let click, destination, closed = false, fail = false;
@@ -23,9 +23,9 @@ const binding = source.slice(start, source.indexOf('      return true;', start))
     const payload = {biological_sex:'Female', right_eye:{axial_length_mm:23}, left_eye:{axial_length_mm:24}};
     const target = 'https://iolcalculator.escrs.org/?biompin=test';
     const context = {
-      eye, data:{escrs_url:target}, status,
+      eye, loadedEyes:['OD','OS'], powerPlans:{OD:{},OS:{}}, tr:x=>x, syncWorkflow:()=>{button.disabled=false;},
       root:{querySelector:()=>null},
-      $:id => id === 'powerResult' ? result : null,
+      $:id => id === 'escrsTransferAll' ? button : id === 'escrsTransferStatus' ? status : null,
       window:{open:()=>({opener:{}, location:{replace:url=>{destination=url;}}, close:()=>{closed=true;}})},
       escrsTransferPayload:()=>payload,
       errorMessage:body=>body.detail,
