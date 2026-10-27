@@ -422,6 +422,7 @@
         throw new Error(errorMessage(data));
       }
       powerPlans[eye] = data;
+      $("backReviewStatus").textContent = "";
       const formula = data.spherical_formula === "T2" ? "T2" : "Cooke K6";
       let notes=`<div class="warning"><strong>${tr(data.calculator_name)}</strong><br>${tr(data.predictions?.length ? `${formula} calculation completed.` : data.message)}</div>`;
       let html = data.predictions?.length ? "" : `<div class="warning">${tr(data.message)}</div>`;
