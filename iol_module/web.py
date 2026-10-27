@@ -53,13 +53,26 @@ def install(core: Any) -> None:
         if len(images) not in {3, 5}:
             raise HTTPException(422, "Upload 3 images for one eye or 5 for both eyes: Cataract Pre-Op and 4 Maps Refractive for each eye, plus one shared IOLMaster 500 report.")
         payloads = await operational_security.read_uploads(images)
-        results = []
-        for raw, filename in payloads:
-            try:
-                result = await asyncio.to_thread(extract_image, core, raw, filename)
-            except Exception as exc:
-                raise HTTPException(502, f"Unable to transcribe {filename}.") from exc
-            results.append({"filename": filename, "extraction": result})
+        return await process_sources(payloads, principal, assessment_request_id, patient_name)
+
+    async def process_sources(payloads, principal, assessment_request_id, patient_name, progress=None):
+        slots = asyncio.Semaphore(2)
+        completed = 0
+        async def read_source(raw, filename):
+            nonlocal completed
+            async with slots:
+                try:
+                    result = await asyncio.to_thread(extract_image, core, raw, filename)
+                except Exception as exc:
+                    raise HTTPException(502, f"Unable to transcribe {filename}.") from exc
+                completed += 1
+                if progress:
+                    progress("READING", completed)
+                return {"filename": filename, "extraction": result}
+        results = await asyncio.gather(*(read_source(raw, filename) for raw, filename in payloads), return_exceptions=True)
+        for result in results:
+            if isinstance(result, BaseException):
+                raise result
         try:
             identity = validate_source_bundle(
                 results,
@@ -68,8 +81,10 @@ def install(core: Any) -> None:
         except ValueError as exc:
             raise HTTPException(422, str(exc)) from exc
         from .archive import archive_iol_sources
-        source_archive = archive_iol_sources(
-            core, payloads, results, principal, assessment_request_id, patient_name,
+        if progress:
+            progress("ARCHIVING", len(payloads))
+        source_archive = await asyncio.to_thread(
+            archive_iol_sources, core, payloads, results, principal, assessment_request_id, patient_name,
         )
         consume_demo_credit = getattr(core, "_cerai_consume_demo_credit", None)
         if principal is not None and callable(consume_demo_credit):
@@ -79,6 +94,9 @@ def install(core: Any) -> None:
                 "IOL",
             )
         return {"sources": results, "identity": identity, "source_archive": source_archive}
+
+    from .jobs import install as install_jobs
+    install_jobs(core, process_sources)
 
     @core.app.post("/iol/evaluate")
     def iol_evaluate(payload: dict[str, Any] = Body(...)):

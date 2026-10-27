@@ -614,15 +614,13 @@
     const surgeonPatientName = $("patientName").value.trim();
     if (!surgeonPatientName) { status.textContent = tr("Enter the patient name before extracting source images."); return; }
     if (files.length !== 3 && files.length !== 5) { status.textContent = tr("Upload 3 images for one eye or 5 for both eyes: Cataract Pre-Op and 4 Maps Refractive for each eye, plus one shared IOLMaster 500 report."); return; }
-    const form = new FormData(); files.forEach(file => form.append("images", file)); form.append("patient_name", surgeonPatientName); form.append("assessment_request_id", iolAssessmentRequestId);
     if (workflowBusy) return;
     clearSourceCase();
     workflowBusy = true; syncWorkflow();
     $("extractButton").disabled = true; $("sourceImages").disabled = true; $("patientName").readOnly = true;
     status.textContent = tr("Transcribing source-locked fields…");
     try {
-      const response = await fetch("/iol/extract", {method:"POST", body:form, credentials:"same-origin"});
-      const data = await response.json(); if (!response.ok) throw new Error(errorMessage(data));
+      const data = await window.CERAI_IOL_JOBS.extract({files, patientName:surgeonPatientName, requestId:iolAssessmentRequestId, onProgress:text => { status.textContent = text; }});
       const eyes = data.identity?.eye === "BOTH" ? data.identity.eyes : [data.identity?.eye];
       if (!data.identity?.patient_name || !eyes?.length || eyes.some(eye => !["OD","OS"].includes(eye))) throw new Error("Source identity verification failed. Check the source reports.");
       const unreadable = [];
@@ -645,7 +643,7 @@
       syncWorkflow();
       const nameReview = data.identity.source_name_review_required ? tr(" The surgeon-entered patient name was retained. Check the patient names printed on the source reports.") : "";
       status.textContent = tr("Images read. Complete any missing fields, then continue to lens recommendation.") + nameReview + (unreadable.length ? " " + unreadable.join(", ") : "");
-    } catch (error) { clearSourceCase(); status.textContent = error.message || tr("Image transcription failed."); status.classList.add("error"); }
+    } catch (error) { if (error.restartRequired) iolAssessmentRequestId = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`; clearSourceCase(); status.textContent = error.message || tr("Image transcription failed."); status.classList.add("error"); }
     finally {
       workflowBusy = false; $("patientName").readOnly = false; syncWorkflow();
       // Focus the first unresolved eye once, after all source panels are ready.
