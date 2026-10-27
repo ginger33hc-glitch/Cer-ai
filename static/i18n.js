@@ -3,6 +3,12 @@
   const stored = (localStorage.getItem("cerai-language") || "en").toLowerCase();
   const locale = stored === "tr" ? "tr" : "en";
   const TR = {
+    "SMILE":"SMILE",
+    "Yes — SMILE":"Evet — SMILE",
+    "SMILE platform":"SMILE platformu",
+    "SMILE cap thickness (µm)":"SMILE kap kalınlığı (µm)",
+    "SMILE maximum lenticule thickness (µm)":"SMILE maksimum lentikül kalınlığı (µm)",
+    "Use the actual device treatment-plan maximum lenticule thickness when available.":"Mevcutsa cihazın tedavi planındaki gerçek maksimum lentikül kalınlığını kullanın.",
     "Select an optical candidate for surgeon review":"Cerrah değerlendirmesi için bir optik aday seçin",
     "Optical evaluation and lens candidates":"Optik değerlendirme ve mercek adayları",
     "Stage 1 identifies optical lens candidates; ocular pathology assessment remains with the surgeon.":"Aşama 1 optik mercek adaylarını belirler; göz patolojilerinin değerlendirilmesi cerraha aittir.",
