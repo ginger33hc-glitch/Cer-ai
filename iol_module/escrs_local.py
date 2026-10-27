@@ -59,6 +59,33 @@ def _dispatch(cdp, page, command):
     host = cdp.call('Runtime.evaluate', {'expression':'location.hostname','returnByValue':True}, page)
     if host.get('result', {}).get('value') != 'iolcalculator.escrs.org':
         raise HTTPException(409, 'Return to the ESCRS calculator.')
+    if command['kind'] == 'fields':
+        result = cdp.call('Runtime.evaluate', {'expression':"""(() => {
+          window.__ceraiFieldCounter = window.__ceraiFieldCounter || 0;
+          return [...document.querySelectorAll('input,textarea')].filter(e =>
+            !e.disabled && !e.readOnly && !['checkbox','radio','button','submit','file','hidden'].includes(e.type)
+          ).map(e => {
+            const r=e.getBoundingClientRect();
+            if(!e.dataset.ceraiField)e.dataset.ceraiField=String(++window.__ceraiFieldCounter);
+            return {id:e.dataset.ceraiField,value:e.value,type:e.type,x:r.x,y:r.y,width:r.width,height:r.height};
+          }).filter(r=>r.width>0 && r.height>0 && r.y>=0 && r.y+r.height<=820 && r.x>=0 && r.x+r.width<=420);
+        })()""", 'returnByValue':True}, page)
+        return result.get('result', {}).get('value', [])
+    if command['kind'] == 'edit':
+        import json
+        expression = """(() => {const e=document.querySelector('[data-cerai-field="'+ID+'"]');
+          if(!e || !e.matches('input,textarea') || e.disabled || e.readOnly)return false;
+          e.focus();return document.activeElement===e;})()""".replace('ID',json.dumps(command['field']))
+        focused=cdp.call('Runtime.evaluate', {'expression':expression,'returnByValue':True}, page)
+        if focused.get('result',{}).get('value') is not True:
+            raise HTTPException(409, 'Select the field again.')
+        cdp.call('Input.dispatchKeyEvent', {'type':'keyDown','key':'a','code':'KeyA','windowsVirtualKeyCode':65,'modifiers':2}, page)
+        cdp.call('Input.dispatchKeyEvent', {'type':'keyUp','key':'a','code':'KeyA','windowsVirtualKeyCode':65,'modifiers':2}, page)
+        if command['text']:
+            cdp.call('Input.insertText', {'text':command['text']}, page)
+        else:
+            _command(cdp, page, {'kind':'key','key':'Backspace'})
+        return
     if command['kind'] == 'frame':
         return cdp.call('Page.captureScreenshot', {'format':'jpeg','quality':65}, page)['data']
     if command['kind'] == 'pdf':
@@ -172,6 +199,8 @@ def _input(payload):
     def number(key, low, high):
         value = payload.get(key)
         return type(value) in (int, float) and math.isfinite(value) and low <= value <= high
+    if kind == 'edit' and isinstance(payload.get('field'),str) and payload['field'].isdigit() and len(payload['field'])<=8 and isinstance(payload.get('text'),str) and len(payload['text'])<=500:
+        return {'kind':kind,'field':payload['field'],'text':payload['text']}
     if kind == 'text' and isinstance(payload.get('text'), str) and 0 < len(payload['text']) <= 500:
         return {'kind':kind,'text':payload['text']}
     if kind == 'key' and payload.get('key') in _KEYS:
@@ -199,6 +228,10 @@ def install(core):
     def status(view_id: str):
         record = owned(view_id)
         return {'seconds_remaining':max(0,int(record.expires-monotonic()))}
+
+    @core.app.get('/iol/escrs-local/{view_id}/fields')
+    def fields(view_id: str):
+        return _request(owned(view_id), {'kind':'fields'})
 
     @core.app.get('/iol/escrs-local/{view_id}/frame')
     def frame(view_id: str):
