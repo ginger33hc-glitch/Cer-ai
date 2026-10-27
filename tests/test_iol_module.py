@@ -160,20 +160,17 @@ def test_surgeon_entered_patient_name_is_authoritative_but_source_names_are_flag
 
 def test_iol_upload_over_two_megabytes_checks_identity_before_returning_values(monkeypatch):
     reports = _source_bundle()
-    outcomes = iter(item["extraction"] for item in reports)
-    monkeypatch.setattr("iol_module.web.extract_image", lambda *_args: next(outcomes))
+    monkeypatch.setattr("iol_module.web.extract_image", lambda _core, _raw, filename: reports[int(filename.split("-")[1].split(".")[0])]["extraction"])
     files = [("images", (f"report-{i}.png", b"x" * 750_000, "image/png")) for i in range(3)]
     response = TestClient(canonical_engine.app).post("/iol/extract", files=files)
     assert response.status_code == 200
     assert response.json()["identity"] == {"patient_name": "Patient Example", "eye": "OD"}
 
     reports[1]["extraction"]["patient_name"] = "Another Patient"
-    outcomes = iter(item["extraction"] for item in reports)
     response = TestClient(canonical_engine.app).post("/iol/extract", files=files)
     assert response.status_code == 422
     assert "Patient names differ" in response.json()["detail"]
 
-    outcomes = iter(item["extraction"] for item in reports)
     response = TestClient(canonical_engine.app).post(
         "/iol/extract",
         files=files,
@@ -560,8 +557,16 @@ def test_bilateral_sources_reject_missing_or_duplicate_eye(index, field, value):
 def test_bilateral_upload_uses_one_shared_iolmaster(monkeypatch):
     reports = _bilateral_source_bundle()
     reports[2]["extraction"]["iolmaster500"] = {"OD": {"axial_length_mm": 23.1}, "OS": {"axial_length_mm": 25.2}}
-    outcomes = iter(item["extraction"] for item in reports)
-    monkeypatch.setattr("iol_module.web.extract_image", lambda *_args: next(outcomes))
+    from threading import Event
+    second_started = Event()
+    def read_report(_core, _raw, filename):
+        index = int(filename.split("-")[1].split(".")[0])
+        if index == 0:
+            assert second_started.wait(2), "Two source images should be read concurrently"
+        elif index == 1:
+            second_started.set()
+        return reports[index]["extraction"]
+    monkeypatch.setattr("iol_module.web.extract_image", read_report)
     response = TestClient(canonical_engine.app).post("/iol/extract", files=[
         ("images", (f"report-{i}.png", b"image", "image/png")) for i in range(5)
     ])
