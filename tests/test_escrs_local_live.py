@@ -51,25 +51,28 @@ def verify_mobile_viewer(record):
         browser=pw.chromium.launch(executable_path=local.executable(),args=['--no-sandbox'])
         try:
             page=browser.new_page(viewport={'width':390,'height':844},is_mobile=True,has_touch=True)
+            clicks=[]
             def route(req):
                 from urllib.parse import urlsplit
                 path=urlsplit(req.request.url).path
+                if path.endswith("/input"):
+                    import json
+                    clicks.append(json.loads(req.request.post_data))
                 response=client.request(req.request.method,path,content=req.request.post_data,
                     headers={'content-type':req.request.headers.get('content-type','')})
                 req.fulfill(status=response.status_code,headers=dict(response.headers),body=response.content)
             page.route('**/*',route)
             page.goto('http://testserver/iol/escrs-local/'+record.view_id)
-            page.locator('.field').first.wait_for()
+            page.wait_for_function("document.querySelector('#screen').naturalWidth > 0")
+            assert page.locator('.field').count()==0
+            assert page.locator('#fields').count()==0
             assert page.locator('#keyboard').count()==0
             assert page.locator('#send').count()==0
-            values=page.locator('.field').evaluate_all('(items)=>items.map(e=>e.value)')
-            # After scrolling, edit an actually visible field and verify native input delivery.
-            index=values.index('CER-AI SYNTHETIC TEST')
-            field=page.locator('.field').nth(index)
-            field.fill('CER-AI MOBILE TEST')
-            field.blur()
+            page.locator('#screen').tap(position={'x':100,'y':100})
             page.wait_for_timeout(1000)
-            assert any(item['value']=='CER-AI MOBILE TEST' for item in local._request(record,{'kind':'fields'}))
+            assert any(item['kind']=='click' for item in clicks)
+            assert not any(item['kind']=='edit' for item in clicks)
+            assert page.locator('.field').count()==0
             assert not page.locator('#viewport').is_hidden()
             assert page.locator('#status').inner_text()==''
         finally:
