@@ -22,11 +22,12 @@ def test_real_escrs_transfer_and_retention():
         assert any(item['value']=='CER-AI UI TEST' for item in local._request(record,{'kind':'fields'}))
         local._request(record,{'kind':'edit','field':surgeon['id'],'text':'CER-AI SYNTHETIC TEST'})
         local._request(record,{'kind':'scroll','delta':400})
-        verify_mobile_viewer(record)
         sleep(125)
         assert local._owned(record.view_id,'synthetic-test') is record
         assert len(local._request(record,{'kind':'frame'})) > 1000
         assert len(local._request(record,{'kind':'pdf'})) > 1000
+        local._request(record,{'kind':'scroll','delta':-400})
+        verify_mobile_viewer(record)
     finally:
         record.stop.set()
     for _ in range(100):
@@ -63,12 +64,12 @@ def verify_mobile_viewer(record):
             assert page.locator('#send').count()==0
             values=page.locator('.field').evaluate_all('(items)=>items.map(e=>e.value)')
             # After scrolling, edit an actually visible field and verify native input delivery.
-            index=next(i for i,v in enumerate(values) if v and len(v)<100)
+            index=values.index('CER-AI SYNTHETIC TEST')
             field=page.locator('.field').nth(index)
-            original=field.input_value()
-            field.fill(original)
+            field.fill('CER-AI MOBILE TEST')
             field.blur()
             page.wait_for_timeout(1000)
+            assert any(item['value']=='CER-AI MOBILE TEST' for item in local._request(record,{'kind':'fields'}))
             assert not page.locator('#viewport').is_hidden()
             assert page.locator('#status').inner_text()==''
         finally:
