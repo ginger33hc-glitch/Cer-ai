@@ -85,3 +85,23 @@ def test_local_provider_without_vendor_keys(monkeypatch):
         assert client.post('/iol/escrs-cloud-transfer',json=body).status_code == 200
         assert transfer.call_args.args[1]=='doctor'
         assert events[0][1]['details']['recipients']==['ESCRS IOL Calculator']
+
+
+def test_local_paths_bind_named_user_in_real_middleware(record):
+    import operational_security
+    import user_access
+    principal=SimpleNamespace(user_id='doctor')
+    core=SimpleNamespace(app=FastAPI(),_cerai_named_users_enabled=True,
+        _cerai_authenticate_request=lambda request: principal if request.cookies.get('test')=='signed-in' else None,
+        _cerai_bind_principal=user_access.bind_current_principal,
+        _cerai_reset_principal=user_access.reset_current_principal)
+    local.install(core)
+    operational_security.install(core)
+    with TestClient(core.app) as client:
+        base='/iol/escrs-local/'+record.view_id
+        assert client.get(base+'/status').status_code==401
+        client.cookies.set('test','signed-in')
+        response=client.get(base+'/status')
+        assert response.status_code==200
+        assert response.headers['cache-control']=='no-store'
+        assert client.post(base+'/close',json={}).status_code==200
