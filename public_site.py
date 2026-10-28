@@ -57,7 +57,7 @@ _PUBLIC_PAGE_LASTMOD = {
     '/keratoconus-screening': "2026-10-28",
     "/about/huseyin-cengiz": "2026-10-11",
     "/tr/korneal-ektazi-risk-degerlendirmesi": "2026-10-28",
-    "/": "2026-10-17",
+    "/": "2026-10-28",
     "/corneal-ectasia-risk-assessment": "2026-10-16",
     "/iol-calculation-software": "2026-10-17",
     "/tr/akilli-mercek-iol-hesaplama": "2026-10-17",

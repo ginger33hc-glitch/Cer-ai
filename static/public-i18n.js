@@ -37,6 +37,7 @@
     "Contact":"İletişim",
     "Messages only":"Sadece mesaj",
     "Program pages":"Program sayfaları",
+    "Keratokonus tarama testi":"Keratokonus tarama testi",
     "Corneal ectasia screening software":"Korneal ektazi tarama programı",
     "IOL selection software":"Göz içi mercek seçim programı",
     "Toric IOL calculator":"Torik mercek hesaplayıcı",
