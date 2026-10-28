@@ -193,11 +193,15 @@ def missing_items(decision, extracted=None):
             for issue in extracted.get("critical_input_issues") or []
             if not is_quality_only_issue(issue)
         )
+    screening_issues = set(decision.get("issues") or []) if decision.get("module") == "KERATOCONUS" else set()
+    items.extend(("GLOBAL", str(issue)) for issue in screening_issues if not is_quality_only_issue(issue))
     for eye in decision.get("eyes") or []:
         eye_id = eye.get("eye", "GLOBAL")
         if eye.get("status") == "POST-REFRACTIVE PATHWAY REQUIRED":
             items.append((eye_id, "POST-REFRACTIVE PATHWAY REQUIRED"))
         for message in eye.get("missing") or []:
+            if message in screening_issues:
+                continue
             if not is_quality_only_issue(message):
                 items.extend(_expanded_ps3_missing(eye_id, message, decision, extracted))
     if not decision.get("eyes"):

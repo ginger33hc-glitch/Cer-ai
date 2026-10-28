@@ -283,3 +283,22 @@ def test_completion_keeps_source_archive_and_charges_once():
         assert len(credits) == 1
     finally:
         reset_current_principal(bound)
+
+
+def test_one_eye_source_conflict_does_not_request_other_eye_override():
+    from extraction_guard import apply_extraction_validation
+
+    extracted, refs = fixture_case()
+    extracted["eyes"][0]["data_conflicts"] = ["BAD_D: 1 versus 3"]
+    extracted = apply_extraction_validation(extracted)
+    response = begin(extracted, refs)
+    requests = {(r["eye"], r["key"]) for r in response["input_requests"]}
+    assert requests == {("OD", "BAD_D")}
+    response = workflow.complete(
+        canonical_engine.core,
+        {
+            "assessment_token": response["assessment_token"],
+            "clinical_overrides": {"OD": {"BAD_D": 1}},
+        },
+    )
+    assert response["workflow_status"] == "READY"
