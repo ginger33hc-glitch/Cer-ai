@@ -10,7 +10,10 @@ intended treatment, ablation, flap/cap, optical zone, RSB/RST, or PTA input.
 
 The original image extraction, mandatory source identification, canonical source
 locks, targeted rereading, geometric SRAX and post-merge validation are shared.
-Screening does not invoke the surgical workflow or invent a surgical plan.
+Screening uses the same assessment_workflow session, completion validation, source
+previews, provenance and canonical entry as refractive assessment. Only the
+procedure-dependent readiness, planning and tissue calculations are omitted.
+No surgical plan is invented.
 
 ## Decision contract
 
@@ -66,7 +69,14 @@ demo-credit boundary apply.
 The UI reads newline-delimited JSON from the protected `/keratoconus/stream`
 endpoint. Existing canonical progress publications drive milestone percentages:
 upload accepted 10%, primary image reads 10–60% by completed image count,
-verification 70%, assessment 85%, archiving 95%, result delivered 100%.
+verification 70%, assessment and completion 85%, final report delivered 100%.
+If values are unreadable, the stream ends with NEEDS_INPUT, not a completed
+negative/positive result. The surgeon enters the requested measurements or
+SRAX/PS3 confirmations and continues the same session without re-uploading.
+The existing source-region endpoint supplies the indicated Pentacam crop.
+Only currently requested fields can be submitted. Surgeon-entered name, age
+and refraction are retained server-side and are not requested again or replaced
+by document readings or completion-payload changes.
 These are stage milestones, not elapsed-time estimates or clinical confidence.
 There is no timer-based simulated increment. Error or truncated streams do not
 produce a successful 100% state. The stream uses a request-local progress sink,

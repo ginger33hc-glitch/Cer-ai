@@ -51,6 +51,7 @@ PROTECTED_PATHS = frozenset({
     "/analyze",
     "/keratoconus/analyze",
     "/keratoconus/stream",
+    "/keratoconus/complete",
     "/assessment/complete",
     "/assessment/source-region",
     "/report/pdf",

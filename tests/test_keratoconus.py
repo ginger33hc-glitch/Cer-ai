@@ -183,7 +183,18 @@ def test_module_and_transport(monkeypatch):
 
     async def assess(payloads, age, plans, modifiers, metadata, *, screening=False):
         calls.append((screening, plans, age, metadata))
-        return evaluate_extracted(extracted, plans)
+        from assessment_workflow import begin
+
+        return begin(
+            canonical_engine.core,
+            extracted,
+            age,
+            plans,
+            modifiers,
+            metadata,
+            source_images=payloads,
+            assessment_mode="KERATOCONUS",
+        )
 
     async def read(images):
         return [(b"synthetic", item.filename) for item in images]
@@ -329,15 +340,12 @@ def test_screening_uses_shared_extraction_without_requiring_intended_or_procedur
     monkeypatch.setattr(
         app, "merge_extractions", lambda results, authority: deepcopy(extracted)
     )
-    monkeypatch.setattr(
-        assessment_workflow,
-        "begin",
-        lambda *a, **k: pytest.fail("Surgical workflow must not run"),
-    )
     response = asyncio.run(
-        app._run_image_assessment(payloads, None, refs, {}, {}, screening=True)
+        app._run_image_assessment(
+            payloads, 30, refs, {}, {"name": "SURGEON NAME"}, screening=True
+        )
     )
-    assert [eye["screening_result"] for eye in response["eyes"]] == [
+    assert [eye["screening_result"] for eye in response["decision"]["eyes"]] == [
         "NEGATIVE",
         "NEGATIVE",
     ]
@@ -394,7 +402,18 @@ def test_screening_stream_reports_real_milestones_and_patient_details(monkeypatc
             )
         await publish_progress("VERIFYING_REQUIRED_VALUES", fields=["BAD_D"])
         await publish_progress("CALCULATING_ASSESSMENT")
-        return evaluate_extracted(extracted, plans)
+        from assessment_workflow import begin
+
+        return begin(
+            canonical_engine.core,
+            extracted,
+            age,
+            plans,
+            modifiers,
+            metadata,
+            source_images=payloads,
+            assessment_mode="KERATOCONUS",
+        )
 
     monkeypatch.setattr("operational_security.read_uploads", read)
     monkeypatch.setattr(canonical_engine.core, "_run_image_assessment", assess)
@@ -420,7 +439,6 @@ def test_screening_stream_reports_real_milestones_and_patient_details(monkeypatc
         60,
         70,
         85,
-        95,
         100,
     ]
     assert events[-1]["type"] == "result"
@@ -477,7 +495,18 @@ def test_stream_reads_uploaded_files_before_response_cleanup(monkeypatch):
     async def assess(payloads, age, plans, modifiers, metadata, *, screening=False):
         assert len(payloads) == 5
         assert all(raw == b"synthetic image bytes" for raw, name in payloads)
-        return evaluate_extracted(extracted, plans)
+        from assessment_workflow import begin
+
+        return begin(
+            canonical_engine.core,
+            extracted,
+            age,
+            plans,
+            modifiers,
+            metadata,
+            source_images=payloads,
+            assessment_mode="KERATOCONUS",
+        )
 
     monkeypatch.setattr(canonical_engine.core, "_run_image_assessment", assess)
     response = TestClient(canonical_engine.app).post(

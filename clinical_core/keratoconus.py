@@ -16,7 +16,7 @@ from .disposition import (
     DecisionFinding,
     finalize_disposition,
 )
-from .erss import erss_disposition, erss_topography_points
+from .erss import erss_disposition, erss_topography_points, _topography_missing
 from .nice import nice_disposition, score_nice
 from .ps3 import evaluate_ps3
 from ps3_policy import defers_all_procedures
@@ -96,10 +96,15 @@ def evaluate_keratoconus(inp):
     )
     missing = []
     if bad_status == ASSESSMENT_INCOMPLETE:
-        missing.append("BAD_D")
+        missing.append("BAD-D: BAD_D")
     if topography_status == ASSESSMENT_INCOMPLETE:
-        missing.append("I_S / front-map SRAX confirmation")
-    missing.extend(nice["missing"])
+        missing.extend(
+            f"Randleman: {field}"
+            for field in _topography_missing(
+                inp.i_s_d, inp.derived_srax_deg, inp.srax_gt20_confirmed
+            )
+        )
+    missing.extend(f"NICE: {field}" for field in nice["missing"])
     missing.extend(f"PS3: {key}" for key in (ps3.missing_keys if ps3 else ("eye",)))
     final = finalize_disposition(findings, incomplete_first=True)
     # Incomplete screening must not be presented as a completed negative or positive.
