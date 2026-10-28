@@ -37,7 +37,7 @@
     "Contact":"İletişim",
     "Messages only":"Sadece mesaj",
     "Program pages":"Program sayfaları",
-    "Keratokonus tarama testi":"Keratokonus tarama testi",
+    "Keratoconus screening test":"Keratokonus tarama testi",
     "Corneal ectasia screening software":"Korneal ektazi tarama programı",
     "IOL selection software":"Göz içi mercek seçim programı",
     "Toric IOL calculator":"Torik mercek hesaplayıcı",
@@ -460,6 +460,9 @@
   }
 
   function routeLearningCenterLinks() {
+    document.querySelectorAll('a[href="/keratoconus-screening"],a[href="/tr/keratokonus-tarama"]').forEach(link => {
+      link.setAttribute("href", locale === "tr" ? "/tr/keratokonus-tarama" : "/keratoconus-screening");
+    });
     document.querySelectorAll('a[href="/toric-iol-calculator"],a[href="/tr/torik-mercek-hesaplayici"]').forEach(link => {
       link.setAttribute("href", locale === "tr" ? "/tr/torik-mercek-hesaplayici" : "/toric-iol-calculator");
     });
