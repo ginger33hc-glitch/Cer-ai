@@ -4,9 +4,8 @@ import asyncio
 from contextlib import suppress
 import json
 from math import isfinite
-from uuid import uuid4
 
-from fastapi import File, Form, HTTPException, UploadFile
+from fastapi import Body, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse, StreamingResponse
 
 from assessment_progress import bind_progress_sink, publish_progress
@@ -92,13 +91,23 @@ def install(core):
             headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"},
         )
 
+    @core.app.post("/keratoconus/complete")
+    async def screening_complete(payload: dict = Body(...)):
+        import assessment_workflow
+
+        with assessment_workflow._lock:
+            session = assessment_workflow._session(payload.get("assessment_token"))
+            if session.get("assessment_mode") != "KERATOCONUS":
+                raise HTTPException(409, "Use the correct assessment module.")
+        response = await asyncio.to_thread(assessment_workflow.complete, core, payload)
+        return screening_payload(response)
+
     core._cerai_keratoconus_module_installed = True
 
 
 async def run_screening(core, images, refractions, patient_name, patient_age):
     from operational_security import read_uploads
     from user_access import current_principal
-    from .archive import archive_screening
 
     patient_name = " ".join(patient_name.split())
     if not patient_name:
@@ -121,21 +130,18 @@ async def run_screening(core, images, refractions, patient_name, patient_age):
     result = await core._run_image_assessment(
         payloads, patient_age, plans, {}, {"name": patient_name}, screening=True
     )
-    result["patient"] = {
-        **result.get("patient", {}),
-        "name": patient_name,
-        "age": patient_age,
-        "identity_source": "SURGEON_CONFIRMED",
-    }
-    usage_id = uuid4().hex
-    await publish_progress("ARCHIVING")
-    result["archive"] = await asyncio.to_thread(
-        archive_screening, core, result, payloads, principal, usage_id
-    )
-    consume = getattr(core, "_cerai_consume_demo_credit", None)
-    if principal is not None and callable(consume):
-        consume(principal.user_id, usage_id, "KERATOCONUS")
-    return result
+    return screening_payload(result)
+
+
+def screening_payload(response):
+    """Preserve the shared workflow contract and the existing ready-screen shape."""
+    if response.get("workflow_status") == "READY":
+        return {
+            **response["decision"],
+            "workflow_status": "READY",
+            "assessment_token": response["assessment_token"],
+        }
+    return response
 
 
 def progress_event(code, details):
@@ -171,7 +177,15 @@ async def screening_events(core, images, refractions, patient_name, patient_age)
                 result = await run_screening(
                     core, images, refractions, patient_name, patient_age
                 )
-            await queue.put({"type": "result", "percent": 100, "result": result})
+            await queue.put(
+                {
+                    "type": "result",
+                    "percent": 85
+                    if result.get("workflow_status") == "NEEDS_INPUT"
+                    else 100,
+                    "result": result,
+                }
+            )
         except HTTPException as exc:
             await queue.put(
                 {"type": "error", "status": exc.status_code, "detail": exc.detail}

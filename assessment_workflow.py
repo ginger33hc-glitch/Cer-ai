@@ -175,7 +175,13 @@ def _session(token):
             410,
             "Assessment session expired or restarted. Upload the images again; entered form values can be retained.",
         )
-    return _sessions[token]
+    session = _sessions[token]
+    if session.get("assessment_mode") == "KERATOCONUS":
+        from user_access import current_principal
+        actor = current_principal()
+        if session.get("actor_id") != getattr(actor, "user_id", None):
+            raise HTTPException(403, "This assessment belongs to another user.")
+    return session
 
 
 def missing_items(decision, extracted=None):
@@ -716,6 +722,12 @@ def _resolve_patient_metadata(metadata, extracted, age):
 
 
 def _respond(core, token, session, age, plans, modifiers, metadata, overrides, source_confirmations=None):
+    screening = session.get("assessment_mode") == "KERATOCONUS"
+    if screening:
+        age = session["surgeon_age"]
+        plans = deepcopy(session["screening_refractions"])
+        metadata = deepcopy(session["surgeon_metadata"])
+        modifiers = {}
     if age is None:
         age = session["extracted"].get("derived_age_years")
     else:
@@ -735,17 +747,18 @@ def _respond(core, token, session, age, plans, modifiers, metadata, overrides, s
     if overrides:
         overrides = _validate_current_overrides(session, overrides)
 
-    readiness = evaluate_precore_readiness(
-        age_years=age,
-        eye_plans=plans,
-        patient_modifiers=modifiers,
-    )
-    if not readiness["ready"]:
-        response = _precore_response(token, session, readiness, plans)
-        response["patient_metadata"] = deepcopy(metadata)
-        if identity_request:
-            response["input_requests"].append(identity_request)
-        return response
+    if not screening:
+        readiness = evaluate_precore_readiness(
+            age_years=age,
+            eye_plans=plans,
+            patient_modifiers=modifiers,
+        )
+        if not readiness["ready"]:
+            response = _precore_response(token, session, readiness, plans)
+            response["patient_metadata"] = deepcopy(metadata)
+            if identity_request:
+                response["input_requests"].append(identity_request)
+            return response
 
     # A surgeon-entered I-S uses the same canonical correction/provenance path as image-derived I-S.
     for eye_id, plan in plans.items():
@@ -763,6 +776,7 @@ def _respond(core, token, session, age, plans, modifiers, metadata, overrides, s
         deepcopy(plans),
         deepcopy(modifiers),
         software_version=getattr(core, "APP_VERSION", None),
+        **({"assessment_mode": "KERATOCONUS"} if screening else {}),
     )
     if extracted.get("surgeon_source_confirmations"):
         decision["identity_warnings"] = list(extracted.get("identity_warnings") or [])
@@ -846,14 +860,36 @@ def _attributed_metadata(core, metadata):
 
 
 def _finalize_archive(core, response, session):
+    if session.get("assessment_mode") == "KERATOCONUS":
+        if response.get("workflow_status") != "READY":
+            return response
+        from keratoconus_module.archive import archive_screening
+        from user_access import current_principal
+        decision = response["decision"]
+        decision["patient"] = {**session["patient_metadata"], "identity_source": "SURGEON_CONFIRMED"}
+        if session.get("screening_final") == decision:
+            decision["archive"] = session.get("screening_archive")
+            return response
+        actor = current_principal()
+        archive = archive_screening(core, decision, session["source_images"], actor, session["screening_case_id"])
+        session["screening_final"] = deepcopy(decision)
+        session["screening_archive"] = archive
+        decision["archive"] = archive
+        consume = getattr(core, "_cerai_consume_demo_credit", None)
+        if actor is not None and callable(consume) and not session.get("screening_credit_used"):
+            consume(actor.user_id, session["screening_case_id"], "KERATOCONUS")
+            session["screening_credit_used"] = True
+        return response
     runtime = getattr(core, "_cerai_case_archive_runtime", None)
     if runtime is None:
         return response
     return runtime.finalize_ready(core, response, deepcopy(session.get("ready")))
 
 
-def begin(core, extracted, age, plans, modifiers, metadata, source_images=None):
+def begin(core, extracted, age, plans, modifiers, metadata, source_images=None, *, assessment_mode="REFRACTIVE"):
     metadata = _attributed_metadata(core, metadata)
+    from user_access import current_principal
+    actor = current_principal()
     with _lock:
         _prune()
         if len(_sessions) >= MAX_SESSIONS:
@@ -870,6 +906,12 @@ def begin(core, extracted, age, plans, modifiers, metadata, source_images=None):
             "source_images": list(source_images or []),
             "completion_requests": set(),
             "trace_id": secrets.token_hex(6),
+            "assessment_mode": assessment_mode,
+            "actor_id": getattr(actor, "user_id", None),
+            "surgeon_age": age,
+            "surgeon_metadata": deepcopy(metadata),
+            "screening_refractions": deepcopy(plans),
+            "screening_case_id": secrets.token_hex(16),
         }
         _sessions[token] = session
         response = _respond(core, token, session, age, plans, modifiers, metadata, {})
@@ -884,6 +926,8 @@ def begin(core, extracted, age, plans, modifiers, metadata, source_images=None):
         )
         if archive_state:
             response["archive"] = archive_state
+            if assessment_mode == "KERATOCONUS" and archive_state.get("case_id"):
+                session["screening_case_id"] = archive_state["case_id"]
     return _finalize_archive(core, response, session)
 
 
@@ -927,6 +971,8 @@ def complete(core, payload):
 def export_payload(payload):
     with _lock:
         session = _session(payload.get("assessment_token"))
+        if session.get("assessment_mode") == "KERATOCONUS":
+            raise HTTPException(409, "Use the screening module's archived PDF report.")
         ready = session.get("ready")
         if not ready or not secrets.compare_digest(
             str(payload.get("report_token") or ""), ready["report_token"]

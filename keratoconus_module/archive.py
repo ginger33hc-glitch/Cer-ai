@@ -37,14 +37,19 @@ def archive_screening(core, result, payloads, actor, case_id):
     }
     try:
         archive = runtime.archive
-        archive.archive_sources(
-            case_id,
-            payloads,
-            patient_metadata={**snapshot["patient"], "created_by": actor.user_id},
-            extracted=snapshot,
-        )
+        if not archive.list_sources(case_id):
+            archive.archive_sources(
+                case_id,
+                payloads,
+                patient_metadata={**snapshot["patient"], "created_by": actor.user_id},
+                extracted=snapshot,
+            )
         sources = archive.list_sources(case_id)
-        if len(sources) != len(payloads) or any(
+        if [item.original_filename for item in sources] != [
+            name for _, name in payloads
+        ] or len(sources) != len(payloads):
+            raise RuntimeError("Screening source set mismatch")
+        if any(
             archive.get_bytes(item.artifact) != raw
             for item, (raw, _) in zip(sources, payloads)
         ):

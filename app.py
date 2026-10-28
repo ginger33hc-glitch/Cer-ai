@@ -1247,9 +1247,10 @@ async def _run_image_assessment(
                         sys.modules[__name__], reread, raw, filename,
                         deadline_monotonic=automation_deadline,
                     )
-                    return await asyncio.to_thread(
+                    enriched = await asyncio.to_thread(
                         geometric_srax_policy.enrich_extraction, reread, raw, filename,
                     )
+                    return apply_surgeon_image_authority(enriched, surgeon_authority)
 
             extraction_results = await asyncio.gather(*(
                 enrich_bounded(result, raw, filename)
@@ -1284,9 +1285,9 @@ async def _run_image_assessment(
     extracted = merge_extractions(extraction_results, surgeon_authority)
     extracted["mandatory_source_set"] = mandatory_source_set
     if screening:
-        from canonical_runtime_service import evaluate_case
-        return evaluate_case(extracted, age, plans, modifiers,
-                             software_version=SOFTWARE_VERSION, assessment_mode="KERATOCONUS")
+        return await asyncio.to_thread(
+            begin, sys.modules[__name__], extracted, age, plans, modifiers, metadata,
+            source_images=image_payloads, assessment_mode="KERATOCONUS")
     return begin(
         sys.modules[__name__], extracted, age, plans, modifiers, metadata,
         source_images=image_payloads,

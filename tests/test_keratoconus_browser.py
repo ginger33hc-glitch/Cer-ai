@@ -15,11 +15,36 @@ from canonical_runtime_service import _evaluate_keratoconus_case as evaluate_ext
 ROOT = Path(__file__).resolve().parents[1]
 
 
-@pytest.mark.parametrize("locale,width", [("en", 1280), ("tr", 390)])
-def test_screening_browser(locale, width):
+@pytest.mark.parametrize(
+    "locale,width,needs_input",
+    [("en", 1280, False), ("tr", 390, False), ("en", 1280, True), ("tr", 390, True)],
+)
+def test_screening_browser(locale, width, needs_input):
     extracted, refs = fixture_case()
     result = evaluate_extracted(extracted, refs)
     result["archive"] = None
+    result["patient"] = {"name": "SYNTHETIC PATIENT", "age": 30}
+    pending = {
+        "assessment_token": "opaque-test-token",
+        "workflow_status": "NEEDS_INPUT",
+        "input_requests": [
+            {
+                "eye": "OD",
+                "key": "BAD_D",
+                "label": "Final BAD-D",
+                "kind": "number",
+                "destination": "measurement",
+            },
+            {
+                "eye": "OD",
+                "key": "srax",
+                "label": "SRAX >20°?",
+                "kind": "select",
+                "destination": "measurement",
+                "options": ["YES", "NO"],
+            },
+        ],
+    }
     with sync_playwright() as p:
         executable = (
             os.environ.get("CERAI_CHROMIUM_EXECUTABLE")
@@ -64,12 +89,30 @@ def test_screening_browser(locale, width):
                                 "completed_images": 2,
                                 "total_images": 5,
                             },
-                            {"type": "progress", "code": "ARCHIVING", "percent": 95},
-                            {"type": "result", "percent": 100, "result": result},
+                            {
+                                "type": "progress",
+                                "code": "CALCULATING_ASSESSMENT"
+                                if needs_input
+                                else "ARCHIVING",
+                                "percent": 85 if needs_input else 95,
+                            },
+                            {
+                                "type": "result",
+                                "percent": 85 if needs_input else 100,
+                                "result": pending if needs_input else result,
+                            },
                         ]
                     )
                     + "\n",
                 )
+            elif path == "/keratoconus/complete":
+                payload = request.request.post_data_json
+                assert payload == {
+                    "assessment_token": "opaque-test-token",
+                    "clinical_overrides": {"OD": {"BAD_D": 1, "srax": "NO"}},
+                    "source_confirmations": {},
+                }
+                request.fulfill(json={**result, "workflow_status": "READY"})
             else:
                 request.fulfill(status=404, body="")
 
@@ -98,6 +141,19 @@ def test_screening_browser(locale, width):
         ]
         page.locator("#images").set_input_files(files)
         page.locator("#analyze").click()
+        if needs_input:
+            expect(page.locator("#completionPanel")).to_be_visible()
+            expect(page.locator("#output")).to_be_hidden()
+            expect(page.locator("#progressPercent")).to_have_text("85%")
+            expect(page.locator("#patientName")).to_have_value("SYNTHETIC PATIENT")
+            expect(page.locator("#patientAge")).to_have_value("30")
+            assert (
+                page.locator('#completionForm [data-key="patient_name"]').count() == 0
+            )
+            assert page.locator('#completionForm [data-key="procedure"]').count() == 0
+            page.locator('#completionForm [data-key="BAD_D"]').fill("1")
+            page.locator('#completionForm [data-key="srax"]').select_option("NO")
+            page.locator("#completeScreening").click()
         expect(page.locator("#results .NEGATIVE")).to_have_count(2)
         expect(page.locator("#output")).to_be_visible()
         expect(page.locator("#progressPercent")).to_have_text("100%")
