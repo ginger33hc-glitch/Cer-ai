@@ -54,7 +54,7 @@ _PUBLIC_CONTENT_LASTMOD = "2026-09-11"
 _INDEXNOW_KEY = "731d2001b05e7e15840a00e98f53447d"
 _PUBLIC_PAGE_LASTMOD = {
     "/about/huseyin-cengiz": "2026-10-11",
-    "/tr/korneal-ektazi-risk-degerlendirmesi": "2026-10-16",
+    "/tr/korneal-ektazi-risk-degerlendirmesi": "2026-10-28",
     "/": "2026-10-17",
     "/corneal-ectasia-risk-assessment": "2026-10-16",
     "/iol-calculation-software": "2026-10-17",
@@ -79,11 +79,11 @@ _PUBLIC_PAGE_METADATA = {
     "/tr/korneal-ektazi-risk-degerlendirmesi": {
         "schema_type": "MedicalWebPage",
         "title": "Korneal Ektazi Tarama Programı | LASIK ve PRK – CER-AI",
-        "description": "CER-AI korneal ektazi tarama programı: LASIK ve PRK öncesi Pentacam raporları, ayrı risk değerlendirmeleri ve kornea doku güvenliği hesaplarıyla hekime karar desteği.",
+        "description": "CER-AI keratokonus erken tanı tarama programı: Pentacam bulguları ve korneal ektazi risk değerlendirmesiyle hekime karar desteği. Tek başına tanı koymaz.",
         "about": "Refraktif cerrahi öncesi korneal ektazi risk değerlendirmesi",
         "in_language": "tr",
         "keywords": [
-            "korneal ektazi tarama programı", "refraktif cerrahi tarama programı", "LASIK tarama programı",
+            "keratokonus erken tanı tarama programı", "korneal ektazi tarama programı", "refraktif cerrahi tarama programı", "LASIK tarama programı",
             "lazik tarama programı", "PRK tarama programı",
             "göz çizdirme öncesi değerlendirme", "gizli keratokonus", "subklinik keratokonus", "keratokonus teşhisine yardımcı yazılım",
         ],
