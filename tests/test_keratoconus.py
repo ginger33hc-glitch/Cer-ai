@@ -182,7 +182,7 @@ def test_module_and_transport(monkeypatch):
     calls = []
 
     async def assess(payloads, age, plans, modifiers, metadata, *, screening=False):
-        calls.append((screening, plans))
+        calls.append((screening, plans, age, metadata))
         return evaluate_extracted(extracted, plans)
 
     async def read(images):
@@ -195,16 +195,25 @@ def test_module_and_transport(monkeypatch):
     assert "/keratoconus" in client.get("/clinical-modules").text
     response = client.post(
         "/keratoconus/analyze",
-        data={"refractions": json.dumps(refs)},
+        data={
+            "refractions": json.dumps(refs),
+            "patient_name": "SYNTHETIC PATIENT",
+            "patient_age": "30",
+        },
         files=[("images", (f"{n}.png", b"synthetic", "image/png")) for n in range(5)],
     )
     assert response.status_code == 200, response.text
     assert response.json()["eyes"][0]["screening_result"] == "NEGATIVE"
-    assert calls == [(True, refs)]
+    assert calls == [(True, refs, 30, {"name": "SYNTHETIC PATIENT"})]
+    assert response.json()["patient"]["age"] == 30
     assert (
         client.post(
             "/keratoconus/analyze",
-            data={"refractions": json.dumps(refs)},
+            data={
+                "refractions": json.dumps(refs),
+                "patient_name": "SYNTHETIC PATIENT",
+                "patient_age": "30",
+            },
             files=[("images", ("one.png", b"a", "image/png"))],
         ).status_code
         == 422
@@ -360,3 +369,127 @@ def test_single_canonical_case_entry():
     assert response["module"] == "KERATOCONUS"
     with pytest.raises(ValueError):
         evaluate_case(extracted, None, refs, {}, assessment_mode="unknown")
+
+
+def test_screening_stream_reports_real_milestones_and_patient_details(monkeypatch):
+    import json
+    import canonical_engine
+    from assessment_progress import publish_progress
+    from operational_security import (
+        _is_protected_path,
+        _request_limit,
+        MAX_REQUEST_BYTES,
+    )
+
+    extracted, refs = fixture_case()
+
+    async def read(images):
+        return [(b"synthetic", item.filename) for item in images]
+
+    async def assess(payloads, age, plans, modifiers, metadata, *, screening=False):
+        assert age == 17 and metadata == {"name": "SYNTHETIC PATIENT"}
+        for completed in range(6):
+            await publish_progress(
+                "ANALYZING_IMAGES", completed_images=completed, total_images=5
+            )
+        await publish_progress("VERIFYING_REQUIRED_VALUES", fields=["BAD_D"])
+        await publish_progress("CALCULATING_ASSESSMENT")
+        return evaluate_extracted(extracted, plans)
+
+    monkeypatch.setattr("operational_security.read_uploads", read)
+    monkeypatch.setattr(canonical_engine.core, "_run_image_assessment", assess)
+    client = TestClient(canonical_engine.app)
+    response = client.post(
+        "/keratoconus/stream",
+        data={
+            "refractions": json.dumps(refs),
+            "patient_name": " SYNTHETIC  PATIENT ",
+            "patient_age": "17",
+        },
+        files=[("images", (f"{n}.png", b"synthetic", "image/png")) for n in range(5)],
+    )
+    assert response.status_code == 200
+    events = [json.loads(line) for line in response.text.splitlines()]
+    assert [e["percent"] for e in events] == [
+        10,
+        10,
+        20,
+        30,
+        40,
+        50,
+        60,
+        70,
+        85,
+        95,
+        100,
+    ]
+    assert events[-1]["type"] == "result"
+    assert events[-1]["result"]["patient"]["name"] == "SYNTHETIC PATIENT"
+    assert events[-1]["result"]["patient"]["age"] == 17
+    assert response.headers["cache-control"] == "no-store"
+    assert _is_protected_path("/keratoconus/stream")
+    assert _request_limit("/keratoconus/stream") == MAX_REQUEST_BYTES
+
+
+@pytest.mark.parametrize(
+    "details",
+    [
+        {},
+        {"patient_name": "Patient"},
+        {"patient_name": "Patient", "patient_age": "1.5"},
+        {"patient_name": "Patient", "patient_age": "-1"},
+    ],
+)
+def test_required_patient_details_rejected_before_assessment(details):
+    import json
+    import canonical_engine
+
+    _, refs = fixture_case()
+    response = TestClient(canonical_engine.app).post(
+        "/keratoconus/stream",
+        data={"refractions": json.dumps(refs), **details},
+        files=[("images", ("source.png", b"synthetic", "image/png"))],
+    )
+    assert response.status_code == 422
+
+
+def test_stream_errors_never_report_completion():
+    import asyncio, json
+    from keratoconus_module.web import screening_events
+
+    async def collect():
+        return [
+            json.loads(event)
+            async for event in screening_events(None, [], "{}", "Patient", 30)
+        ]
+
+    events = asyncio.run(collect())
+    assert events[-1]["type"] == "error" and events[-1]["status"] == 422
+    assert all(event.get("percent", 0) < 100 for event in events)
+
+
+def test_stream_reads_uploaded_files_before_response_cleanup(monkeypatch):
+    import json
+    import canonical_engine
+
+    extracted, refs = fixture_case()
+
+    async def assess(payloads, age, plans, modifiers, metadata, *, screening=False):
+        assert len(payloads) == 5
+        assert all(raw == b"synthetic image bytes" for raw, name in payloads)
+        return evaluate_extracted(extracted, plans)
+
+    monkeypatch.setattr(canonical_engine.core, "_run_image_assessment", assess)
+    response = TestClient(canonical_engine.app).post(
+        "/keratoconus/stream",
+        data={
+            "refractions": json.dumps(refs),
+            "patient_name": "Patient",
+            "patient_age": "30",
+        },
+        files=[
+            ("images", (f"{i}.png", b"synthetic image bytes", "image/png"))
+            for i in range(5)
+        ],
+    )
+    assert json.loads(response.text.splitlines()[-1])["type"] == "result"

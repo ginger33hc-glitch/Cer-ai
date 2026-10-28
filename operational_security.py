@@ -50,6 +50,7 @@ EXPOSE_API_DOCS = os.getenv("CERAI_EXPOSE_API_DOCS", "0").strip() == "1"
 PROTECTED_PATHS = frozenset({
     "/analyze",
     "/keratoconus/analyze",
+    "/keratoconus/stream",
     "/assessment/complete",
     "/assessment/source-region",
     "/report/pdf",
@@ -164,7 +165,7 @@ def _is_protected_path(path: str) -> bool:
 
 
 def _request_limit(path: str) -> int:
-    return MAX_REQUEST_BYTES if path in {"/analyze", "/analysis/jobs", "/iol/extract", "/keratoconus/analyze"} else MAX_JSON_REQUEST_BYTES
+    return MAX_REQUEST_BYTES if path in {"/analyze", "/analysis/jobs", "/iol/extract", "/keratoconus/analyze", "/keratoconus/stream"} else MAX_JSON_REQUEST_BYTES
 
 
 def _secure_response(response, path: str):
