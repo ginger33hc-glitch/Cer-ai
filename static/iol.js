@@ -624,16 +624,20 @@
     let payload;
     try { payload = escrsTransferPayload(); }
     catch (error) {status.textContent = tr(error.message);return;}
-    const tab = window.open("about:blank", "_blank");
-    if (tab) tab.opener = null;
     button.disabled = true;
     try {
       const response = await fetch("/iol/escrs-transfer", {method:"POST", credentials:"same-origin", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload)});
       const result = await response.json();
       if (!response.ok) throw new Error(errorMessage(result));
-      if (tab) tab.location.replace(result.escrs_url); else window.location.assign(result.escrs_url);
+      // Open only after the server confirms transfer. Failed requests must not
+      // create a blank window or depend on its navigation/close lifecycle.
+      const tab = window.open("about:blank", "_blank");
+      if (tab) {
+        tab.opener = null;
+        tab.location.replace(result.escrs_url);
+      } else window.location.assign(result.escrs_url);
       status.textContent = tr("Measurements transferred. Select the lens and surgical settings in ESCRS.");
-    } catch (error) {if (tab) tab.close();status.textContent = tr(error.message);}
+    } catch (error) {status.textContent = tr(error.message);}
     finally {syncWorkflow();}
   });
   $("recommendAll").addEventListener("click", () => runLoadedEyes("recommend"));
