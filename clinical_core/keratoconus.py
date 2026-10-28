@@ -22,7 +22,7 @@ from .ps3 import evaluate_ps3
 from ps3_policy import defers_all_procedures
 from .rules import erss_topography_category
 
-SCREENING_POLICY_VERSION = "CERAI-KC-1.0"
+SCREENING_POLICY_VERSION = "CER-AI-KC-1.0"
 SCREENING_LABELS = {
     PASS: "NEGATIVE",
     CAUTION: "SUSPICIOUS",
