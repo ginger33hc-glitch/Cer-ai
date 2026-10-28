@@ -16,7 +16,7 @@ const start = source.indexOf('  $("escrsTransferAll").addEventListener');
 const binding = source.slice(start, source.indexOf('  $("recommendAll").addEventListener', start));
 (async () => {
   for (const eye of ['OD', 'OS']) {
-    let click, destination, closed = false, fail = false;
+    let click, destination, closed = false, fail = false, opened = 0, blocked = false;
     const button = {disabled:false, addEventListener:(event, handler) => {assert.equal(event, 'click'); click=handler;}};
     const result = {querySelector:selector => selector === `#${eye}-escrsTransfer` ? button : null};
     const status = {classList:{add:()=>{}}};
@@ -26,7 +26,7 @@ const binding = source.slice(start, source.indexOf('  $("recommendAll").addEvent
       eye, loadedEyes:['OD','OS'], powerPlans:{OD:{},OS:{}}, tr:x=>x, syncWorkflow:()=>{button.disabled=false;},
       root:{querySelector:()=>null},
       $:id => id === 'escrsTransferAll' ? button : id === 'escrsTransferStatus' ? status : null,
-      window:{open:()=>({opener:{}, location:{replace:url=>{destination=url;}}, close:()=>{closed=true;}})},
+      window:{open:()=>{assert.equal(fail,false);opened++;return blocked ? null : {opener:{}, location:{replace:url=>{destination=url;}}, close:()=>{closed=true;}};},location:{assign:url=>{destination=url;}}},
       escrsTransferPayload:()=>payload,
       errorMessage:body=>body.detail,
       fetch:async (url, options)=>{
@@ -44,9 +44,14 @@ const binding = source.slice(start, source.indexOf('  $("recommendAll").addEvent
     fail=true; destination=null;
     await click();
     assert.equal(destination, null);
-    assert.equal(closed, true);
+    assert.equal(opened, 1); // The failed request must not open a second window.
+    assert.equal(closed, false);
     assert.equal(status.textContent, 'Transfer unavailable');
     assert.equal(button.disabled, false);
+    fail=false; blocked=true; destination=null;
+    await click();
+    assert.equal(destination, target); // Popup blocked: use the current tab.
+    assert.equal(opened, 2);
   }
 })().catch(error=>{console.error(error);process.exitCode=1;});
 '''
