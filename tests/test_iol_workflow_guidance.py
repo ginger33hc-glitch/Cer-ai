@@ -227,18 +227,36 @@ def test_shared_transfer_survives_invalid_posterior_axes_and_exposes_correction(
             expect(page.locator(f"#{eye}-back_k2_axis_deg")).to_have_value("20")
             if locale == "tr":
                 expect(page.locator(f"#{eye}-backReviewStatus")).to_contain_text("90°")
-        transfers = []
+        transfers, popups = [], []
+        page.on("popup", lambda popup: popups.append(popup))
         def transfer(route):
             transfers.append(route.request.post_data_json)
             route.fulfill(status=503, json={"detail":"Synthetic transfer response"})
         page.route("**/iol/escrs-transfer", transfer)
         page.locator("#escrsTransferAll").click()
         expect(page.locator("#escrsTransferStatus")).to_have_text("Synthetic transfer response")
+        assert not popups, "A rejected transfer must not open an empty tab"
         assert len(transfers) == 1
         assert transfers[0]["right_eye"]["axial_length_mm"] == 24
         assert transfers[0]["left_eye"]["k2_d"] == 43.5
         assert "posterior_cornea" not in transfers[0]["left_eye"]
         assert not any(path == "/iol/power/plan" for path, _ in requests)
+        assert not errors, errors
+    finally:
+        context.close()
+
+
+def test_shared_transfer_opens_only_confirmed_destination(browser):
+    context, page, requests, errors, _ = open_workflow(browser, {"OD": 1.25, "OS": 1.5})
+    try:
+        destination = "https://iolcalculator.escrs.org/?biompin=synthetic-test"
+        context.route("https://iolcalculator.escrs.org/**", lambda route: route.fulfill(content_type="text/html",body="<h1>Synthetic ESCRS destination</h1>"))
+        page.route("**/iol/escrs-transfer", lambda route: route.fulfill(json={"escrs_url":destination}))
+        with page.expect_popup() as popup:
+            page.locator("#escrsTransferAll").click()
+        popup.value.wait_for_url(destination)
+        expect(page.locator("#escrsTransferStatus")).to_contain_text("Measurements transferred")
+        assert popup.value.evaluate("window.opener === null")
         assert not errors, errors
     finally:
         context.close()

@@ -103,7 +103,16 @@ def runtime_invariants():
     if "srax_completion_policy" in phase_names or "randleman_report_readiness_policy" in phase_names:
         errors.append("Retired workflow monkey-patch remains in production composition")
 
+    if core._run_image_assessment.__module__ != "app":
+        errors.append("Image assessment entry has been replaced")
+    if canonical_runtime_service.evaluate_case.__module__ != "canonical_runtime_service":
+        errors.append("Canonical case evaluator has been replaced")
+    screening_runtime = inspect.getsource(canonical_runtime_service._evaluate_keratoconus_case)
+    if "evaluate_keratoconus(inp)" not in screening_runtime:
+        errors.append("Screening is disconnected from canonical clinical_core")
     assessment_source = inspect.getsource(core._run_image_assessment)
+    if 'assessment_mode="KERATOCONUS"' not in assessment_source:
+        errors.append("Screening does not call the canonical case entry")
     if "mandatory_source_set_policy.validate_preassessment_requirements(" not in assessment_source:
         errors.append("Mandatory Pentacam source gate is not directly owned by app._run_image_assessment")
     source_gate = assessment_source.find("mandatory_source_set_policy.validate_preassessment_requirements(")
@@ -151,6 +160,7 @@ def runtime_invariants():
         ("_cerai_research_export_installed", "Research export boundary is not active"),
         ("_cerai_named_user_ui_installed", "Named-user UI boundary is not active"),
         ("_cerai_clinical_entry_installed", "Clinical module selector is not active"),
+        ("_cerai_keratoconus_module_installed", "Keratoconus screening module is not active"),
         ("_cerai_iol_module_installed", "Independent IOL module is not active"),
     ):
         if not getattr(core, marker, False):

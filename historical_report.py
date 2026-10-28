@@ -39,6 +39,11 @@ def regenerate_bytes(
         if owner_deidentified else dict(assessment)
     )
     localized["locale"] = "tr" if str(locale).lower().startswith("tr") else "en"
+    if localized.get("module") == "KERATOCONUS":
+        if kind != "pdf":
+            raise HTTPException(404, "Screening reports are available as PDF.")
+        from keratoconus_module.report import build_screening_pdf
+        return build_screening_pdf(localized)
     if localized.get("module") == "IOL":
         if kind != "pdf":
             raise HTTPException(404, "IOL reports are available as PDF.")

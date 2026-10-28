@@ -1,4 +1,5 @@
 """Single canonical CER-AI final-disposition owner."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -30,10 +31,13 @@ class FinalDisposition:
     incomplete_drivers: tuple[DecisionFinding, ...]
 
 
-def finalize_disposition(findings: Iterable[DecisionFinding]) -> FinalDisposition:
+def finalize_disposition(
+    findings: Iterable[DecisionFinding], *, incomplete_first: bool = False
+) -> FinalDisposition:
     """Combine ERSS/NICE/PS3/Final BAD-D once, preserving independent gates and eye results.
 
-    STOP dominates everything. Missing decision-critical data is never PASS.
+    STOP dominates by default. Procedure-free screening can explicitly require
+    complete data first with incomplete_first=True. Missing critical data is never PASS.
     Zero cautions among the four scoring systems yields PASS; one yields
     PASS WITH CAUTION; two or more yield CAUTION. Independent caution findings
     retain CAUTION. Already-combined eye results propagate without counting eyes
@@ -46,19 +50,26 @@ def finalize_disposition(findings: Iterable[DecisionFinding]) -> FinalDispositio
         raise ValueError(f"Unknown CER-AI decision status: {invalid[0].status!r}")
 
     stop_drivers = tuple(f for f in findings if f.status == STOP_DEFER)
-    caution_drivers = tuple(f for f in findings if f.status in {CAUTION, PASS_WITH_CAUTION})
+    caution_drivers = tuple(
+        f for f in findings if f.status in {CAUTION, PASS_WITH_CAUTION}
+    )
     incomplete_drivers = tuple(f for f in findings if f.status == ASSESSMENT_INCOMPLETE)
     scoring_keys = {"randleman_erss", "nice", "ps3", "bad_d"}
     caution_scoring_keys = {
-        f.key for f in findings
+        f.key
+        for f in findings
         if f.key in scoring_keys and f.status in {CAUTION, PASS_WITH_CAUTION}
     }
-    independent_caution = any(f.status == CAUTION and f.key not in scoring_keys for f in findings)
+    independent_caution = any(
+        f.status == CAUTION and f.key not in scoring_keys for f in findings
+    )
     propagated_pass_with_caution = any(
         f.status == PASS_WITH_CAUTION and f.key not in scoring_keys for f in findings
     )
 
-    if stop_drivers:
+    if incomplete_first and incomplete_drivers:
+        status = ASSESSMENT_INCOMPLETE
+    elif stop_drivers:
         status = STOP_DEFER
     elif incomplete_drivers:
         status = ASSESSMENT_INCOMPLETE

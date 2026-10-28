@@ -3,6 +3,9 @@
   const stored = (localStorage.getItem("cerai-language") || "en").toLowerCase();
   const locale = stored === "tr" ? "tr" : "en";
   const TR = {
+    "Keratoconus Screening":"Keratokonus Tarama",
+    "Manifest refraction and Pentacam-based keratoconus screening.":"Refraksiyon ve Pentacam ile keratokonus taraması.",
+    "Choose a clinical workflow to continue. Sign in if prompted.":"Devam etmek için bir klinik modül seçin. İstenirse giriş yapın.",
     "SMILE":"SMILE",
     "Yes — SMILE":"Evet — SMILE",
     "SMILE platform":"SMILE platformu",
