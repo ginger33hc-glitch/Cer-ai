@@ -22,7 +22,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def test_screening_browser(locale, width, needs_input):
     extracted, refs = fixture_case()
     result = evaluate_extracted(extracted, refs)
-    result["archive"] = None
+    result["archive"] = {"case_id": "synthetic-case", "revision_id": "synthetic-revision"}
     result["patient"] = {"name": "SYNTHETIC PATIENT", "age": 30}
     pending = {
         "assessment_token": "opaque-test-token",
@@ -55,7 +55,7 @@ def test_screening_browser(locale, width, needs_input):
         if not Path(executable).is_file():
             pytest.skip("Chromium unavailable")
         browser = p.chromium.launch(executable_path=executable, args=["--no-sandbox"])
-        context = browser.new_context(viewport={"width": width, "height": 900})
+        context = browser.new_context(viewport={"width": width, "height": 900}, accept_downloads=True)
         context.add_init_script(
             "localStorage.setItem('cerai-language'," + json.dumps(locale) + ");"
         )
@@ -75,6 +75,8 @@ def test_screening_browser(locale, width, needs_input):
                     content_type="application/javascript",
                     body=(ROOT / "static/keratoconus.js").read_text(),
                 )
+            elif path == "/archive/cases/synthetic-case/revisions/synthetic-revision/report/pdf":
+                request.fulfill(content_type="application/pdf", body=b"%PDF-1.4 synthetic report")
             elif path == "/keratoconus/stream":
                 uploads.append(request.request.post_data_buffer)
                 request.fulfill(
@@ -158,6 +160,20 @@ def test_screening_browser(locale, width, needs_input):
         expect(page.locator("#output")).to_be_visible()
         expect(page.locator("#progressPercent")).to_have_text("100%")
         expect(page.locator("#progressBar")).to_have_attribute("value", "100")
+        expect(page.locator("#pdfReport")).to_be_visible()
+        pdf_url = f"/archive/cases/synthetic-case/revisions/synthetic-revision/report/pdf?locale={locale}"
+        expect(page.locator("#openPDF")).to_have_attribute("href", pdf_url)
+        expect(page.locator("#openPDF")).to_have_attribute("target", "_blank")
+        expect(page.locator("#downloadPDF")).to_have_attribute("href", pdf_url)
+        with page.expect_download() as download_info:
+            page.locator("#downloadPDF").click()
+        download = download_info.value
+        assert download.suggested_filename == "CER-AI_Keratoconus_Screening.pdf"
+        assert download.url.endswith(pdf_url)
+        alternate = "en" if locale == "tr" else "tr"
+        page.locator("#language").select_option(alternate)
+        expect(page.locator("#downloadPDF")).to_have_attribute("href", pdf_url.replace(f"locale={locale}", f"locale={alternate}"))
+        page.locator("#language").select_option(locale)
         assert b"patient_name" in uploads[0] and b"SYNTHETIC PATIENT" in uploads[0]
         assert b"patient_age" in uploads[0]
         assert len(uploads) == 1
