@@ -53,6 +53,8 @@ _PUBLIC_CANONICAL_BASE = os.getenv(
 _PUBLIC_CONTENT_LASTMOD = "2026-09-11"
 _INDEXNOW_KEY = "731d2001b05e7e15840a00e98f53447d"
 _PUBLIC_PAGE_LASTMOD = {
+    '/tr/keratokonus-tarama': "2026-10-28",
+    '/keratoconus-screening': "2026-10-28",
     "/about/huseyin-cengiz": "2026-10-11",
     "/tr/korneal-ektazi-risk-degerlendirmesi": "2026-10-28",
     "/": "2026-10-17",
@@ -76,6 +78,22 @@ _PUBLIC_PAGE_LAST_REVIEWED = {
     "/toric-iol-calculator": "2026-09-29",
 }
 _PUBLIC_PAGE_METADATA = {
+    '/keratoconus-screening': {
+        "schema_type": "MedicalWebPage",
+        "title": "Keratoconus Screening with Pentacam | CER-AI",
+        "description": "CER-AI supports ophthalmologists reviewing manifest refraction and five Pentacam images for keratoconus screening. Results: negative, suspicious or positive.",
+        "about": "Keratoconus screening",
+        "in_language": "en",
+        "alternate_path": "/tr/keratokonus-tarama"
+    },
+    '/tr/keratokonus-tarama': {
+        "schema_type": "MedicalWebPage",
+        "title": "Keratokonus Tarama Programı | Pentacam – CER-AI",
+        "description": "CER-AI keratokonus tarama programı: refraksiyon ve beş Pentacam görüntüsüyle göz hekimine karar desteği. Negatif, şüpheli veya pozitif tarama sonucu ve PDF rapor.",
+        "about": "Keratokonus tarama programı",
+        "in_language": "tr",
+        "alternate_path": "/keratoconus-screening"
+    },
     "/tr/korneal-ektazi-risk-degerlendirmesi": {
         "schema_type": "MedicalWebPage",
         "title": "Korneal Ektazi Tarama Programı | LASIK ve PRK – CER-AI",
@@ -1029,6 +1047,8 @@ CER-AI is a clinical decision-support system, not an autonomous diagnostic syste
 def _sitemap_xml(base: str) -> str:
     urls = (
         (f"{base}/", "1.0"),
+        (f"{base}/keratoconus-screening", "0.9"),
+        (f"{base}/tr/keratokonus-tarama", "0.9"),
         (f"{base}/learning-center", "0.9"),
         (f"{base}/corneal-ectasia-risk-assessment", "0.9"),
         (f"{base}/tr/korneal-ektazi-risk-degerlendirmesi", "0.9"),
@@ -1098,6 +1118,14 @@ def install(core) -> None:
     @core.app.get("/tr/korneal-ektazi-risk-degerlendirmesi", include_in_schema=False)
     def corneal_ectasia_risk_assessment_tr(request: Request) -> HTMLResponse:
         return _render_public_page(_AI_LANDING_TR, request, "/tr/korneal-ektazi-risk-degerlendirmesi")
+
+    @core.app.get("/keratoconus-screening", include_in_schema=False)
+    def keratoconus_screening_public(request: Request) -> HTMLResponse:
+        return _render_public_page(Path("static/keratoconus-screening-public.html"), request, "/keratoconus-screening")
+
+    @core.app.get("/tr/keratokonus-tarama", include_in_schema=False)
+    def keratoconus_screening_public_tr(request: Request) -> HTMLResponse:
+        return _render_public_page(Path("static/tr-keratokonus-tarama.html"), request, "/tr/keratokonus-tarama")
 
     @core.app.get("/learning-center", include_in_schema=False)
     def learning_center(request: Request) -> HTMLResponse:
