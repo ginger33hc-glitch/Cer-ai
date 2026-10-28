@@ -1,8 +1,11 @@
 # CER-AI Keratoconus Screening
 
 Entry: `/keratoconus` from the clinical module selector. The protected POST
-`/keratoconus/analyze` accepts only bilateral manifest sphere, signed cylinder,
-axis, and exactly five existing Pentacam sources. There is no procedure selection,
+`/keratoconus/analyze` and `/keratoconus/stream` require surgeon-entered patient
+name and whole-year age (1–120), bilateral manifest sphere, signed cylinder, axis,
+and exactly five existing Pentacam sources. Surgeon-entered name and age use the
+existing image-authority path and are retained in the result and archived PDF;
+age is demographic context, not an added screening score. There is no procedure selection,
 intended treatment, ablation, flap/cap, optical zone, RSB/RST, or PTA input.
 
 The original image extraction, mandatory source identification, canonical source
@@ -57,6 +60,19 @@ archived PDF access. Editing source data invalidates the displayed report. Input
 are locked during an assessment; clinical data is not written to browser storage.
 The existing named-user gate, request size limits, cost/concurrency guards and
 demo-credit boundary apply.
+
+## Progress transport
+
+The UI reads newline-delimited JSON from the protected `/keratoconus/stream`
+endpoint. Existing canonical progress publications drive milestone percentages:
+upload accepted 10%, primary image reads 10–60% by completed image count,
+verification 70%, assessment 85%, archiving 95%, result delivered 100%.
+These are stage milestones, not elapsed-time estimates or clinical confidence.
+There is no timer-based simulated increment. Error or truncated streams do not
+produce a successful 100% state. The stream uses a request-local progress sink,
+never a clinical wrapper or monkey patch. Patient data is not included in
+progress events. Disconnects cancel the request task; no global progress state
+or shared patient job is exposed.
 
 ## Verification
 

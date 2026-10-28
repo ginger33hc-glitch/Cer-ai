@@ -51,7 +51,7 @@ def build_screening_pdf(snapshot):
     patient = snapshot.get("patient") or {}
     story += [
         para(
-            f"{patient.get('name') or '—'} | {patient.get('report_date') or ''} | {patient.get('reviewer') or ''}"
+            f"{patient.get('name') or '—'} | {'Yaş' if tr else 'Age'}: {patient.get('age', '—')} | {patient.get('report_date') or ''} | {patient.get('reviewer') or ''}"
         )
     ]
     notice = (

@@ -1,12 +1,15 @@
 """Protected upload boundary for keratoconus screening."""
 
 import asyncio
+from contextlib import suppress
 import json
 from math import isfinite
 from uuid import uuid4
 
 from fastapi import File, Form, HTTPException, UploadFile
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
+
+from assessment_progress import bind_progress_sink, publish_progress
 
 from clinical_core.refraction import normalize_minus_cylinder
 
@@ -69,36 +72,130 @@ def install(core):
 
     @core.app.post("/keratoconus/analyze")
     async def screening_analyze(
-        images: list[UploadFile] = File(...), refractions: str = Form(...)
+        images: list[UploadFile] = File(...),
+        refractions: str = Form(...),
+        patient_name: str = Form(..., min_length=1, max_length=200),
+        patient_age: int = Form(..., ge=1, le=120),
     ):
-        from operational_security import read_uploads
-        from user_access import current_principal
-        from .archive import archive_screening
+        return await run_screening(core, images, refractions, patient_name, patient_age)
 
-        try:
-            plans = validate_refractions(json.loads(refractions))
-        except json.JSONDecodeError as exc:
-            raise HTTPException(422, "Invalid refraction JSON.") from exc
-        if len(images) != 5:
-            raise HTTPException(
-                422,
-                "Upload exactly 5 Pentacam images: OD/OS Four Maps Refractive, OD/OS BAD Display, and Show 2 Exams Topometric.",
-            )
-        principal = current_principal()
-        assert_credit = getattr(core, "_cerai_assert_demo_credit", None)
-        if principal is not None and callable(assert_credit):
-            assert_credit(principal.user_id)
-        payloads = await read_uploads(images)
-        result = await core._run_image_assessment(
-            payloads, None, plans, {}, {}, screening=True
+    @core.app.post("/keratoconus/stream")
+    async def screening_stream(
+        images: list[UploadFile] = File(...),
+        refractions: str = Form(...),
+        patient_name: str = Form(..., min_length=1, max_length=200),
+        patient_age: int = Form(..., ge=1, le=120),
+    ):
+        return StreamingResponse(
+            screening_events(core, images, refractions, patient_name, patient_age),
+            media_type="application/x-ndjson",
+            headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"},
         )
-        usage_id = uuid4().hex
-        result["archive"] = await asyncio.to_thread(
-            archive_screening, core, result, payloads, principal, usage_id
-        )
-        consume = getattr(core, "_cerai_consume_demo_credit", None)
-        if principal is not None and callable(consume):
-            consume(principal.user_id, usage_id, "KERATOCONUS")
-        return result
 
     core._cerai_keratoconus_module_installed = True
+
+
+async def run_screening(core, images, refractions, patient_name, patient_age):
+    from operational_security import read_uploads
+    from user_access import current_principal
+    from .archive import archive_screening
+
+    patient_name = " ".join(patient_name.split())
+    if not patient_name:
+        raise HTTPException(422, "Enter the patient name.")
+    try:
+        plans = validate_refractions(json.loads(refractions))
+    except json.JSONDecodeError as exc:
+        raise HTTPException(422, "Invalid refraction JSON.") from exc
+    if len(images) != 5:
+        raise HTTPException(
+            422,
+            "Upload exactly 5 Pentacam images: OD/OS Four Maps Refractive, OD/OS BAD Display, and Show 2 Exams Topometric.",
+        )
+    principal = current_principal()
+    assert_credit = getattr(core, "_cerai_assert_demo_credit", None)
+    if principal is not None and callable(assert_credit):
+        assert_credit(principal.user_id)
+    payloads = await read_uploads(images)
+    await publish_progress("UPLOAD_COMPLETE")
+    result = await core._run_image_assessment(
+        payloads, patient_age, plans, {}, {"name": patient_name}, screening=True
+    )
+    result["patient"] = {
+        **result.get("patient", {}),
+        "name": patient_name,
+        "age": patient_age,
+        "identity_source": "SURGEON_CONFIRMED",
+    }
+    usage_id = uuid4().hex
+    await publish_progress("ARCHIVING")
+    result["archive"] = await asyncio.to_thread(
+        archive_screening, core, result, payloads, principal, usage_id
+    )
+    consume = getattr(core, "_cerai_consume_demo_credit", None)
+    if principal is not None and callable(consume):
+        consume(principal.user_id, usage_id, "KERATOCONUS")
+    return result
+
+
+def progress_event(code, details):
+    """Operational milestone percentage, not elapsed-time or clinical confidence."""
+    percent = {
+        "UPLOAD_COMPLETE": 10,
+        "VERIFYING_REQUIRED_VALUES": 70,
+        "CALCULATING_ASSESSMENT": 85,
+        "ARCHIVING": 95,
+    }.get(code, 0)
+    if code == "ANALYZING_IMAGES":
+        total = max(1, int(details.get("total_images", 5)))
+        completed = min(total, max(0, int(details.get("completed_images", 0))))
+        percent = 10 + round(50 * completed / total)
+    return {
+        "type": "progress",
+        "code": code,
+        "percent": percent,
+        **{k: details[k] for k in ("completed_images", "total_images") if k in details},
+    }
+
+
+async def screening_events(core, images, refractions, patient_name, patient_age):
+    """Stream the existing canonical assessment's published milestones only."""
+    queue = asyncio.Queue(maxsize=32)
+
+    async def receive(code, details):
+        await queue.put(progress_event(code, details))
+
+    async def process():
+        try:
+            with bind_progress_sink(receive):
+                result = await run_screening(
+                    core, images, refractions, patient_name, patient_age
+                )
+            await queue.put({"type": "result", "percent": 100, "result": result})
+        except HTTPException as exc:
+            await queue.put(
+                {"type": "error", "status": exc.status_code, "detail": exc.detail}
+            )
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            await queue.put(
+                {
+                    "type": "error",
+                    "status": 500,
+                    "detail": "Screening could not be completed. Please retry.",
+                }
+            )
+
+    task = asyncio.create_task(process())
+    try:
+        while True:
+            event = await queue.get()
+            yield json.dumps(event, ensure_ascii=False) + "\n"
+            if event["type"] in {"result", "error"}:
+                break
+    finally:
+        if not task.done():
+            task.cancel()
+        with suppress(asyncio.CancelledError):
+            await task

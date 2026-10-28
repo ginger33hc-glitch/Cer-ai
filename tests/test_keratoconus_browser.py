@@ -50,9 +50,26 @@ def test_screening_browser(locale, width):
                     content_type="application/javascript",
                     body=(ROOT / "static/keratoconus.js").read_text(),
                 )
-            elif path == "/keratoconus/analyze":
+            elif path == "/keratoconus/stream":
                 uploads.append(request.request.post_data_buffer)
-                request.fulfill(json=result)
+                request.fulfill(
+                    content_type="application/x-ndjson",
+                    body="\n".join(
+                        json.dumps(event)
+                        for event in [
+                            {
+                                "type": "progress",
+                                "code": "ANALYZING_IMAGES",
+                                "percent": 30,
+                                "completed_images": 2,
+                                "total_images": 5,
+                            },
+                            {"type": "progress", "code": "ARCHIVING", "percent": 95},
+                            {"type": "result", "percent": 100, "result": result},
+                        ]
+                    )
+                    + "\n",
+                )
             else:
                 request.fulfill(status=404, body="")
 
@@ -61,10 +78,12 @@ def test_screening_browser(locale, width):
         expect(page.locator("h1")).to_have_text(
             "Keratokonus Tarama" if locale == "tr" else "Keratoconus Screening"
         )
-        assert page.locator("input[type=number]").count() == 6
+        assert page.locator("input[type=number]").count() == 7
         assert (
             page.locator("select").count() == 1
         )  # Language only; no procedure selector.
+        page.locator("#patientName").fill("SYNTHETIC PATIENT")
+        page.locator("#patientAge").fill("30")
         for eye in ("OD", "OS"):
             page.locator(f"#{eye}_sphere").fill("-3")
             page.locator(f"#{eye}_cylinder").fill("-1")
@@ -81,6 +100,10 @@ def test_screening_browser(locale, width):
         page.locator("#analyze").click()
         expect(page.locator("#results .NEGATIVE")).to_have_count(2)
         expect(page.locator("#output")).to_be_visible()
+        expect(page.locator("#progressPercent")).to_have_text("100%")
+        expect(page.locator("#progressBar")).to_have_attribute("value", "100")
+        assert b"patient_name" in uploads[0] and b"SYNTHETIC PATIENT" in uploads[0]
+        assert b"patient_age" in uploads[0]
         assert len(uploads) == 1
         assert b"manifest_entered_sphere_D" in uploads[0]
         assert b"procedure" not in uploads[0] and b"intended" not in uploads[0]
