@@ -88,8 +88,8 @@ _PUBLIC_PAGE_METADATA = {
     },
     '/tr/keratokonus-tarama': {
         "schema_type": "MedicalWebPage",
-        "title": "Keratokonus Tarama Programı | Pentacam – CER-AI",
-        "description": "CER-AI keratokonus tarama programı: refraksiyon ve beş Pentacam görüntüsüyle göz hekimine karar desteği. Negatif, şüpheli veya pozitif tarama sonucu ve PDF rapor.",
+        "title": "Keratokonus Tarama Testi, Programı ve Yazılımı | CER-AI",
+        "description": "CER-AI keratokonus tarama testi, programı ve yazılımı: refraksiyon ve Pentacam görüntüleriyle göz hekimine karar desteği, tarama sonucu ve paylaşılabilir PDF rapor.",
         "about": "Keratokonus tarama programı",
         "in_language": "tr",
         "alternate_path": "/keratoconus-screening"
