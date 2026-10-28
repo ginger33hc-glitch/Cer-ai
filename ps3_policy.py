@@ -159,8 +159,13 @@ def _automated_completeness(findings):
     return not missing, missing
 
 
+def defers_all_procedures(moderate_count: int, high_count: int) -> bool:
+    """Canonical common PS3 defer rule, also used in procedure-free screening."""
+    return high_count >= 1 or moderate_count >= 2
+
+
 def _disposition(moderate_count: int, high_count: int, complete: bool):
-    if high_count >= 1 or moderate_count >= 2:
+    if defers_all_procedures(moderate_count, high_count):
         return PS3ProcedureDisposition(DEFER, DEFER, DEFER)
     if moderate_count == 1:
         if complete:

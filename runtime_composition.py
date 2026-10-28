@@ -25,6 +25,7 @@ import research_export  # noqa: E402
 import demo_access  # noqa: E402
 import named_user_ui  # noqa: E402
 import clinical_entry  # noqa: E402
+from keratoconus_module import web as keratoconus_web
 from iol_module import web as iol_web  # noqa: E402
 
 app = core.app
@@ -32,7 +33,7 @@ app = core.app
 COMPOSITION_PHASES = {
     "canonical_reporting": ("reports",),
     "canonical_workflow": ("assessment_workflow",),
-    "clinical_modules": ("iol_module",),
+    "clinical_modules": ("iol_module", "keratoconus_module"),
     "access_and_persistence": (
         "user_access", "operational_security", "public_site", "clinical_entry",
         "analysis_job_service",
@@ -64,6 +65,7 @@ def compose(version: str):
     public_site.install(core)
     clinical_entry.install(core)
     iol_web.install(core)
+    keratoconus_web.install(core)
     analysis_job_service.install(core)
 
     archive_required = os.getenv("CERAI_ARCHIVE_REQUIRED", "0").strip() == "1"

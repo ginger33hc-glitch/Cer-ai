@@ -117,12 +117,12 @@ def test_module_selector_does_not_claim_an_authentication_state(signed_in):
         client.cookies.set("cer_ai_session", "valid")
     response = client.get("/clinical-modules")
     assert response.status_code == 200
-    assert "Choose the surgical workflow to continue. Sign in if prompted." in response.text
+    assert "Choose a clinical workflow to continue. Sign in if prompted." in response.text
     assert "You are signed in" not in response.text
     assert 'href="/app"' in response.text
     assert 'href="/iol"' in response.text
     translations = Path("static/i18n.js").read_text(encoding="utf-8")
-    assert '"Choose the surgical workflow to continue. Sign in if prompted.":"Devam etmek için cerrahi iş akışını seçin. İstenirse giriş yapın."' in translations
+    assert '"Choose a clinical workflow to continue. Sign in if prompted.":"Devam etmek için bir klinik modül seçin. İstenirse giriş yapın."' in translations
 
 
 @pytest.mark.parametrize("path", (

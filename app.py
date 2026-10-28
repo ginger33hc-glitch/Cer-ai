@@ -1127,6 +1127,7 @@ async def _run_image_assessment(
     plans: Dict[str, Any],
     modifiers: Dict[str, Any],
     metadata: Dict[str, Any],
+    *, screening: bool = False,
 ) -> Dict[str, Any]:
     from operational_security import admit_analysis, analysis_slot
 
@@ -1200,9 +1201,12 @@ async def _run_image_assessment(
             # Page identity from the primary read is the single source-set authority.
             # Stop here if one of the five mandatory sources is absent; no targeted
             # reread, SRAX measurement, merge, clinical score, or report may start.
-            mandatory_source_set = mandatory_source_set_policy.validate_preassessment_requirements(
-                extraction_results, plans
-            )
+            if screening:
+                mandatory_source_set = mandatory_source_set_policy.validate_source_set(extraction_results)
+            else:
+                mandatory_source_set = mandatory_source_set_policy.validate_preassessment_requirements(
+                    extraction_results, plans
+                )
             exam_date_reread_required = authoritative_exam_date_conflict(extraction_results)
 
             verification_fields = {
@@ -1279,6 +1283,10 @@ async def _run_image_assessment(
     from assessment_workflow import begin
     extracted = merge_extractions(extraction_results, surgeon_authority)
     extracted["mandatory_source_set"] = mandatory_source_set
+    if screening:
+        from canonical_runtime_service import evaluate_case
+        return evaluate_case(extracted, age, plans, modifiers,
+                             software_version=SOFTWARE_VERSION, assessment_mode="KERATOCONUS")
     return begin(
         sys.modules[__name__], extracted, age, plans, modifiers, metadata,
         source_images=image_payloads,

@@ -29,6 +29,9 @@ from clinical_core.disposition import (
     DecisionFinding,
     finalize_disposition,
 )
+from clinical_core.keratoconus import evaluate_keratoconus, SCREENING_POLICY_VERSION
+from pentacam_quality_policy import warnings_for_extracted
+from release_identity import SOFTWARE_VERSION
 from clinical_core.pipeline import evaluate_normalized_case
 from clinical_core.planning import (
     LASIK_PLANS,
@@ -612,8 +615,13 @@ def evaluate_case(
     patient_modifiers: Mapping[str, Any],
     *,
     software_version: str | None = None,
+    assessment_mode: str = "REFRACTIVE",
 ) -> dict[str, Any]:
-    """Evaluate requested procedures and failed-LASIK PRK alternatives through the canonical core."""
+    """Single canonical runtime entry for refractive planning and KC screening."""
+    if assessment_mode == "KERATOCONUS":
+        return _evaluate_keratoconus_case(extracted, eye_plans, software_version=software_version)
+    if assessment_mode != "REFRACTIVE":
+        raise ValueError("Unknown canonical assessment mode")
     if not isinstance(patient_modifiers, Mapping):
         raise TypeError("patient_modifiers must be a mapping")
 
@@ -773,4 +781,95 @@ def evaluate_case(
             "srax": SRAX_POLICY_VERSION,
         },
         "engine": "CERAI_CANONICAL_CLINICAL_CORE",
+    }
+
+
+SCREENING_NOTICE = 'Screening support only. A positive result is not a keratoconus diagnosis; a negative result does not exclude disease. Final interpretation requires ophthalmologist review.'
+
+
+def _evaluate_keratoconus_case(extracted, refractions, *, software_version=None):
+    issues = list(extracted.get("critical_input_issues") or []) + list(
+        extracted.get("identity_warnings") or []
+    )
+    sources = {
+        eye.get("eye"): eye
+        for eye in extracted.get("eyes", [])
+        if eye.get("eye") in {"OD", "OS"}
+    }
+    for eye_id in ("OD", "OS"):
+        if eye_id not in sources:
+            issues.append(f"{eye_id}: Pentacam data unavailable.")
+    eyes = []
+    for eye_id in ("OD", "OS"):
+        source = sources.get(eye_id)
+        if source is None:
+            eyes.append(
+                {
+                    "eye": eye_id,
+                    "status": "ASSESSMENT INCOMPLETE",
+                    "screening_result": "NOT_ASSESSABLE",
+                    "missing": ["Pentacam"],
+                    "findings": [],
+                }
+            )
+            continue
+        if issues:
+            eyes.append({"eye": eye_id, "status": ASSESSMENT_INCOMPLETE,
+                         "screening_result": "NOT_ASSESSABLE", "missing": issues,
+                         "findings": []})
+            continue
+        inp = build_clinical_core_input(
+            source,
+            refractions[eye_id],
+            age_years=None,
+            extracted=extracted,
+            plan_already_resolved=True,
+        )
+        result = evaluate_keratoconus(inp)
+        result.update(
+            eye=eye_id,
+            measurements={
+                key: value
+                for key, value in source.items()
+                if isinstance(value, (float, int)) and not isinstance(value, bool)
+            },
+            refraction=refractions[eye_id],
+            source_provenance={
+                key: source.get(key)
+                for key in (
+                    "field_provenance",
+                    "canonical_source_ids",
+                    "source_files",
+                    "table_verified_numeric_fields",
+                )
+            },
+            astigmatic_disparity=asdict(
+                astigmatic_disparity_from_plan(source, refractions[eye_id])
+            ),
+        )
+        eyes.append(result)
+    return {
+        "module": "KERATOCONUS",
+        "source_contexts": extracted.get("document_contexts", []),
+        "eyes": eyes,
+        "issues": list(dict.fromkeys(issues)),
+        "warnings": list(extracted.get("global_warnings") or [])
+        + warnings_for_extracted(extracted),
+        "patient": {
+            "name": next(
+                (
+                    c.get("patient_name")
+                    for c in extracted.get("document_contexts", [])
+                    if c.get("patient_name")
+                ),
+                None,
+            )
+        },
+        "notice": SCREENING_NOTICE,
+        "versions": {
+            "screening_policy": SCREENING_POLICY_VERSION,
+            "clinical_policy": CLINICAL_POLICY_VERSION,
+            "software": software_version or SOFTWARE_VERSION,
+            "deployment_sha": deployment_sha(),
+        },
     }

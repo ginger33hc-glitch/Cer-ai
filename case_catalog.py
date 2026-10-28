@@ -373,8 +373,8 @@ def install(core: Any, archive_runtime: Any) -> None:
             owner_deidentified = principal.role == "OWNER" and not _principal_created_entry(
                 principal, entry
             )
-            if entry.get("module") == "IOL" and kind != "pdf":
-                raise HTTPException(404, "IOL reports are available as PDF.")
+            if entry.get("module") in {"IOL", "KERATOCONUS"} and kind != "pdf":
+                raise HTTPException(404, "This module provides archived PDF reports only.")
             regenerated_summary = False
             if owner_deidentified:
                 from reports import build_conclusion_pdf, build_docx, build_pdf
@@ -384,7 +384,10 @@ def install(core: Any, archive_runtime: Any) -> None:
                     raise HTTPException(404, "Archived CER-AI canonical assessment not found.")
                 payload = archive_privacy.owner_assessment(assessment)
                 payload["locale"] = locale
-                if entry.get("module") == "IOL":
+                if entry.get("module") == "KERATOCONUS":
+                    from keratoconus_module.report import build_screening_pdf
+                    content = build_screening_pdf(payload)
+                elif entry.get("module") == "IOL":
                     from iol_module.archive import build_archived_iol_pdf
                     content = build_archived_iol_pdf(payload)
                 else:
