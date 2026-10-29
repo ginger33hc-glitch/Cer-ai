@@ -53,10 +53,12 @@ _PUBLIC_CANONICAL_BASE = os.getenv(
 _PUBLIC_CONTENT_LASTMOD = "2026-09-11"
 _INDEXNOW_KEY = "731d2001b05e7e15840a00e98f53447d"
 _PUBLIC_PAGE_LASTMOD = {
-    '/tr/keratokonus-tarama': "2026-10-28",
+    "/tr/learning-center": "2026-10-29",
+    "/learning-center": "2026-10-29",
+    '/tr/keratokonus-tarama': "2026-10-29",
     '/keratoconus-screening': "2026-10-28",
     "/about/huseyin-cengiz": "2026-10-11",
-    "/tr/korneal-ektazi-risk-degerlendirmesi": "2026-10-28",
+    "/tr/korneal-ektazi-risk-degerlendirmesi": "2026-10-29",
     "/": "2026-10-28",
     "/corneal-ectasia-risk-assessment": "2026-10-16",
     "/iol-calculation-software": "2026-10-17",
@@ -68,7 +70,7 @@ _PUBLIC_PAGE_LASTMOD = {
     "/what-is-recommended-for-corneal-ectasia-screening": "2026-09-30",
     "/corneal-ectasia-screening-systems": "2026-09-30",
     "/tr/korneal-ektazi-taramasi-onerileri": "2026-10-12",
-    "/tr/korneal-ektazi-tarama-sistemleri": "2026-10-12",
+    "/tr/korneal-ektazi-tarama-sistemleri": "2026-10-29",
 }
 _PUBLIC_PAGE_LAST_REVIEWED = {
     "/tr/korneal-ektazi-risk-degerlendirmesi": "2026-09-29",
@@ -88,11 +90,12 @@ _PUBLIC_PAGE_METADATA = {
     },
     '/tr/keratokonus-tarama': {
         "schema_type": "MedicalWebPage",
-        "title": "Keratokonus Tarama Testi, Programı ve Yazılımı | CER-AI",
-        "description": "CER-AI keratokonus tarama testi, programı ve yazılımı: refraksiyon ve Pentacam görüntüleriyle göz hekimine karar desteği, tarama sonucu ve paylaşılabilir PDF rapor.",
+        "title": "Keratokonus Tarama Testi | Pentacam Değerlendirmesi – CER-AI",
+        "description": "Keratokonus tarama testi nedir, nasıl yapılır? Kornea topografisi, Pentacam tomografisi ve sonuçların yorumu; göz hekimleri için CER-AI tarama yazılımı.",
         "about": "Keratokonus tarama programı",
         "in_language": "tr",
-        "alternate_path": "/keratoconus-screening"
+        "alternate_path": "/keratoconus-screening",
+        "citation": ["https://www.aao.org/eye-health/diseases/what-is-keratoconus", "https://doi.org/10.4274/tjo.galenos.2023.68188"]
     },
     "/tr/korneal-ektazi-risk-degerlendirmesi": {
         "schema_type": "MedicalWebPage",

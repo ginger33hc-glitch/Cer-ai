@@ -164,7 +164,7 @@ def test_sitemap_contains_only_public_discovery_pages():
         ) in text
         assert (
             "<loc>https://cer-ai.com/learning-center</loc>"
-                "<lastmod>2026-09-11</lastmod>"
+                "<lastmod>2026-10-29</lastmod>"
         ) in text
         for private_path in ("/app", "/analyze", "/assessment/", "/archive"):
             assert f"<loc>https://cer-ai.com{private_path}" not in text
