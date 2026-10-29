@@ -929,10 +929,11 @@ def render_hub(base: str, robots: str, locale: str = "en") -> str:
         "isPartOf": {"@id": f"{base}/#website"},
         "inLanguage": locale,
         "author": {"@id": f"{base}/#clinical-author"},
-        "dateModified": "2026-09-11",
+        "dateModified": "2026-10-29",
         "copyrightHolder": {"@type": "Person", "name": "Hüseyin Cengiz, M.D."},
         "copyrightYear": 2026,
     }
+    screening_link = ('<p><a href="/tr/keratokonus-tarama">Keratokonus tarama testi: nasıl yapılır, sonuçlar nasıl yorumlanır?</a></p>' if locale == "tr" else '<p><a href="/keratoconus-screening">Keratoconus screening: workflow and results</a></p>')
     cards = "".join(
         f'<article class="learning-card"><span>{escape(t.eyebrow)}</span><h2><a href="{_path(locale, f"/learning/{t.slug}")}">{escape(t.title)}</a></h2><p>{escape(t.description)}</p><a class="text-link" href="{_path(locale, f"/learning/{t.slug}")}">{curriculum[3]} <span aria-hidden="true">→</span></a></article>'
         for t in topics
@@ -950,7 +951,7 @@ def render_hub(base: str, robots: str, locale: str = "en") -> str:
     else:
         presentations = '''<section class="learning-section learning-alt"><div class="learning-wrap"><div class="learning-section-head"><p class="learning-kicker">Physician presentation</p><h2>CER-AI presentation examples</h2><p>Review the program logic, canonical data sources, independent risk channels, and procedure-specific decision workflow in a 20-slide deck.</p><div class="learning-actions"><a class="learning-button" href="/static/education/presentations/CER-AI_English_Physician_Presentation_2026-09-15_v1.pptx" download>Download English presentation</a><a class="learning-button secondary" href="/static/education/presentations/CER-AI_Turkce_Hekim_Tanitimi_2026-09-15_v5.pptx" download>Download Turkish presentation</a></div></div></div></section>'''
     return f"""<!doctype html><html lang="{locale}"><head>{_head(base, path, title, description, robots, schema, locale)}</head><body>{_nav(locale, path)}<main>
-<section class="learning-hero"><div class="learning-wrap">{_breadcrumb(breadcrumb)}<p class="learning-kicker">{hero[0]}</p><h1>{hero[1]}</h1><p class="learning-lead">{hero[2]}</p><div class="learning-principle"><strong>{boundary[0]}</strong><span>{boundary[1]}</span></div></div></section>
+<section class="learning-hero"><div class="learning-wrap">{_breadcrumb(breadcrumb)}<p class="learning-kicker">{hero[0]}</p><h1>{hero[1]}</h1><p class="learning-lead">{hero[2]}</p>{screening_link}<div class="learning-principle"><strong>{boundary[0]}</strong><span>{boundary[1]}</span></div></div></section>
 <section class="learning-section"><div class="learning-wrap"><div class="learning-section-head"><p class="learning-kicker">{curriculum[0]}</p><h2>{curriculum[1]}</h2><p>{curriculum[2]}</p></div><div class="learning-grid">{cards}</div></div></section>
 {presentations}
 <section class="learning-section learning-alt"><div class="learning-wrap"><div class="learning-section-head"><p class="learning-kicker">{case_head[0]}</p><h2>{case_head[1]}</h2><p>{case_head[2]}</p></div><div class="learning-grid case-grid">{_case_cards(locale)}</div></div></section>
