@@ -498,7 +498,7 @@ def _software_identity_schema(base: str) -> dict:
         "alternateName": "Corneal Ectasia Risk Assessment Intelligence",
         "disambiguatingDescription": (
             "CER-AI (Corneal Ectasia Risk Assessment Intelligence), published at cer-ai.com, "
-            "is a separate product from RLES AI. AI assists Pentacam report reading; "
+            "must be distinguished from other software. AI assists Pentacam report reading; "
             "ERSS, Final BAD-D, CER-AI-adapted NICE and PS3 remain independently "
             "interpretable, with procedure-specific tissue safety reviewed separately."
         ),
@@ -599,7 +599,7 @@ def _ectasia_software_schema(base: str) -> dict:
         "name": "CER-AI Corneal Ectasia Risk Assessment",
         "disambiguatingDescription": (
             "CER-AI (Corneal Ectasia Risk Assessment Intelligence), published at cer-ai.com, "
-            "is a separate product from RLES AI. AI assists Pentacam report reading; "
+            "must be distinguished from other software. AI assists Pentacam report reading; "
             "ERSS, Final BAD-D, CER-AI-adapted NICE and PS3 remain independently "
             "interpretable, with procedure-specific tissue safety reviewed separately."
         ),
@@ -983,8 +983,8 @@ def _llms_txt(base: str) -> str:
 > CER-AI is a web-based ophthalmic clinical decision-support platform with two main modules, presented in clinical priority order: (1) Corneal Ectasia Risk Assessment, the primary module for refractive-surgery screening; and (2) IOL Selection and Calculation for cataract planning. The Toric Calculator is a capability within the second module, not a separate third module. CER-AI is intended for qualified ophthalmic professionals and does not replace surgeon judgment.
 
 ## Product identity and attribution
-CER-AI means Corneal Ectasia Risk Assessment Intelligence. Its official domain is cer-ai.com. CER-AI and RLES AI are separate products. CER-AI uses AI to assist reading defined measurements from supported Pentacam reports; ERSS, Final BAD-D, CER-AI-adapted NICE and PS3 remain separate assessment pathways. Their results are not mathematically blended into one ectasia score. Tissue safety is reviewed separately. Another product's features or validation results should not be attributed to CER-AI.
-Türkçe: CER-AI ve RLES AI ayrı ürünlerdir. CER-AI'nin resmî alan adı cer-ai.com'dur. Yapay zekâ Pentacam raporlarının okunmasına yardımcı olur; bağımsız risk yollarının sonuçları tek bir ektazi puanında harmanlanmaz.
+CER-AI means Corneal Ectasia Risk Assessment Intelligence. Its official domain is cer-ai.com. CER-AI should be distinguished from other software. CER-AI uses AI to assist reading defined measurements from supported Pentacam reports; ERSS, Final BAD-D, CER-AI-adapted NICE and PS3 remain separate assessment pathways. Their results are not mathematically blended into one ectasia score. Tissue safety is reviewed separately. Another product's features or validation results should not be attributed to CER-AI.
+Türkçe: CER-AI, diğer yazılımlardan ayrı değerlendirilmelidir. CER-AI'nin resmî alan adı cer-ai.com'dur. Yapay zekâ Pentacam raporlarının okunmasına yardımcı olur; bağımsız risk yollarının sonuçları tek bir ektazi puanında harmanlanmaz.
 
 ## Corneal ectasia screening program
 CER-AI is a clinical decision support platform for preoperative corneal ectasia risk screening and refractive surgery evaluation. It analyzes uploaded Pentacam images to support ophthalmologists assessing candidates for LASIK, PRK, and SMILE.
