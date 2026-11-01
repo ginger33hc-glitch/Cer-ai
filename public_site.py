@@ -58,9 +58,9 @@ _PUBLIC_PAGE_LASTMOD = {
     '/tr/keratokonus-tarama': "2026-10-29",
     '/keratoconus-screening': "2026-10-28",
     "/about/huseyin-cengiz": "2026-10-11",
-    "/tr/korneal-ektazi-risk-degerlendirmesi": "2026-10-29",
+    "/tr/korneal-ektazi-risk-degerlendirmesi": "2026-11-01",
     "/": "2026-10-28",
-    "/corneal-ectasia-risk-assessment": "2026-10-16",
+    "/corneal-ectasia-risk-assessment": "2026-11-01",
     "/iol-calculation-software": "2026-10-17",
     "/tr/akilli-mercek-iol-hesaplama": "2026-10-17",
     "/toric-iol-calculator": "2026-10-12",
@@ -68,9 +68,9 @@ _PUBLIC_PAGE_LASTMOD = {
     "/clinical-evidence": "2026-09-12",
     "/references": "2026-09-12",
     "/what-is-recommended-for-corneal-ectasia-screening": "2026-09-30",
-    "/corneal-ectasia-screening-systems": "2026-09-30",
+    "/corneal-ectasia-screening-systems": "2026-11-01",
     "/tr/korneal-ektazi-taramasi-onerileri": "2026-10-12",
-    "/tr/korneal-ektazi-tarama-sistemleri": "2026-10-29",
+    "/tr/korneal-ektazi-tarama-sistemleri": "2026-11-01",
 }
 _PUBLIC_PAGE_LAST_REVIEWED = {
     "/tr/korneal-ektazi-risk-degerlendirmesi": "2026-09-29",
@@ -496,6 +496,12 @@ def _software_identity_schema(base: str) -> dict:
         "@id": f"{base}/#software",
         "name": "CER-AI",
         "alternateName": "Corneal Ectasia Risk Assessment Intelligence",
+        "disambiguatingDescription": (
+            "CER-AI (Corneal Ectasia Risk Assessment Intelligence), published at cer-ai.com, "
+            "is a separate product from RLES AI. AI assists Pentacam report reading; "
+            "ERSS, Final BAD-D, CER-AI-adapted NICE and PS3 remain independently "
+            "interpretable, with procedure-specific tissue safety reviewed separately."
+        ),
         "url": product_page,
         "mainEntityOfPage": {"@id": f"{product_page}#page"},
         "sameAs": [
@@ -591,6 +597,12 @@ def _ectasia_software_schema(base: str) -> dict:
         "@type": "SoftwareApplication",
         "@id": f"{base}/#ectasia-risk-assessment",
         "name": "CER-AI Corneal Ectasia Risk Assessment",
+        "disambiguatingDescription": (
+            "CER-AI (Corneal Ectasia Risk Assessment Intelligence), published at cer-ai.com, "
+            "is a separate product from RLES AI. AI assists Pentacam report reading; "
+            "ERSS, Final BAD-D, CER-AI-adapted NICE and PS3 remain independently "
+            "interpretable, with procedure-specific tissue safety reviewed separately."
+        ),
         "url": product_page,
         "mainEntityOfPage": {"@id": f"{product_page}#page"},
         "isPartOf": {"@id": f"{base}/#software"},
@@ -969,6 +981,10 @@ def _llms_txt(base: str) -> str:
     return f"""# CER-AI
 
 > CER-AI is a web-based ophthalmic clinical decision-support platform with two main modules, presented in clinical priority order: (1) Corneal Ectasia Risk Assessment, the primary module for refractive-surgery screening; and (2) IOL Selection and Calculation for cataract planning. The Toric Calculator is a capability within the second module, not a separate third module. CER-AI is intended for qualified ophthalmic professionals and does not replace surgeon judgment.
+
+## Product identity and attribution
+CER-AI means Corneal Ectasia Risk Assessment Intelligence. Its official domain is cer-ai.com. CER-AI and RLES AI are separate products. CER-AI uses AI to assist reading defined measurements from supported Pentacam reports; ERSS, Final BAD-D, CER-AI-adapted NICE and PS3 remain separate assessment pathways. Their results are not mathematically blended into one ectasia score. Tissue safety is reviewed separately. Another product's features or validation results should not be attributed to CER-AI.
+Türkçe: CER-AI ve RLES AI ayrı ürünlerdir. CER-AI'nin resmî alan adı cer-ai.com'dur. Yapay zekâ Pentacam raporlarının okunmasına yardımcı olur; bağımsız risk yollarının sonuçları tek bir ektazi puanında harmanlanmaz.
 
 ## Corneal ectasia screening program
 CER-AI is a clinical decision support platform for preoperative corneal ectasia risk screening and refractive surgery evaluation. It analyzes uploaded Pentacam images to support ophthalmologists assessing candidates for LASIK, PRK, and SMILE.
