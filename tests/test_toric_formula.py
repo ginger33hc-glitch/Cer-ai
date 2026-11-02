@@ -121,3 +121,34 @@ def test_surgeon_incision_axis_changes_toric_optical_result():
     changed = research_toric_candidates(replace(eye, incision_axis_deg=90), "clareon-panoptix-toric-cnwtt3", **args)
     assert default == explicit
     assert changed != default
+
+
+@pytest.mark.parametrize("family", list(__import__('iol_module.toric_catalog', fromlist=['VERIFIED_LENS_STEPS']).VERIFIED_LENS_STEPS))
+def test_surgeon_policy_steps_down_catalog_and_recomputes_at_shifted_axis(family):
+    from iol_module.toric_catalog import VERIFIED_LENS_STEPS
+    eye = ToricBiometry(24.01, 43.10, 44.53, 14, -6.30, -6.50, 167.4, 520, 119.20, .25, 180)
+    args = dict(spherical_equivalent_iol_d=20, spherical_predicted_refraction_d=-.35)
+    raw = research_toric_candidates(eye, family, **args)
+    adjusted = research_toric_candidates(eye, family, apply_surgeon_adjustment=True, **args)
+    series = sorted(VERIFIED_LENS_STEPS[family], key=VERIFIED_LENS_STEPS[family].get)
+    assert adjusted[0].model == series[max(0, series.index(raw[0].model)-1)]
+    assert len({x.model for x in adjusted}) == len(raw)
+    for candidate in adjusted:
+        original = next(x for x in raw if x.model == candidate.model)
+        assert candidate.marker_axis_deg == pytest.approx((original.marker_axis_deg+2.5)%180)
+        assert candidate.original_preferred_model == raw[0].model
+        assert candidate.residual_spectacle_cylinder_d >= original.residual_spectacle_cylinder_d - 1e-6
+    if family == 'clareon-vivity-toric-cnwet2':
+        assert raw[0].model == 'CNWET4'
+        assert adjusted[0].model == 'CNWET3'
+        assert adjusted[0].marker_axis_deg == pytest.approx(107.1)
+        assert adjusted[0].residual_spectacle_cylinder_d > .70
+
+
+def test_surgeon_policy_floor_and_axis_wrap():
+    eye = ToricBiometry(24, 43, 43, 0, -5.8, -5.8, 0, 550, 119.1, sia_d=0)
+    args = dict(spherical_equivalent_iol_d=20, spherical_predicted_refraction_d=0)
+    raw = research_toric_candidates(eye, 'clareon-vivity-toric-cnwet2', **args)
+    adjusted = research_toric_candidates(eye, 'clareon-vivity-toric-cnwet2', apply_surgeon_adjustment=True, **args)
+    assert raw[0].model == adjusted[0].model == 'CNWET3'
+    assert all(0 <= x.marker_axis_deg < 180 for x in adjusted)

@@ -198,12 +198,16 @@ class ToricResearchResult:
     residual_spectacle_cylinder_d: float
     residual_spectacle_axis_deg: float
     elp_mm: float
+    original_marker_axis_deg: float | None = None
+    original_preferred_model: str | None = None
+    adjustment_policy: str | None = None
 
 
 def research_toric_candidates(
     eye: ToricBiometry, selected_lens_id: str,
     *, spherical_equivalent_iol_d: float,
     spherical_predicted_refraction_d: float,
+    apply_surgeon_adjustment: bool = False,
 ) -> list[ToricResearchResult]:
     """Spherical-formula-anchored thick-cornea/Holladay-ELP optical prototype.
 
@@ -269,6 +273,7 @@ def research_toric_candidates(
     incoming = propagate_to_iol(target)
     retinal_scalar = incoming.equivalent_d + spherical_equivalent_iol_d
     results = []
+    adjusted_results = []
     for model, cylinder in steps.items():
         def spectacle_residual(axis_deg: float) -> Vergence:
             lens = Vergence.from_meridians(
@@ -284,5 +289,25 @@ def research_toric_candidates(
         results.append(ToricResearchResult(
             model, spherical_equivalent_iol_d, cylinder, best_axis,
             refraction.cylinder_d, refraction.axis_deg, elp_mm))
-    return sorted(results, key=lambda result: (result.residual_spectacle_cylinder_d,
+        if apply_surgeon_adjustment:
+            adjusted_axis = (best_axis + 2.5) % 180
+            adjusted_refraction = spectacle_residual(adjusted_axis)
+            adjusted_results.append(ToricResearchResult(
+                model, spherical_equivalent_iol_d, cylinder, adjusted_axis,
+                adjusted_refraction.cylinder_d, adjusted_refraction.axis_deg, elp_mm,
+                original_marker_axis_deg=best_axis,
+                adjustment_policy="SURGEON_ONE_STEP_LOWER_AXIS_PLUS_2_5_V1"))
+    ranked = sorted(results, key=lambda result: (result.residual_spectacle_cylinder_d,
                                                 result.cylinder_iol_d))
+    if not apply_surgeon_adjustment:
+        return ranked
+    # Owner/surgeon-requested empirical policy, NOT an ESCRS-validated formula.
+    # Step down by documented cylinder strength, never by model-name suffix.
+    # Preserve the raw preference for audit and keep the published core unchanged.
+    from dataclasses import replace
+    ordered = sorted(steps, key=lambda model: steps[model])
+    preferred = ordered[max(0, ordered.index(ranked[0].model) - 1)]
+    adjusted_results = [replace(value, original_preferred_model=ranked[0].model)
+                        for value in adjusted_results]
+    return sorted(adjusted_results, key=lambda value: (
+        value.model != preferred, value.residual_spectacle_cylinder_d, value.cylinder_iol_d))

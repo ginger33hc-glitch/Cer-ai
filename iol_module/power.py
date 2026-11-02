@@ -328,6 +328,7 @@ def plan_iol_power(case: IOLPowerPlanInput) -> IOLPowerPlan:
                         ), lens.id,
                         spherical_equivalent_iol_d=best[0]["IOL"],
                         spherical_predicted_refraction_d=best[0]["Rx"],
+                        apply_surgeon_adjustment=True,
                     )
                 except (ValueError, ZeroDivisionError, OverflowError) as exc:
                     toric_status = "CALCULATION_UNAVAILABLE"
