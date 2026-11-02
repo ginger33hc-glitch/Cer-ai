@@ -37,6 +37,8 @@
     "Target refraction":"Hedef refraksiyon",
     "Cornea Back — review source measurements":"Arka kornea — kaynak ölçümleri kontrol edin",
     "Read the source images before transferring to ESCRS.":"ESCRS’ye aktarmadan önce kaynak görüntüleri okuyun.",
+    "Review K1/K2 powers and axes against the same-eye IOLMaster report, then retry.":"K1/K2 güç ve akslarını aynı gözün IOLMaster raporuyla karşılaştırın. Yukarıdaki düzenlenebilir alanlarda düzeltip yeniden deneyin. ESCRS için akslar tam sayı ve 90° aralıklı olmalıdır.",
+    "IOLMaster K1/K2 must identify approximately orthogonal flat/steep axes.":"IOLMaster K1/K2 güç ve akslarını kontrol edin. K1 düz, K2 dik meridyen olmalı; akslar yaklaşık 90° aralıklı olmalıdır. Aks alanlarını kaynak rapora göre düzeltebilirsiniz.",
     "Cornea Back K axes must be approximately orthogonal.":"Arka kornea K1 ve K2 aksları yaklaşık 90° aralıklı olmalıdır. Okunan aksları aynı gözün Pentacam Cornea Back paneliyle karşılaştırıp aşağıdaki alanlarda düzeltin.",
     "Cornea Back signed K1 must be no more negative than K2.":"Arka kornea K1/K2 değerlerinin eksi işaretini ve sırasını Pentacam Cornea Back panelinden kontrol edin; K1, K2’den daha negatif olmamalıdır.",
     "Measurements transferred. Select the lens and surgical settings in ESCRS.":"Ölçümler aktarıldı. Lens ve cerrahi ayarları ESCRS’de seçin.",

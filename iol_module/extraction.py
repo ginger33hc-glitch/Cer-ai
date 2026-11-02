@@ -102,6 +102,10 @@ Transcribe AL, K1 and axis, K2 and axis, and ACD separately for OD and OS. Set t
 edited marker only when an asterisk is printed. Transcribe lens thickness only if explicitly
 printed. Preserve device version, printed formula and target when readable. IOLMaster K1/K2
 and axes are the sole source for the toric trigger.
+Read each K axis only after the @ symbol on its own K1 or K2 row in the same-eye
+upper biometry block. The Cyl. axis is NOT the K2 axis; never copy it to both K
+rows. Keep every digit (including leading 1 in three-digit axes). If either
+printed axis is unclear, return null for that field; never force a 90-degree pair.
 
 For unreadable recognized-document fields return null and add the fully qualified key to
 unreadable_fields.

@@ -50,6 +50,11 @@
   }
   function escrsTransferPayload() {
     if (!loadedEyes.length) throw new Error("Read the source images before transferring to ESCRS.");
+    for (const eye of loadedEyes) {
+      if (!controllers.get(eye).reviewKeratometry(true)) {
+        throw new Error(`${eye}: ${tr("Review K1/K2 powers and axes against the same-eye IOLMaster report, then retry.")}`);
+      }
+    }
     const measurements = Object.fromEntries(loadedEyes.map(eye => [eye, controllers.get(eye).transferMeasurements()]));
     return {
       biological_sex: $("biologicalSex").value,
@@ -250,6 +255,21 @@
     return true;
   }
 
+  function reviewKeratometry(transfer = false) {
+    const k1 = numberOrNull("k1"), k2 = numberOrNull("k2");
+    const a1 = numberOrNull("k1Axis"), a2 = numberOrNull("k2Axis");
+    let invalid = null;
+    if (k1 === null || k2 === null || k1 > k2) invalid = $("k1");
+    else if (a1 === null || a1 < 0 || a1 > 180) invalid = $("k1Axis");
+    else if (a2 === null || a2 < 0 || a2 > 180) invalid = $("k2Axis");
+    else if (transfer && !Number.isInteger(a1)) invalid = $("k1Axis");
+    else if (transfer && !Number.isInteger(a2)) invalid = $("k2Axis");
+    else if (Math.abs(Math.abs(a2 - a1) - 90) > (transfer ? 0 : 5)) invalid = $("k2Axis");
+    if (!invalid) return true;
+    revealRequiredField(invalid);
+    return false;
+  }
+
   function populateEye() {
     const eye = $("eye").value;
     const bio = originals[eye];
@@ -261,7 +281,7 @@
       setIfPresent("k1Axis", bio.k1_axis_deg); setIfPresent("k2", bio.k2_d);
       setIfPresent("k2Axis", bio.k2_axis_deg); setIfPresent("lensThickness", bio.lens_thickness_mm);
       $("alMarker").textContent = bio.axial_length_edited_marker ? "IOLMaster printed an edited-value (*) marker; retained for visibility." : "";
-      $("al").readOnly = Number.isFinite(bio.axial_length_mm); $("k1Axis").readOnly = Number.isFinite(bio.k1_axis_deg); $("k2Axis").readOnly = Number.isFinite(bio.k2_axis_deg);
+      $("al").readOnly = Number.isFinite(bio.axial_length_mm); $("k1Axis").readOnly = false; $("k2Axis").readOnly = false;
     }
     if (pentacam) {
       setIfPresent("hoa", pentacam.total_corneal_hoa_4mm_um); setIfPresent("kappa", pentacam.angle_kappa_mm);
@@ -391,6 +411,10 @@
     }
     if (!document.getElementById("patientForm").reportValidity() || !$("iolForm").reportValidity()) return false;
     const status = $("powerStatus"); status.className="status"; const difference = kDifference();
+    if (requiresRegularity(difference) && $("astigType").value === "REGULAR" && !reviewKeratometry()) {
+      status.textContent = tr("Review K1/K2 powers and axes against the same-eye IOLMaster report, then retry.");
+      return false;
+    }
     const corneaBack = corneaBackByEye[$("eye").value];
     if (corneaBack) posteriorFields.forEach(key => {
       if (!$("back_field_"+key).hidden) {
@@ -489,7 +513,7 @@
     $("iolForm").addEventListener("submit", event => { event.preventDefault(); runLoadedEyes("recommend"); });
     $("powerButton").addEventListener("click", calculate);
     return {
-      evaluate, recommend, calculate, invalidate,
+      evaluate, recommend, calculate, invalidate, reviewKeratometry,
       evaluated: () => recommendation !== null,
       recommendationShown: () => recommendationShown,
       readyToRecommend: () => $("iolForm").checkValidity(),
