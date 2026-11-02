@@ -68,7 +68,7 @@ const source=fs.readFileSync('static/iol.js','utf8');
 const start=source.indexOf('  function escrsTransferPayload()');
 const end=source.indexOf('  function syncWorkflow()',start);
 let current={OD:{axial_length_mm:23.1},OS:{axial_length_mm:25.2}};
-const context={loadedEyes:['OD','OS'],controllers:new Map(['OD','OS'].map(eye=>[eye,{transferMeasurements:()=>current[eye]}])), $:()=>({value:'Female'})};
+const context={loadedEyes:['OD','OS'],controllers:new Map(['OD','OS'].map(eye=>[eye,{reviewKeratometry:()=>true,transferMeasurements:()=>current[eye]}])), $:()=>({value:'Female'})};
 vm.createContext(context);vm.runInContext(source.slice(start,end),context);
 let payload=context.escrsTransferPayload();
 assert.equal(payload.right_eye.axial_length_mm,23.1);
