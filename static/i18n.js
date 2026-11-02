@@ -554,6 +554,7 @@
       .replace(/^([A-Z0-9]+) · ([\d.]+)° marker axis$/,"$1 · $2° işaretleme aksı")
       .replace(/^Predicted residual cylinder: ([\d.]+) D at ([\d.]+)° \(prototype estimate\)\.$/,"Tahmini rezidüel silindir: $1 D, $2° (prototip tahmini).")
       .replace(/^Eligible:\s*/,"Uygun: ")
+      .replace(/\bEDOF – Monofocal\b/g,"EDOF – Monofokal")
       .replace(/\bToric Multifocal\b/g,"Torik Multifokal")
       .replace(/\bToric Monofocal\b/g,"Torik Monofokal")
       .replace(/\bToric EDOF\b/g,"Torik EDOF")

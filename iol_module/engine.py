@@ -141,7 +141,9 @@ def evaluate_case(case: IOLCaseInput) -> IOLRecommendation:
         and case.astigmatism_type == AstigmatismType.REGULAR
         else "NON_TORIC"
     )
-    label = main.title().replace("Edof", "EDOF")
+    # Present the two non-multifocal categories explicitly; individual lens
+    # eligibility remains governed by the clinical rules above.
+    label = "Multifocal" if main == "MULTIFOCAL" else "EDOF – Monofocal"
     formatted = f"Toric {label}" if toric == "TORIC" else label
 
     explanation.append(

@@ -666,3 +666,21 @@ def test_lens_category_target_and_nearest_prediction(lens_id, target, acd):
     chosen = [r for r in result if r["IsBestOption"]]
     assert len(chosen) == 1
     assert chosen[0]["Rx"] == (0.05 if target == 0 else -0.22)
+
+
+@pytest.mark.parametrize("overrides", [
+    {"total_corneal_hoa_4mm_um": 0.51},
+    {"retina_status": "SIGNIFICANT"},
+    {"macular_pathology_present": True},
+    {"near_demand": "LOW"},
+    {"patient_age_years": 75},
+])
+@pytest.mark.parametrize("toric", [False, True])
+def test_non_multifocal_recommendation_names_both_categories(overrides, toric):
+    if toric:
+        overrides = {**overrides, "iolm500_k2_d": 44.0, "astigmatism_type": "REGULAR"}
+    recommendation = result(overrides)
+    expected = "Toric EDOF – Monofocal" if toric else "EDOF – Monofocal"
+    assert recommendation.formatted_recommendation == expected
+    if overrides.get("total_corneal_hoa_4mm_um") == 0.51 or overrides.get("retina_status") == "SIGNIFICANT":
+        assert recommendation.eligible_categories == ["MONOFOCAL"]
