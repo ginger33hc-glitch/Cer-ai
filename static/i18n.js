@@ -539,6 +539,7 @@
   const translate = value => {
     const text = String(value ?? "");
     if (locale !== "tr" || !text) return text;
+    if (text === "Residual: estimate based on surgeon-reported field calibration; retained from the original calculation.") return "Rezidüel: cerrahın bildirdiği saha kalibrasyonuna dayalı tahmin; özgün hesap değeri korunmuştur.";
     if (CLINICAL[text]) return CLINICAL[text];
     if (TR[text]) return TR[text];
     if (text.startsWith("ML7 ") && TR[text.slice(4)]) return `ML7 ${TR[text.slice(4)]}`;

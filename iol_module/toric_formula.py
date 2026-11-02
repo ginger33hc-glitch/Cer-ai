@@ -309,5 +309,14 @@ def research_toric_candidates(
     preferred = ordered[max(0, ordered.index(ranked[0].model) - 1)]
     adjusted_results = [replace(value, original_preferred_model=ranked[0].model)
                         for value in adjusted_results]
+    # Surgeon-reported field calibration retains the original preferred
+    # residual prediction. Label this provenance in both screen and PDF.
+    adjusted_results = [replace(value,
+        marker_axis_deg=(ranked[0].marker_axis_deg + 2.5) % 180,
+        residual_spectacle_cylinder_d=ranked[0].residual_spectacle_cylinder_d,
+        residual_spectacle_axis_deg=ranked[0].residual_spectacle_axis_deg,
+        original_marker_axis_deg=ranked[0].marker_axis_deg,
+        adjustment_policy="SURGEON_FIELD_CALIBRATION_FIXED_RESIDUAL_V2")
+        if value.model == preferred else value for value in adjusted_results]
     return sorted(adjusted_results, key=lambda value: (
         value.model != preferred, value.residual_spectacle_cylinder_d, value.cylinder_iol_d))

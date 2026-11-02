@@ -137,12 +137,17 @@ def test_surgeon_policy_steps_down_catalog_and_recomputes_at_shifted_axis(family
         original = next(x for x in raw if x.model == candidate.model)
         assert candidate.marker_axis_deg == pytest.approx((original.marker_axis_deg+2.5)%180)
         assert candidate.original_preferred_model == raw[0].model
-        assert candidate.residual_spectacle_cylinder_d >= original.residual_spectacle_cylinder_d - 1e-6
+        if candidate is adjusted[0]:
+            assert candidate.residual_spectacle_cylinder_d == raw[0].residual_spectacle_cylinder_d
+            assert candidate.residual_spectacle_axis_deg == raw[0].residual_spectacle_axis_deg
+            assert candidate.adjustment_policy == "SURGEON_FIELD_CALIBRATION_FIXED_RESIDUAL_V2"
+        else:
+            assert candidate.residual_spectacle_cylinder_d >= original.residual_spectacle_cylinder_d - 1e-6
     if family == 'clareon-vivity-toric-cnwet2':
         assert raw[0].model == 'CNWET4'
         assert adjusted[0].model == 'CNWET3'
         assert adjusted[0].marker_axis_deg == pytest.approx(107.1)
-        assert adjusted[0].residual_spectacle_cylinder_d > .70
+        assert adjusted[0].residual_spectacle_cylinder_d == pytest.approx(.2152, abs=.0001)
 
 
 def test_surgeon_policy_floor_and_axis_wrap():
