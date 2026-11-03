@@ -5,7 +5,8 @@ scoring status and can never change the CER-AI disposition.
 
 Source rules: the user-supplied Turkish ML7 reference (MED-LOGICS document
 200-0386, Rev. 22) plus the binding CER-AI temporal-default hinge rule and
-steep-meridian amendment for a K spread >4.00 D.
+steep-meridian amendment for a K spread >4.00 D and mandatory
+steep-axis alignment for all hyperopic LASIK plans.
 """
 from dataclasses import asdict, dataclass, field
 from typing import Optional, Tuple
@@ -200,7 +201,20 @@ def plan_microkeratome(inp: MicrokeratomePlanningInput) -> MicrokeratomePlan:
     alternative_safety = "NOT_APPLICABLE"
 
     # Binding CER-AI rule: strict >4.00 D, not >=4.00 D.
-    if delta is not None and delta > 4.00:
+    if inp.hyperopic:
+        # Surgeon-defined CER-AI planning policy, independent of K spread.
+        # Never substitute a temporal default or an off-axis contingency.
+        hinge_location = None
+        if steep_axis is not None and 0 <= steep_axis <= 180:
+            steep_meridian_axis = steep_axis % 180.0
+            primary_hinge = f"Mandatory steep-axis hinge ({steep_meridian_axis:g}°)"
+            hinge_location = primary_hinge
+            if inp.superior_hinge_anatomically_possible is False and 60 <= steep_axis <= 120:
+                warnings.append("Mandatory steep-axis hinge is anatomically impractical; surgeon review required. No off-axis alternative was generated.")
+        else:
+            primary_hinge = "Mandatory steep-axis hinge: confirm the steep K axis"
+            warnings.append("Hyperopic LASIK requires a verified steep K axis (0-180°); enter or confirm the axis to complete hinge planning.")
+    elif delta is not None and delta > 4.00:
         if steep_axis is not None and 0 <= steep_axis <= 180:
             steep_meridian_axis = steep_axis % 180.0
             hinge_location, hinge_location_alternative = _hinge_location_for_steep_meridian(
@@ -257,7 +271,10 @@ def plan_microkeratome(inp: MicrokeratomePlanningInput) -> MicrokeratomePlan:
                 warnings.append("RSB/PTA inputs are incomplete; the +10 temporal/nasal contingency cannot be cleared.")
 
     if (inp.hyperopic or inp.mixed_cylinder) and hinge_low_k is not None and hinge_low_k <= 37:
-        notes.append("Active ML7 hinge rule triggered: hinge-site lowest K <=37 D; plan toward a higher-K temporal/nasal/superior direction or consider +10/+20 blade.")
+        if inp.hyperopic:
+            notes.append("Active ML7 hinge rule triggered: hinge-site lowest K <=37 D; review blade selection while maintaining mandatory steep-axis alignment.")
+        else:
+            notes.append("Active ML7 hinge rule triggered: hinge-site lowest K <=37 D; plan toward a higher-K temporal/nasal/superior direction or consider +10/+20 blade.")
         for blade in ("+10 blade", "+20 blade"):
             if blade not in blades:
                 blades.append(blade)
