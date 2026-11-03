@@ -1,4 +1,5 @@
 import pytest
+from clinical_core.disposition import STOP_DEFER, ASSESSMENT_INCOMPLETE
 
 from planning.microkeratome import MicrokeratomePlanningInput, plan_microkeratome
 
@@ -161,3 +162,56 @@ def test_hyperopic_low_hinge_k_rule():
     p = plan_microkeratome(base(hyperopic=True, hinge_site_lowest_k_d=37))
     assert "+10 blade" in p.blade_recommendations
     assert any("hinge-site lowest K" in n for n in p.notes)
+
+
+@pytest.mark.parametrize('axis', [0, 20, 45, 59.9, 90, 135, 180])
+@pytest.mark.parametrize('spread', [0.5, 4, 5])
+@pytest.mark.parametrize('status', ['PASS', STOP_DEFER, ASSESSMENT_INCOMPLETE])
+def test_hyperopic_hinge_always_uses_exact_steep_axis(axis, spread, status):
+    plan = plan_microkeratome(base(hyperopic=True, steep_axis_deg=axis,
+        steepest_k_d=42+spread, assessment_status=status,
+        superior_hinge_anatomically_possible=False))
+    assert plan.steep_meridian_axis_deg == axis % 180
+    assert plan.primary_hinge == f'Mandatory steep-axis hinge ({axis % 180:g}°)'
+    assert plan.hinge_location_preference == plan.primary_hinge
+    assert plan.alternative_hinge is None
+    assert plan.hinge_location_alternative is None
+    assert plan.assessment_gate == status
+
+
+@pytest.mark.parametrize('axis', [None, -1, 181, float('nan'), float('inf'), True])
+def test_hyperopic_missing_or_invalid_axis_never_defaults_temporal(axis):
+    plan = plan_microkeratome(base(hyperopic=True, steep_axis_deg=axis))
+    assert plan.steep_meridian_axis_deg is None
+    assert plan.hinge_location_preference is None
+    assert 'confirm' in plan.primary_hinge
+    assert any('enter or confirm' in w for w in plan.warnings)
+    assert plan.vacuum_ring_mm == 8.5
+
+
+def test_hyperopic_low_k_cannot_offer_off_axis_hinge():
+    plan = plan_microkeratome(base(hyperopic=True, steep_axis_deg=90,
+        hinge_site_lowest_k_d=37))
+    assert not any('higher-K temporal/nasal' in n for n in plan.notes)
+    assert plan.alternative_hinge is None
+
+
+def test_runtime_uses_canonical_k2_axis_for_hyperopic_lasik():
+    from canonical_runtime_service import _microkeratome_planning
+    from clinical_core.refraction import HYPEROPIC
+    result = _microkeratome_planning(
+        {'K1_D': 42, 'K2_D': 43, 'K2_axis_deg': 73, 'pachy_thinnest_um': 540},
+        {'procedure': 'LASIK', 'flap_um': 100, 'ablation_um': 60},
+        {'status': STOP_DEFER, 'intended_refractive_group': HYPEROPIC},
+    )
+    assert result['primary_hinge'] == 'Mandatory steep-axis hinge (73°)'
+    assert result['assessment_gate'] == STOP_DEFER
+
+
+def test_hyperopic_hinge_turkish_translation():
+    from cerai_i18n import translate_text
+    assert translate_text('Mandatory steep-axis hinge (73°)', 'tr') == 'Dik aksta zorunlu menteşe (73°)'
+    plan = plan_microkeratome(base(hyperopic=True))
+    assert 'doğrulayın' in translate_text(plan.primary_hinge, 'tr')
+    warning = next(w for w in plan.warnings if 'Hyperopic LASIK' in w)
+    assert 'Hipermetropik LASIK' in translate_text(warning, 'tr')
