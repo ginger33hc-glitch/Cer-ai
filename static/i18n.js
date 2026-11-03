@@ -496,6 +496,11 @@
     "Shared-image storage is unavailable.":"Paylaşılan görüntü depolama alanı kullanılamıyor.",
     "Canonical Pentacam values and provenance":"Kanonik Pentacam değerleri ve kökeni",
     "Canonical field":"Kanonik alan","Decision basis":"Karar dayanağı","Exact finding":"Kesin bulgu",
+    "Original LASIK tissue safety":"İlk LASIK doku güvenliği","Original LASIK ML7 calculations":"İlk LASIK ML7 hesaplamaları",
+    "Procedural safety only; scoring STOP remains binding.":"Yalnızca işlem güvenliğine göre plan seçimi; skorların DURDUR sonucu geçerliliğini korur.",
+    "ML7 parameters are calculations only; STOP or incomplete assessment remains in force.":"ML7 parametreleri yalnızca hesaplamadır; DURDUR veya eksik değerlendirme sonucu geçerliliğini korur.",
+    "OD: LASIK tissue safety failed. Now evaluating PRK.":"OD: LASIK doku güvenliği uygun bulunmadı. PRK değerlendiriliyor.",
+    "OS: LASIK tissue safety failed. Now evaluating PRK.":"OS: LASIK doku güvenliği uygun bulunmadı. PRK değerlendiriliyor.",
     "Procedural safety":"Prosedür güvenliği","Procedure planning":"Prosedür planlaması","Surgeon-completed values":"Cerrah tarafından tamamlanan değerler",
     "ML7 Preferred hinge location":"ML7 tercih edilen menteşe konumu","ML7 Vacuum pressure":"ML7 vakum basıncı","ML7 Vacuum ring":"ML7 vakum halkası","MMC guidance":"MMC yönlendirmesi",
   };
@@ -695,3 +700,4 @@
   };
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",initialize,{once:true});else initialize();
 })();
+

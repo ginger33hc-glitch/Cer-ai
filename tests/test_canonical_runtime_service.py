@@ -313,18 +313,16 @@ def test_astigmatic_disparity_does_not_redirect_safe_lasik_to_prk():
     assert 'lasik_assessment' not in eye
 
 
-def test_failed_lasik_automatically_evaluates_prk_and_retains_failed_assessment():
+def test_scoring_stop_retains_lasik_tissue_calculations_and_ml7():
     result = _evaluate(extracted=_case(_eye('OD', PPI_avg=1.3)))
     od, os = result['eyes']
-    assert od['lasik_assessment']['status'] == 'STOP-DEFER'
-    assert od['lasik_assessment']['report_payload']['procedure'] == 'LASIK'
-    assert od['report_payload']['procedure'] == 'PRK'
-    assert od['status'] == 'PASS'
-    assert od['values']['PRK_RST_um'] == 445
-    assert result['effective_eye_plans']['OD']['flap_um'] is None
-    assert result['procedure_transitions'][0]['message'] == 'OD: LASIK failed. Now evaluating PRK.'
+    assert od['status'] == 'STOP-DEFER'
+    assert od['report_payload']['procedure'] == 'LASIK'
+    assert od['values']['LASIK_RSB_um'] == 395
+    assert od['microkeratome_planning']['assessment_gate'] == 'STOP-DEFER'
+    assert result['procedure_transitions'] == []
     assert os['report_payload']['procedure'] == 'LASIK'
-    assert 'lasik_assessment' not in os
+    assert os['status'] == 'PASS'
 
 
 def test_490_to_499_exception_keeps_lasik_and_500_has_no_escalation():
@@ -347,28 +345,30 @@ def test_490_to_499_exception_keeps_lasik_and_500_has_no_escalation():
     assert result['procedure_transitions'] == []
 
 
-def test_other_system_caution_defers_lasik_and_evaluates_prk():
+def test_other_system_caution_defers_lasik_without_procedure_switch():
     extracted = _case(
         _eye('OD', pachy_thinnest_um=495, central_pachy_um=525, BAD_D=2.0),
         _eye('OS', pachy_thinnest_um=500, central_pachy_um=525),
     )
     result = _evaluate(extracted=extracted)
     od = result['eyes'][0]
-    assert od['lasik_assessment']['status'] == 'STOP-DEFER'
-    assert od['lasik_assessment']['report_payload']['ps3']['decision']['exception_applied'] is False
-    assert od['report_payload']['procedure'] == 'PRK'
-    assert result['procedure_transitions'][0]['from'] == 'LASIK'
+    assert od['status'] == 'STOP-DEFER'
+    assert od['report_payload']['ps3']['decision']['exception_applied'] is False
+    assert od['report_payload']['procedure'] == 'LASIK'
+    assert result['procedure_transitions'] == []
 
 
-def test_prk_fallback_keeps_shared_stops_and_missing_data():
+def test_scoring_stops_and_missing_data_do_not_trigger_prk():
     result = _evaluate(extracted=_case(_eye('OD', pachy_thinnest_um=498, PPI_avg=1.3,
                                            srax=None, srax_deg=None)))
     od = result['eyes'][0]
-    assert od['report_payload']['procedure'] == 'PRK'
+    assert od['report_payload']['procedure'] == 'LASIK'
     assert od['status'] == 'STOP-DEFER'
     assert not od['ps3']['complete']
     assert 'Randleman: SRAX' in od['missing']
     assert od['ps3']['moderate_count'] == 2
+
+    assert result['procedure_transitions'] == []
 
 
 def test_incomplete_lasik_does_not_trigger_prk_fallback():
@@ -394,7 +394,7 @@ def test_shared_pta_gate_in_direct_prk_and_automatic_transition(
         _eye('OS', pachy_thinnest_um=600, central_pachy_um=605),
     )
     result = _evaluate(extracted=extracted, plans={
-        'OD': _plan(requested_procedure, ablation_um=ablation,
+        'OD': _plan(requested_procedure, ablation_um=ablation, lasik_bc_ablation_um=ablation,
                     optical_zone_mm=6.5, transition_zone_mm=9.0),
         'OS': _plan(),
     })
@@ -442,3 +442,4 @@ def test_prk_missing_actual_hyperopic_ablation_cannot_clear_pta():
         assert eye['values']['PRK_PTA_percent'] is None
         assert eye['status'] == 'ASSESSMENT INCOMPLETE'
         assert any('ablation' in field for field in eye['missing'])
+

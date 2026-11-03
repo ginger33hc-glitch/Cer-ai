@@ -109,10 +109,11 @@ def test_ps3_runtime_one_moderate_defers_lasik_only():
     assert ps3["moderate_count"] == 1
     assert ps3["high_count"] == 0
     assert ps3["disposition"] == {"prk": "ALLOWED", "smile": "ALLOWED", "lasik": "DEFER"}
-    assert by_eye["OD"]["lasik_assessment"]["status"] == "STOP-DEFER"
-    assert by_eye["OD"]["status"] == "PASS"
-    assert result["effective_eye_plans"]["OD"]["procedure"] == "PRK"
-    assert result["status"] == "PASS"
+    assert by_eye["OD"]["status"] == "STOP-DEFER"
+    assert by_eye["OD"]["values"]["LASIK_RSB_um"] is not None
+    assert result["effective_eye_plans"]["OD"]["procedure"] == "LASIK"
+    assert result["procedure_transitions"] == []
+    assert result["status"] == "STOP-DEFER"
 
 
 def test_ps3_runtime_same_single_moderate_allows_prk():
@@ -172,3 +173,4 @@ def test_ps3_runtime_negative_i_s_prevents_false_srax_defer():
     assert "SRAX 20.5°" in item["detail"]
     assert by_eye["OD"]["ps3"]["disposition"]["prk"] == "ALLOWED"
     assert result["status"] != "STOP-DEFER"
+

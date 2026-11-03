@@ -179,6 +179,12 @@ TR = {
     "Planning item": "Planlama öğesi",
     "Procedure planning": "Cerrahi planlama",
     "Canonical result": "Hesaplanan sonuç",
+    "Original LASIK tissue safety": "İlk LASIK doku güvenliği",
+    "Original LASIK ML7 calculations": "İlk LASIK ML7 hesaplamaları",
+    "Procedural safety only; scoring STOP remains binding.": "Yalnızca işlem güvenliğine göre plan seçimi; skorların DURDUR sonucu geçerliliğini korur.",
+    "ML7 parameters are calculations only; STOP or incomplete assessment remains in force.": "ML7 parametreleri yalnızca hesaplamadır; DURDUR veya eksik değerlendirme sonucu geçerliliğini korur.",
+    "OD: LASIK tissue safety failed. Now evaluating PRK.": "OD: LASIK doku güvenliği uygun bulunmadı. PRK değerlendiriliyor.",
+    "OS: LASIK tissue safety failed. Now evaluating PRK.": "OS: LASIK doku güvenliği uygun bulunmadı. PRK değerlendiriliyor.",
     "Procedural safety": "Cerrahi güvenlik",
     "Interpretation": "Yorum",
     "Procedure disposition": "İşleme özgü karar",
@@ -671,3 +677,4 @@ def authorship_notice(locale: str) -> str:
         "Developed by Hüseyin Cengiz, MD. All rights reserved. "
         "Final responsibility rests with the surgeon at all times and under all circumstances."
     )
+

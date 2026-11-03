@@ -393,6 +393,15 @@ def _report_sections(report: Mapping[str, Any]) -> list[tuple[str, list[list[str
         for key, value in (report.get("microkeratome_planning") or {}).items()
     ])
     sections.append(("Procedure planning", planning_rows))
+    prior = report.get("prior_lasik_assessment") or {}
+    if prior:
+        sections.append(("Original LASIK tissue safety", [["Parameter", "Canonical result"]] + [
+            [key, _text(value)] for key, value in (prior.get("tissue_safety") or {}).items()
+        ]))
+        sections.append(("Original LASIK ML7 calculations", [["Parameter", "Canonical result"]] + [
+            ["Original LASIK ML7 " + key, _text(value)]
+            for key, value in (prior.get("microkeratome_planning") or {}).items()
+        ]))
 
     drivers = report.get("decision_drivers") or {}
     driver_rows = [["Level", "Canonical decision driver"]]
@@ -471,6 +480,14 @@ def _conclusion_eye_rows(report: Mapping[str, Any]) -> list[list[str]]:
             _text(prior_lasik_status),
             "; ".join(transition_details) or "Not documented",
         ])
+    prior = report.get("prior_lasik_assessment") or {}
+    if prior:
+        tissue = prior.get("tissue_safety") or {}
+        original_ml7 = prior.get("microkeratome_planning") or {}
+        rows.append(["Original LASIK tissue safety", _text(tissue.get("status")),
+                     f"RSB: {_text(tissue.get('LASIK_RSB_um'))} µm; PTA: {_text(tissue.get('LASIK_PTA_percent'))}%"])
+        rows.append(["Original LASIK ML7 calculations", _text(original_ml7.get("assessment_gate")),
+                     f"Ring: {_text(original_ml7.get('vacuum_ring_mm'))} mm; pressure: {_text(original_ml7.get('vacuum_pressure_mmhg'))} mmHg"])
     rows.extend([
         [
             "Randleman / ERSS",
@@ -877,3 +894,4 @@ def build_docx(payload: Mapping[str, Any]) -> bytes:
     field = OxmlElement("w:fldSimple"); field.set(qn("w:instr"), "PAGE"); page._p.append(field)
     for run in page.runs: run.font.size = Pt(6.2); run.font.color.rgb = RGBColor.from_string(GRAY)
     output = BytesIO(); document.save(output); return output.getvalue()
+

@@ -311,15 +311,15 @@ def test_ml7_planning_is_attached_directly_after_favorable_lasik():
     assert ml7["status_independent"] is True
 
 
-def test_upstream_stop_blocks_planning_before_candidate_evaluation():
+def test_upstream_stop_keeps_disposition_but_does_not_block_tissue_planning():
     _, by_eye = _evaluate(
         od_eye=_eye("OD", BAD_D=2.6),
         od_plan=_plan("LASIK", ablation_um=None),
     )
     assert by_eye["OD"]["status"] == "STOP-DEFER"
-    assert by_eye["OD"]["planning"]["selected_plan"] is None
-    assert by_eye["OD"]["planning"]["sequence"] == []
-    assert "microkeratome_planning" not in by_eye["OD"]
+    assert by_eye["OD"]["planning"]["selected_plan"] == "Plan A"
+    assert by_eye["OD"]["planning"]["sequence"][0]["procedural_safety"]["status"] == "PASS"
+    assert by_eye["OD"]["microkeratome_planning"]["assessment_gate"] == "STOP-DEFER"
 
 
 def test_upstream_stop_still_completes_requested_myopic_plan_rsb_for_full_report():
@@ -336,10 +336,11 @@ def test_upstream_stop_still_completes_requested_myopic_plan_rsb_for_full_report
     assert od["status"] == "STOP-DEFER"
     assert od["score"]["total"] is not None
     assert "RSB" not in od["score"]["missing"]
-    assert od["lasik_assessment"]["values"]["LASIK_RSB_um"] is not None
-    assert od["lasik_assessment"]["values"]["LASIK_PTA_percent"] is not None
+    assert od["values"]["LASIK_RSB_um"] is not None
+    assert od["values"]["LASIK_PTA_percent"] is not None
     assert result["effective_eye_plans"]["OD"]["ablation_source"] == "CERAI_MYOPIC_ESTIMATE"
-    assert od["planning"]["sequence"] == []
+    assert od["planning"]["selected_plan"] == "Plan A"
+    assert result["procedure_transitions"] == []
 
 
 def test_prk_never_receives_ml7_planning():
@@ -383,3 +384,4 @@ def test_supplemental_ablation_is_profile_specific_and_original_is_authoritative
     assert _candidate_ablation(plan, LASIK_PLANS[2], HYPEROPIC, 1.625)[0] == 35.
     del plan['lasik_bc_ablation_um']
     assert _candidate_ablation(plan, LASIK_PLANS[1], HYPEROPIC, 1.625)[0] is None
+

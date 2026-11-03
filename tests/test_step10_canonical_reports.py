@@ -47,10 +47,10 @@ def _plan():
     }
 
 
-def _payload(**od_overrides):
+def _payload(*, od_plan=None, **od_overrides):
     decision = evaluate_case(
         {"eyes": [_eye("OD", **od_overrides), _eye("OS")]}, 35,
-        {"OD": _plan(), "OS": _plan()},
+        {"OD": od_plan or _plan(), "OS": _plan()},
         {"eye_rubbing": "no", "family_history": "no",
          "pregnancy_nursing": "no", "collagen_tissue_disease": "no", "drug_usage": "no",
          "dry_eye": "no", "systemic_disease": "no"},
@@ -177,8 +177,8 @@ def test_ps3_report_uses_canonical_findings_and_exposes_exact_trigger():
     ppi = next(row for row in rows if row[0] == "ppi_average")
     assert ppi[1] == "MODERATE"
     assert "PPI Average 1.3 > 1.20" in ppi[2]
-    assert any(row[0] == "Procedure disposition" and row[1] == "PASS" for row in rows)
-    assert any(row[0] == "Procedure disposition" and "Raw PS3 PRK disposition: ALLOWED" in row[2] for row in rows)
+    assert any(row[0] == "Procedure disposition" and row[1] == "STOP-DEFER" for row in rows)
+    assert any(row[0] == "Procedure disposition" and "Raw PS3 LASIK disposition: DEFER" in row[2] for row in rows)
 
 
 def test_erss_ectatic_stop_is_explained_and_highlighted_in_owning_section():
@@ -292,7 +292,7 @@ def test_single_page_conclusion_uses_the_full_report_completion_gate():
 
 
 def test_single_page_conclusion_explains_lasik_to_prk_transition_from_canonical_reasons():
-    payload = _payload(pachy_thinnest_um=486)
+    payload = _payload(pachy_thinnest_um=600, od_plan=dict(_plan(), ablation_um=166, lasik_bc_ablation_um=166, optical_zone_mm=6.5, transition_zone_mm=9.0))
     od_report = payload["decision"]["eyes"][0]["report_payload"]
     assert od_report["procedure"] == "PRK"
 
@@ -304,9 +304,10 @@ def test_single_page_conclusion_explains_lasik_to_prk_transition_from_canonical_
 
     assert len(reader.pages) == 1
     assert "LASIK outcome / transition" in text
-    assert "OD: LASIK failed. Now evaluating PRK." in text
-    assert "The 490-499 µm isolated-thickness LASIK exception does not apply" in text
-    assert "thinnest pachymetry is 486 µm, below 490 µm" in text
+    assert "OD: LASIK tissue safety failed. Now evaluating PRK." in text
+    assert "lasik_pta" in text
+    assert "Original LASIK tissue safety" in text
+    assert "Original LASIK ML7 calculations" in text
 
 
 def test_full_report_rejects_incomplete_ps3_even_when_an_immediate_stop_exists():
@@ -330,3 +331,4 @@ def test_report_module_has_no_scorer_import_threshold_or_runtime_patch():
     assert "ps3_policy" not in source
     assert "SimpleDocTemplate.build =" not in source
     assert "reports._" not in source
+

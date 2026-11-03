@@ -298,32 +298,19 @@ def _candidate_ablation(plan, spec, intended_group, intended_mrse_d):
     return None, "ACTUAL_PLAN_MAX_ABLATION_REQUIRED"
 
 
-def _candidate_rejection_reasons(core_result, eligibility_missing=()):
-    reasons = _hard_stop_reasons(core_result.get("procedural_safety") or {})
-    reasons.extend(
-        reason for reason in _decision_reasons(core_result) if reason not in reasons
-    )
-    if reasons:
-        return tuple(reasons)
-    missing = _missing(core_result, eligibility_missing)
-    if missing:
-        return tuple(missing)
-    return (str(core_result.get("status") or ASSESSMENT_INCOMPLETE),)
+def _lasik_tissue_failure(planning):
+    """PRK fallback requires complete, explicitly failed LASIK tissue checks.
 
-
-def _preplanning_gate(core_result: Mapping[str, Any]):
-    """Finalize plan-independent findings before candidate evaluation.
-
-    ERSS and procedural safety depend on RSB/ablation and therefore must be
-    evaluated against each candidate by the canonical core. BAD-D, NICE, PS3,
-    and eligibility are already plan-independent and may block planning here.
+    Scoring STOP, non-tissue constraints and missing data cannot trigger it.
+    The values and thresholds remain owned by the canonical safety engine.
     """
-    findings = tuple(
-        finding
-        for finding in core_result.get("decision_findings") or ()
-        if getattr(finding, "key", None) not in {"randleman_erss", "procedural_safety"}
+    sequence = planning.get("sequence") or []
+    return len(sequence) == len(LASIK_PLANS) and all(
+        not (item.get("procedural_safety") or {}).get("missing")
+        and any((item.get("procedural_safety") or {}).get("hard_stops", {}).get(key)
+                for key in ("preop_thickness", "lasik_rsb", "lasik_pta"))
+        for item in sequence
     )
-    return finalize_disposition(findings)
 
 
 def _evaluate_lasik_planning(source_eye, resolved_plan, *, age_years, extracted, eligibility):
@@ -348,23 +335,6 @@ def _evaluate_lasik_planning(source_eye, resolved_plan, *, age_years, extracted,
             "rejection_reasons": [
                 "Actual maximum ablation must be zero or greater before LASIK planning."
             ],
-            "mmc_guidance": "NOT_APPLICABLE",
-        }
-        return preliminary_core, preliminary_plan, planning
-    upstream = _preplanning_gate(preliminary_core)
-    if upstream.status not in {PASS, PASS_WITH_CAUTION, CAUTION}:
-        reasons = [
-            finding.detail or finding.key
-            for finding in (
-                upstream.stop_drivers
-                + upstream.incomplete_drivers
-                + upstream.caution_drivers
-            )
-        ]
-        planning = {
-            "selected_plan": None,
-            "sequence": [],
-            "rejection_reasons": list(dict.fromkeys(reasons)),
             "mmc_guidance": "NOT_APPLICABLE",
         }
         return preliminary_core, preliminary_plan, planning
@@ -409,8 +379,11 @@ def _evaluate_lasik_planning(source_eye, resolved_plan, *, age_years, extracted,
             normalized, external_findings=eligibility.findings
         )
         status = str(core_result.get("status") or ASSESSMENT_INCOMPLETE)
-        safe = status in {PASS, PASS_WITH_CAUTION, CAUTION}
-        reasons = () if safe else _candidate_rejection_reasons(core_result, eligibility.missing)
+        safety = core_result.get("procedural_safety") or {}
+        safe = safety.get("status") in {PASS, PASS_WITH_CAUTION, CAUTION} and not safety.get("missing")
+        reasons = () if safe else tuple(
+            _hard_stop_reasons(safety) + list(safety.get("missing") or [])
+        )
         candidate_meta[spec["name"]] = {
             "candidate_plan": candidate,
             "status": status,
@@ -436,6 +409,7 @@ def _evaluate_lasik_planning(source_eye, resolved_plan, *, age_years, extracted,
             "safe": evaluation.safe,
             "rejection_reasons": list(evaluation.rejection_reasons),
             "status": meta["status"],
+            "procedural_safety": _plain(evaluation.result.get("procedural_safety") or {}),
             "flap_um": float(spec["flap_um"]),
             "optical_zone_mm": float(spec["optical_zone_mm"]),
             "transition_zone_mm": float(spec["transition_zone_mm"]),
@@ -446,6 +420,7 @@ def _evaluate_lasik_planning(source_eye, resolved_plan, *, age_years, extracted,
         "selected_plan": selected.selected_plan,
         "selected_plan_definition": lasik_plan_definition(selected.selected_plan),
         "selection_rule": LASIK_PLAN_SELECTION_RULE,
+        "selection_basis": "Procedural safety only; scoring STOP remains binding.",
         "sequence": sequence,
         "rejection_reasons": [],
         "mmc_guidance": "NOT_APPLICABLE",
@@ -465,6 +440,8 @@ def _evaluate_lasik_planning(source_eye, resolved_plan, *, age_years, extracted,
         if evaluated
         else preliminary_core
     )
+    if _lasik_tissue_failure(planning):
+        return core_result, dict(candidate_meta[evaluated[-1].plan]["candidate_plan"]), planning
     return core_result, dict(resolved_plan), planning
 
 
@@ -544,10 +521,10 @@ def _microkeratome_planning(
     effective_plan: Mapping[str, Any],
     core_result: Mapping[str, Any],
 ):
-    """Build the ML7 record directly after favorable canonical LASIK planning."""
+    """Calculate ML7 for requested LASIK without changing clinical disposition."""
     status = str(core_result.get("status") or ASSESSMENT_INCOMPLETE)
     procedure = str(effective_plan.get("procedure") or "").strip().upper()
-    if procedure != "LASIK" or status not in {PASS, PASS_WITH_CAUTION, CAUTION}:
+    if procedure != "LASIK":
         return None
 
     steep, flat, steep_axis = _keratometry(source_eye)
@@ -722,13 +699,14 @@ def evaluate_case(
         lasik_assessment = None
         transition_message = None
         astigmatic_disparity = astigmatic_disparity_from_plan(eye, plan).as_dict()
-        if procedure == "LASIK" and core_result.get("status") == STOP_DEFER:
+        if procedure == "LASIK" and _lasik_tissue_failure(planning):
             # Keep the complete original LASIK assessment; PRK starts from the requested
             # correction and optical zone, never the last rejected LASIK candidate.
             lasik_assessment = _virgin_eye_payload(
                 eye_name, eye, core_result, software_version,
                 eligibility_missing=eligibility.missing, eligibility_notes=eligibility.notes,
-                planning=planning, microkeratome_planning=None,
+                planning=_attach_selected_procedure_plan(planning, eye_name, effective_plans[eye_name], core_result),
+                microkeratome_planning=_microkeratome_planning(eye, effective_plans[eye_name], core_result),
                 astigmatic_disparity=astigmatic_disparity,
             )
             prk_plan = dict(plan, procedure="PRK", flap_um=None)
@@ -738,7 +716,7 @@ def evaluate_case(
             )
             core_result = evaluate_normalized_case(normalized, external_findings=eligibility.findings)
             planning = _non_lasik_planning("PRK", normalized, core_result)
-            transition_message = f"{eye_name}: LASIK failed. Now evaluating PRK."
+            transition_message = f"{eye_name}: LASIK tissue safety failed. Now evaluating PRK."
             planning["procedure_transition"] = transition_message
             planning["prior_lasik_status"] = STOP_DEFER
             planning["prior_lasik_reasons"] = list(lasik_assessment.get("reasons") or [])
@@ -768,6 +746,7 @@ def evaluate_case(
         ))
         if lasik_assessment is not None:
             results[-1]["lasik_assessment"] = lasik_assessment
+            results[-1]["report_payload"]["prior_lasik_assessment"] = lasik_assessment["report_payload"]
             results[-1]["warnings"].append(transition_message)
 
     overall_status = _overall_status(results) if results else ASSESSMENT_INCOMPLETE
@@ -877,3 +856,4 @@ def _evaluate_keratoconus_case(extracted, refractions, *, software_version=None)
             "deployment_sha": deployment_sha(),
         },
     }
+
