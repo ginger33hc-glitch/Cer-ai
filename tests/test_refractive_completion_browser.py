@@ -93,7 +93,7 @@ def test_completion_corrects_invalid_depth_and_reaches_report_without_reupload(b
             page.locator("#assessBtn").click()
             expect(page.locator("#assessmentProgress")).to_contain_text(reason)
             expect(page.locator("#assessmentProgress")).to_contain_text("OS")
-            expect(page.locator("#assessmentProgress")).to_contain_text("6.0")
+            expect(page.locator("#assessmentProgress")).to_contain_text("6,0" if locale == "tr" else "6.0")
             expect(field).to_be_focused()
             expect(field).to_have_attribute("aria-invalid", "true")
             expect(field).to_have_value(value)
