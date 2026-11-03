@@ -227,6 +227,9 @@ window.HCReadiness = class {
           input.value=this.overrides[item.eye]?.[item.key]??'';
         }
       }
+      if(input&&item.help&&item.kind==='form'){
+        const help=document.createElement('p');help.className='note';help.textContent=tr(item.help);row.append(help);
+      }
       if(input){this.hasCompletableInputs=true;input.required=true;input.id=`completion_${seen.size}`;label.htmlFor=input.id;row.append(input);}
       else {
         row.classList.add('completion-blocker');

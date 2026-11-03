@@ -96,6 +96,15 @@ class PlanningResult:
     sequence: tuple[PlanEvaluation, ...]
 
 
+def lasik_ablation_field(plan_name: str) -> str:
+    """Identify the device depth for each fixed optical/transition-zone profile."""
+    if plan_name == "Plan A":
+        return "lasik_a_ablation_um"
+    if plan_name in {"Plan B", "Plan C"}:
+        return "lasik_bc_ablation_um"
+    raise ValueError("Unknown LASIK plan")
+
+
 def lasik_plan_definition(plan_name: str) -> Optional[str]:
     """Return a display label derived from the one canonical plan registry."""
     spec = next((item for item in LASIK_PLANS if item["name"] == plan_name), None)

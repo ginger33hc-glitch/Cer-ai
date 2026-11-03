@@ -41,6 +41,7 @@ from clinical_core.planning import (
     estimate_smile_max_lenticule_um,
     mmc_guidance,
     lasik_plan_definition,
+    lasik_ablation_field,
     select_first_safe_lasik_plan,
 )
 from clinical_core.refraction import (
@@ -287,6 +288,9 @@ def _candidate_ablation(plan, spec, intended_group, intended_mrse_d):
     actual = _plan_number(plan, "max_ablation_um", "ablation_um")
     if actual is not None and _candidate_matches_actual_plan(plan, spec):
         return actual, str(plan.get("ablation_source") or "ENTERED_OR_ACTUAL_PLAN_MAX_ABLATION")
+    supplemental = _plan_number(plan, lasik_ablation_field(spec["name"]))
+    if supplemental is not None:
+        return supplemental, "SURGEON_ENTERED_ZONE_SPECIFIC_MAX_ABLATION"
     if intended_group == MYOPIC:
         estimated = estimate_myopic_ablation_um(intended_mrse_d, spec["optical_zone_mm"])
         if estimated is not None:

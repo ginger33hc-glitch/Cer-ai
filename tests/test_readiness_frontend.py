@@ -192,7 +192,7 @@ def test_patient_age_completion_uses_one_shared_field():
     html = (ROOT / 'static/index.html').read_text()
     translations = (ROOT / 'static/i18n.js').read_text()
     assert '<label>Patient age (years)</label>' in html
-    assert '/static/assessment-readiness.js?v=8' in html
+    assert '/static/assessment-readiness.js?v=9' in html
     assert 'Pentacam age unreadable; enter years' not in html
     assert 'Pentacam yaşı okunamadı; yıl olarak girin' not in translations
     assert item == {
@@ -271,3 +271,56 @@ def test_only_unread_fields_can_request_a_temporary_source_region():
     assert 'Pentacam/topography region the application could not read' in readiness
     assert '.completion-with-source>input,.completion-with-source>select{grid-column:2' in html
     assert '.completion-source-region{grid-column:1' in html
+
+
+def test_supplemental_ablation_serialization_and_edit_invalidation():
+    if not shutil.which('node'):
+        pytest.skip('Node is not available')
+    script = r'''
+const fs=require('fs'),vm=require('vm'),assert=require('assert');
+const html=fs.readFileSync('static/index.html','utf8');
+const fields={};
+for(const prefix of ['od','os'])for(const suffix of ['lasik_a_ablation_um','lasik_bc_ablation_um','ablation','procedure'])fields[`${prefix}_${suffix}`]={value:''};
+fields.os_procedure.value='LASIK';fields.os_ablation.value='40';
+const copies=[{value:'35',dataset:{sourceForm:'os_lasik_bc_ablation_um'}}];
+const ctx={window:{},document:{getElementById:id=>fields[id],querySelectorAll:selector=>selector.includes('os_lasik_bc_ablation_um')?copies:[]},
+ value:id=>fields[id]?.value||'',numberOrNull:id=>fields[id]?.value?Number(fields[id].value):null};
+vm.createContext(ctx);vm.runInContext(fs.readFileSync('static/assessment-readiness.js','utf8'),ctx);
+fields.os_lasik_bc_ablation_um.setCustomValidity=()=>{};
+const panel={replaceChildren(){},querySelectorAll:selector=>selector==='[data-source-form]'?copies:[]};
+const readiness=new ctx.window.HCReadiness(panel);readiness.collect();
+vm.runInContext(html.slice(html.indexOf('function plan(prefix)'),html.indexOf('function statusClass')),ctx);
+assert.equal(ctx.plan('os').ablation_um,40);assert.equal(ctx.plan('os').lasik_bc_ablation_um,35);
+vm.runInContext(html.slice(html.indexOf('function invalidateSupplementaryAblations'),html.indexOf("f.addEventListener('input',invalidateSupplementaryAblations)")),ctx);
+ctx.invalidateSupplementaryAblations({target:{id:'os_sphere'}});
+assert.equal(ctx.plan('os').lasik_bc_ablation_um,null);assert.equal(copies[0].value,'');
+assert.equal(ctx.plan('os').ablation_um,40);
+'''
+    subprocess.run(['node','-e',script],cwd=ROOT,check=True,capture_output=True,text=True)
+
+
+@pytest.mark.parametrize("width", [390, 1280])
+def test_zone_completion_browser_transfers_visible_answer(width):
+    import os
+    from playwright.sync_api import sync_playwright
+    with sync_playwright() as playwright:
+        executable = (os.environ.get("CERAI_CHROMIUM_EXECUTABLE") or shutil.which("google-chrome")
+                      or shutil.which("chromium") or playwright.chromium.executable_path)
+        if not Path(executable).is_file():
+            pytest.skip("Chromium unavailable")
+        browser = playwright.chromium.launch(executable_path=executable, args=["--no-sandbox"])
+        page = browser.new_page(viewport={"width": width, "height": 900})
+        page.set_content('<form><input id="os_ablation" value="40"><div hidden><input type="number" id="os_lasik_bc_ablation_um" min="0" step=".1"></div><div id="panel"></div></form>')
+        page.add_script_tag(content=(ROOT / "static/assessment-readiness.js").read_text())
+        page.evaluate("""() => {
+          window.readiness=new HCReadiness(document.getElementById('panel'));
+          readiness.show({assessment_token:'synthetic',workflow_status:'NEEDS_INPUT',input_requests:[{
+            eye:'OS',key:'lasik_bc_ablation_um',form_id:'os_lasik_bc_ablation_um',kind:'form',destination:'source',
+            label:'Plan B/C — OZ 6.0 / TZ 8.5',help:'Original depth retained.'}]});
+        }""")
+        page.locator('#completion_1').fill('35')
+        page.evaluate('readiness.collect()')
+        assert page.locator('#os_lasik_bc_ablation_um').input_value() == '35'
+        assert page.locator('#os_ablation').input_value() == '40'
+        assert page.locator('form').evaluate('(form)=>form.checkValidity()')
+        browser.close()
