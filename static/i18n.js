@@ -540,6 +540,7 @@
     const text = String(value ?? "");
     if (locale !== "tr" || !text) return text;
     if (text === "Residual: estimate based on surgeon-reported field calibration; retained from the original calculation.") return "Rezidüel: cerrahın bildirdiği saha kalibrasyonuna dayalı tahmin; özgün hesap değeri korunmuştur.";
+    if (text === "K1/K2 axes are not 90 degrees apart. Check both axes against the source; either may need correction.") return "K1/K2 aksları arasında 90 derece yok. İki aksı da kaynak ölçümle karşılaştırın; hangisinin düzeltileceğini kontrol edin.";
     if (CLINICAL[text]) return CLINICAL[text];
     if (TR[text]) return TR[text];
     if (text.startsWith("ML7 ") && TR[text.slice(4)]) return `ML7 ${TR[text.slice(4)]}`;

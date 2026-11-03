@@ -247,6 +247,7 @@
       $("siaAxis").value = $("incisionAxis").value;
       $("sia").value = "0.25";
     }
+    markAxisPair();
   }
   function focusMissingRegularity() {
     if (!$("astigType").required || $("astigType").value) return false;
@@ -255,7 +256,19 @@
     return true;
   }
 
+  function markAxisPair() {
+    const k1 = numberOrNull("k1"), k2 = numberOrNull("k2");
+    const a1 = numberOrNull("k1Axis"), a2 = numberOrNull("k2Axis");
+    const conflict = k1 !== null && k2 !== null && requiresRegularity(Math.abs(k2-k1)) &&
+      a1 !== null && a2 !== null && Math.abs(Math.abs(a2-a1)-90) > 0.000001;
+    for (const id of ["k1Axis", "k2Axis"]) {
+      $(id).classList.toggle("axis-pair-conflict", conflict);
+      $(id).setAttribute("aria-invalid", String(conflict));
+      $(id).title = conflict ? tr("K1/K2 axes are not 90 degrees apart. Check both axes against the source; either may need correction.") : "";
+    }
+  }
   function reviewKeratometry(transfer = false) {
+    markAxisPair();
     const k1 = numberOrNull("k1"), k2 = numberOrNull("k2");
     const a1 = numberOrNull("k1Axis"), a2 = numberOrNull("k2Axis");
     let invalid = null;
@@ -506,6 +519,7 @@
       syncWorkflow();
     }
     const invalidateFromEvent = event => {
+      markAxisPair();
       if (event.target.validity?.valid) event.target.classList.remove("field-attention");
       invalidate(!$("powerSection").contains(event.target) && !$("backCompletion").contains(event.target) && !$("lensThicknessField").contains(event.target));
     };
