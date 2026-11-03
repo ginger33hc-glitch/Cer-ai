@@ -3,6 +3,14 @@
   const stored = (localStorage.getItem("cerai-language") || "en").toLowerCase();
   const locale = stored === "tr" ? "tr" : "en";
   const TR = {
+    "Plan A maximum ablation — optical zone 6.5 mm / transition zone 9.0 mm":"Plan A maksimum ablasyonu — optik zon 6,5 mm / geçiş zonu 9,0 mm",
+    "Plan B/C maximum ablation — optical zone 6.0 mm / transition zone 8.5 mm":"Plan B/C maksimum ablasyonu — optik zon 6,0 mm / geçiş zonu 8,5 mm",
+    "Device treatment plan — Maximal Ablation":"Cihazın tedavi planı — maksimum ablasyon",
+    "Your original ablation entry is retained. Enter the actual device depth for the zones shown; do not copy a depth from different zones.":"İlk girdiğiniz ablasyon değeri korunuyor. Burada belirtilen zonlar için cihazın gerçek maksimum ablasyon değerini girin; farklı zonlara ait değeri kopyalamayın.",
+    "Maximum ablation depth":"Maksimum ablasyon derinliği",
+    "Safety":"Güvenlik",
+    "Surgeon treatment/refraction inputs":"Cerrahın tedavi/refraksiyon girdileri",
+    "Complete all decision-critical information before a clinical report can be produced.":"Klinik rapor oluşturulabilmesi için karar açısından gerekli tüm bilgileri tamamlayın.",
     "Keratoconus Screening":"Keratokonus Tarama",
     "Manifest refraction and Pentacam-based keratoconus screening.":"Refraksiyon ve Pentacam ile keratokonus taraması.",
     "Choose a clinical workflow to continue. Sign in if prompted.":"Devam etmek için bir klinik modül seçin. İstenirse giriş yapın.",

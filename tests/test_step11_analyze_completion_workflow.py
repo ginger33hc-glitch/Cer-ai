@@ -423,3 +423,36 @@ def test_repeated_positive_is_requires_signed_surgeon_input_before_report():
     assert response['workflow_status'] == 'READY'
     assert response['decision']['eyes'][0]['score']['category'] == 'NORMAL_SYMMETRIC'
     assert response['decision']['eyes'][0]['score']['rows']['topography'] == 0
+
+
+def test_hyperopic_lasik_completion_asks_for_fallback_zones_and_terminates():
+    # Complete Plan A data can fail ERSS; B/C have different treatment zones.
+    # Re-entering 40 into the original field previously repeated forever.
+    plan = _plan(ablation_um=40.0, optical_zone_mm=6.5, transition_zone_mm=9.0,
+                 manifest_entered_sphere_D=0.75, manifest_cylinder_signed_D=1.75,
+                 intended_entered_sphere_D=0.75, intended_cylinder_signed_D=1.75,
+                 intended_axis_deg=90.0)
+    session = {"extracted": {"eyes": [_eye("OD"), _eye("OS", pachy_thinnest_um=500)]},
+               "ready": None, "source_images": []}
+    args = (SimpleNamespace(APP_VERSION="test"), "token", session, 21)
+    plans = {"OD": _plan(), "OS": plan}
+    response = workflow._respond(*args, plans, _modifiers(), {"name": "Synthetic"}, {})
+    assert response["workflow_status"] == "NEEDS_INPUT"
+    requests = response["input_requests"]
+    assert [(item["eye"], item["key"]) for item in requests] == [("OS", "lasik_bc_ablation_um")]
+    assert "6.0 mm" in requests[0]["label"] and "8.5 mm" in requests[0]["label"]
+    assert response["effective_eye_plans"]["OS"]["ablation_um"] == 40
+    # A separately supplied device value applies only to B/C, without changing A.
+    plans["OS"] = dict(plan, lasik_bc_ablation_um=35.0)
+    response = workflow._respond(*args, plans, _modifiers(), {"name": "Synthetic"}, {})
+    assert response["workflow_status"] == "READY"
+    assert response["input_requests"] == []
+    assert response["decision"]["eyes"][1]["status"] != "ASSESSMENT INCOMPLETE"
+
+
+@pytest.mark.parametrize("value", [-1, float("nan"), float("inf"), True, "40"])
+def test_supplemental_device_depth_rejects_invalid_values(value):
+    from fastapi import HTTPException
+    with pytest.raises(HTTPException) as error:
+        _respond(plans={"OD": _plan(lasik_bc_ablation_um=value), "OS": _plan()})
+    assert error.value.status_code == 422

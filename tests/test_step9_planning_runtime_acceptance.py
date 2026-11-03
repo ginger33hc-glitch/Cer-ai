@@ -370,3 +370,16 @@ def test_ml7_accepts_explicit_surgeon_confirmed_hwtw_without_accepting_unverifie
     assert _horizontal_wtw(source) == 11.7
     source["surgeon_verified_numeric_fields"] = []
     assert _horizontal_wtw(source) is None
+
+
+def test_supplemental_ablation_is_profile_specific_and_original_is_authoritative():
+    from canonical_runtime_service import _candidate_ablation
+    from clinical_core.planning import LASIK_PLANS
+    from clinical_core.refraction import HYPEROPIC
+    plan = dict(ablation_um=40., optical_zone_mm=6.5, transition_zone_mm=9.,
+                lasik_bc_ablation_um=35., lasik_a_ablation_um=99.)
+    assert _candidate_ablation(plan, LASIK_PLANS[0], HYPEROPIC, 1.625)[0] == 40.
+    assert _candidate_ablation(plan, LASIK_PLANS[1], HYPEROPIC, 1.625)[0] == 35.
+    assert _candidate_ablation(plan, LASIK_PLANS[2], HYPEROPIC, 1.625)[0] == 35.
+    del plan['lasik_bc_ablation_um']
+    assert _candidate_ablation(plan, LASIK_PLANS[1], HYPEROPIC, 1.625)[0] is None

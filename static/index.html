@@ -133,8 +133,8 @@
 </main>
 <footer class="app-legal-footer">Developed by Hüseyin Cengiz, MD. All rights reserved. Final responsibility rests with the surgeon at all times and under all circumstances.</footer>
 
-<script src="/static/i18n.js?v=26"></script>
-<script src="/static/assessment-readiness.js?v=8"></script>
+<script src="/static/i18n.js?v=27"></script>
+<script src="/static/assessment-readiness.js?v=9"></script>
 <script>
 const i18n=window.CERAI_I18N;
 async function ceraiFetch(url,options={}){
@@ -179,6 +179,7 @@ const eyeTemplate = (eye) => `
   <p class="note">Intended treatment initially follows manifest refraction. An explicit zero cylinder also sets the intended cylinder and axis to zero; a nonzero cylinder requires an axis.</p>
   <div class="row"><label>Cylinder axis (degrees)</label><input id="${eye}_axis" type="number" step="1" min="0" max="180"></div>
   <div class="row"><label>Actual maximum ablation (µm) <span id="${eye}_ablation_requirement" class="note">— optional except mixed astigmatism</span></label><input id="${eye}_ablation" type="number" step=".1" min="0"></div>
+  <div hidden><input id="${eye}_lasik_a_ablation_um" type="number" step=".1" min="0"><input id="${eye}_lasik_bc_ablation_um" type="number" step=".1" min="0"></div>
   <div class="row"><label>Laser platform</label><input id="${eye}_platform" type="text" value="Alcon EX500" readonly aria-readonly="true"></div>
   <div class="row"><label>Planned LASIK flap (µm)</label><select id="${eye}_flap"><option value="">Select</option><option value="90">90 µm</option><option value="100" selected>100 µm</option><option value="110">110 µm</option><option value="120">120 µm</option></select></div>
   <div class="row"><label>SMILE platform</label><select id="${eye}_smile_platform"><option value="ZEISS_VISUMAX_500">ZEISS VisuMax 500</option><option value="ZEISS_VISUMAX_800">ZEISS VisuMax 800</option></select></div>
@@ -682,6 +683,8 @@ function plan(prefix){
   const procedure=value(`${prefix}_procedure`);
   return {
   prior:value(`${prefix}_prior`), procedure,
+  lasik_a_ablation_um:numberOrNull(`${prefix}_lasik_a_ablation_um`),
+  lasik_bc_ablation_um:numberOrNull(`${prefix}_lasik_bc_ablation_um`),
   manifest_entered_sphere_D:numberOrNull(`${prefix}_manifest_sphere`), manifest_cylinder_signed_D:numberOrNull(`${prefix}_manifest_cylinder`),
   intended_entered_sphere_D:numberOrNull(`${prefix}_sphere`), intended_cylinder_signed_D:numberOrNull(`${prefix}_cylinder`),
   entered_axis_deg:numberOrNull(`${prefix}_axis`),
@@ -868,6 +871,18 @@ wordBtn.addEventListener("click",()=>downloadReport("word"));
 conclusionPdfBtn.addEventListener("click",()=>downloadReport("conclusion"));
 shareConclusionBtn.addEventListener("click",shareConclusionReport);
 printBtn.addEventListener("click",()=>{if(lastReport&&!reportCard.hidden)window.print();});
+// Supplementary device depths belong to the correction for which they were entered.
+function invalidateSupplementaryAblations(event){
+  const match=/^(od|os)_(procedure|sphere|cylinder|axis|manifest_sphere|manifest_cylinder|ablation|optical|transition)$/.exec(event.target.id||'');
+  if(!match)return;
+  for(const suffix of ['lasik_a_ablation_um','lasik_bc_ablation_um']){
+    const id=`${match[1]}_${suffix}`;
+    document.getElementById(id).value='';
+    for(const copy of document.querySelectorAll(`[data-source-form="${id}"]`))copy.value='';
+  }
+}
+f.addEventListener('input',invalidateSupplementaryAblations);
+f.addEventListener('change',invalidateSupplementaryAblations);
 // A report belongs to its assessed inputs, never to subsequently edited form values.
 f.addEventListener('input',()=>{reportCard.hidden=true;lastReport=null;});
 f.addEventListener('change',()=>{reportCard.hidden=true;lastReport=null;});

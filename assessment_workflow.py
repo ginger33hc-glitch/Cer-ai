@@ -14,6 +14,7 @@ import secrets
 
 from fastapi import Body, HTTPException, Response
 
+from clinical_core.planning import lasik_ablation_field
 from canonical_readiness import evaluate_precore_readiness
 from canonical_runtime_service import evaluate_case
 from pentacam_field_registry import COMPLETION_NUMERIC_FIELDS
@@ -47,6 +48,7 @@ _SAFE_TRACE_KEYS = frozenset({
     *SELECT_FIELDS,
     EXAM_DATE_CONFIRMATION_KEY,
     "age", "patient_name", "contact_lens_type", "contact_lens_discontinuation_days",
+    "lasik_a_ablation_um", "lasik_bc_ablation_um",
     "prior", "procedure", "ablation_um", "flap_um", "max_lenticule_thickness_um", "smile_cap_um",
     "manifest_entered_sphere_D", "manifest_cylinder_signed_D", "manifest_axis_deg",
     "intended_sphere_D", "intended_cylinder_signed_D", "intended_axis_deg",
@@ -239,6 +241,35 @@ def planning_missing_items(decision, extracted):
             if not _finite(source_eye.get(field)):
                 items.append((eye_id, f"ML7 planning: {field}"))
     return list(dict.fromkeys(items))
+
+
+def _plan_ablation_requests(requests, decision):
+    """Ask for the missing candidate profile, never re-ask an accepted depth."""
+    by_eye = {item.get("eye"): item for item in decision.get("eyes") or []}
+    result = []
+    for request in requests:
+        eye = request.get("eye")
+        planning = ((by_eye.get(eye) or {}).get("report_payload") or {}).get("planning") or {}
+        pending = [item for item in planning.get("sequence") or []
+                   if item.get("ablation_source") == "ACTUAL_PLAN_MAX_ABLATION_REQUIRED"]
+        plan = (decision.get("effective_eye_plans") or {}).get(eye) or {}
+        has_original = any(_finite(plan.get(key)) for key in ("ablation_um", "max_ablation_um"))
+        if request.get("key") != "ablation_um" or not pending or not has_original:
+            result.append(request)
+            continue
+        seen = set()
+        for item in pending:
+            key = lasik_ablation_field(item["plan"])
+            if key in seen:
+                continue
+            seen.add(key)
+            label = ("Plan A maximum ablation — optical zone 6.5 mm / transition zone 9.0 mm"
+                     if key == "lasik_a_ablation_um" else
+                     "Plan B/C maximum ablation — optical zone 6.0 mm / transition zone 8.5 mm")
+            result.append({**request, "key": key, "form_id": f"{eye.lower()}_{key}",
+                           "label": label, "source_box": "Device treatment plan — Maximal Ablation",
+                           "help": "Your original ablation entry is retained. Enter the actual device depth for the zones shown; do not copy a depth from different zones."})
+    return result
 
 
 def _with_region(item, extracted):
@@ -741,6 +772,11 @@ def _respond(core, token, session, age, plans, modifiers, metadata, overrides, s
             raise HTTPException(422, "Clinical inputs must be objects.")
     if set(plans) - {"OD", "OS"} or any(not isinstance(value, dict) for value in plans.values()):
         raise HTTPException(422, "Plans must contain OD/OS objects.")
+    for eye_id, plan in plans.items():
+        for key in ("lasik_a_ablation_um", "lasik_bc_ablation_um"):
+            value = plan.get(key)
+            if value is not None and (not _finite(value) or value < 0):
+                raise HTTPException(422, f"{eye_id} {key}: enter a finite, nonnegative device depth.")
     metadata, identity_request = _resolve_patient_metadata(metadata, session["extracted"], age)
     session["patient_metadata"] = metadata
     overrides = deepcopy(overrides)
@@ -793,6 +829,8 @@ def _respond(core, token, session, age, plans, modifiers, metadata, overrides, s
     requests = _dedupe_requests([
         _request(eye, message, request_context) for eye, message in missing
     ])
+
+    requests = _plan_ablation_requests(requests, decision)
 
     response = {
         "assessment_token": token,
