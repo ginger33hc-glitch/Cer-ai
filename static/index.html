@@ -133,7 +133,7 @@
 </main>
 <footer class="app-legal-footer">Developed by Hüseyin Cengiz, MD. All rights reserved. Final responsibility rests with the surgeon at all times and under all circumstances.</footer>
 
-<script src="/static/i18n.js?v=27"></script>
+<script src="/static/i18n.js?v=28"></script>
 <script src="/static/assessment-readiness.js?v=10"></script>
 <script>
 const i18n=window.CERAI_I18N;
@@ -785,7 +785,7 @@ function renderEye(r){
   const selectedProcedureDetails=[selectedProcedure.selected_lasik_plan,selectedProcedure.optical_zone_mm==null?null:`OZ ${reportDisplayValue(selectedProcedure.optical_zone_mm)} mm`,selectedProcedure.transition_zone_mm==null?null:`TZ ${reportDisplayValue(selectedProcedure.transition_zone_mm)} mm`,selectedProcedure.flap_um==null?null:`Flap ${reportDisplayValue(selectedProcedure.flap_um)} µm`,selectedProcedure.ablation_um==null?null:`Ablation ${reportDisplayValue(selectedProcedure.ablation_um)} µm`].filter(Boolean).join(" — ");
   const planningEntries=Object.entries(p.planning||{}).filter(([key])=>!["selected_plan_definition","selected_procedure_plan"].includes(key)).map(([key,value])=>[planningLabels[key]||key,key==="selected_plan"?(p.planning?.selected_plan_definition||value):value]);
   const planningRows=[[selectedProcedureLabel,selectedProcedureDetails||p.procedure],...planningEntries,...Object.entries(p.microkeratome_planning||{}).map(([key,value])=>[`ML7 ${ml7Labels[key]||key}`,value])];
-  const greenPlanningRows=[...(selectedProcedure.status==="PASS"?[selectedProcedureLabel]:[]),...(p.planning?.selected_plan?["Selected LASIK plan","ML7 Preferred hinge location","ML7 Vacuum ring","ML7 Vacuum pressure"]:[])];
+  const greenPlanningRows=[...(selectedProcedure.status==="PASS"?[selectedProcedureLabel]:[]),...(p.planning?.selected_plan&&["PASS","PASS WITH CAUTION","CAUTION"].includes(r.status)?["Selected LASIK plan","ML7 Preferred hinge location","ML7 Vacuum ring","ML7 Vacuum pressure"]:[])];
   const driverRows=["stop","caution","incomplete"].flatMap(level=>(p.decision_drivers?.[level]||[]).map(item=>[level.toUpperCase(),item]));
   const sourceRows=Object.entries(p.source_values||{}).map(([key,value])=>[key,value,provenanceText(p.source_provenance?.[key])]);
   const correctionRows=(p.manual_corrections||[]).map(item=>[item.field,item.original,item.value,item.label]);
@@ -795,6 +795,7 @@ function renderEye(r){
     ${canonicalTable("NICE",["Component","Input","Points / disposition"],niceRows)}
     ${canonicalTable("PS3",["Factor","Status","Exact finding"],ps3Rows)}
     ${canonicalTable("Belin/Ambrósio BAD-D",["Parameter","Value","Interpretation"],badRows)}
+    ${r.lasik_assessment?canonicalTable("Original LASIK tissue safety",["Parameter","Canonical result"],Object.entries(r.lasik_assessment.report_payload?.tissue_safety||{}))+canonicalTable("Original LASIK ML7 calculations",["Parameter","Canonical result"],Object.entries(r.lasik_assessment.report_payload?.microkeratome_planning||{})):""}
     ${canonicalTable("Procedural safety",["Parameter","Canonical result","Exact finding"],safetyRows)}
     ${canonicalTable("Procedure planning",["Planning item","Canonical result"],planningRows,greenPlanningRows)}
     ${canonicalTable("Decision basis",["Level","Canonical decision driver"],driverRows)}

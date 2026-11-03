@@ -212,7 +212,7 @@ def missing_items(decision, extracted=None):
 
 
 def planning_missing_items(decision, extracted):
-    """Require source-complete ring planning after a favorable LASIK result.
+    """Require source-complete ring calculations regardless of scoring status.
 
     This is a report-completion gate only.  It does not alter the clinical
     assessment, plan selection, thresholds, or disposition.
@@ -225,13 +225,11 @@ def planning_missing_items(decision, extracted):
     items = []
     for eye in decision.get("eyes") or []:
         eye_id = eye.get("eye")
-        report = eye.get("report_payload") or {}
-        planning = report.get("planning") or {}
+        report = (eye.get("lasik_assessment") or eye).get("report_payload") or {}
         ml7 = report.get("microkeratome_planning") or {}
         if (
             eye_id not in source_eyes
             or str(report.get("procedure") or "").upper() != "LASIK"
-            or not planning.get("selected_plan")
             or not ml7.get("applicable")
             or (ml7.get("vacuum_ring_mm") is not None and ml7.get("vacuum_pressure_mmhg") is not None)
         ):
@@ -1074,3 +1072,4 @@ def install(core):
         )
 
     core._hc_readiness_installed = True
+

@@ -33,7 +33,7 @@ def test_completion_corrects_invalid_depth_and_reaches_report_without_reupload(b
     session = {"extracted": {"eyes": [_eye("OD"), _eye("OS", pachy_thinnest_um=500)]},
                "ready": None, "source_images": []}
     core = SimpleNamespace(APP_VERSION="synthetic-test")
-    os_plan = _plan(ablation_um=40., optical_zone_mm=6.5, transition_zone_mm=9.,
+    os_plan = _plan(ablation_um=105., optical_zone_mm=6.5, transition_zone_mm=9.,
                     manifest_entered_sphere_D=.75, manifest_cylinder_signed_D=1.75,
                     intended_entered_sphere_D=.75, intended_cylinder_signed_D=1.75,
                     intended_axis_deg=90.)
@@ -78,7 +78,7 @@ def test_completion_corrects_invalid_depth_and_reaches_report_without_reupload(b
           for(const eye of ['od','os']){
             const fields={procedure:'LASIK',manifest_sphere:eye==='os'?'.75':'-2',
               manifest_cylinder:eye==='os'?'1.75':'-1',sphere:eye==='os'?'.75':'-2',
-              cylinder:eye==='os'?'1.75':'-1',axis:'90',ablation:eye==='os'?'40':'50',flap:'100'};
+              cylinder:eye==='os'?'1.75':'-1',axis:'90',ablation:eye==='os'?'105':'50',flap:'100'};
             for(const [key,value] of Object.entries(fields))document.getElementById(`${eye}_${key}`).value=value;
             document.getElementById(`${eye}_clinical`).open=true;
           }
@@ -97,7 +97,7 @@ def test_completion_corrects_invalid_depth_and_reaches_report_without_reupload(b
             expect(field).to_be_focused()
             expect(field).to_have_attribute("aria-invalid", "true")
             expect(field).to_have_value(value)
-            expect(page.locator("#os_ablation")).to_have_value("40")
+            expect(page.locator("#os_ablation")).to_have_value("105")
             expect(page.locator("#od_ablation")).to_have_value("50")
             assert requests == []
         field.fill("35")
@@ -105,10 +105,17 @@ def test_completion_corrects_invalid_depth_and_reaches_report_without_reupload(b
         expect(page.locator("#reportCard")).to_be_visible()
         expect(page.locator("#readinessPanel")).to_be_hidden()
         assert len(requests) == 1
-        assert requests[0]["eye_plans"]["OS"]["ablation_um"] == 40
+        assert requests[0]["eye_plans"]["OS"]["ablation_um"] == 105
         assert requests[0]["eye_plans"]["OS"]["lasik_bc_ablation_um"] == 35
         assert requests[0]["eye_plans"]["OD"]["ablation_um"] == 50
         assert session["ready"] is not None
+        os_report = session["ready"]["decision"]["eyes"][1]["report_payload"]
+        assert os_report["procedure"] == "LASIK"
+        assert os_report["status"] == "STOP-DEFER"
+        assert os_report["tissue_safety"]["status"] == "PASS"
+        assert os_report["microkeratome_planning"]["vacuum_ring_mm"] is not None
+        expect(page.locator("#reportCard")).to_contain_text("ML7")
+        assert page.locator('#eyeResults .eye-result').nth(1).locator('.safe-plan-row').count() == 0
         assert page.locator("#imageInput").evaluate("el=>el.files.length") == 1
         assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
         assert not errors, errors

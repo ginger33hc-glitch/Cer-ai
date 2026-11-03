@@ -1,8 +1,7 @@
 """Post-assessment ML7 microkeratome planning.
 
-The vacuum-ring/blade rules are kept outside the ectasia engine.  They can only
-produce a surgeon-review recommendation after a favorable LASIK assessment and
-can never change the CER-AI disposition.
+The vacuum-ring/blade rules are kept outside the ectasia engine.  They produce surgeon-review calculations for requested LASIK independently of
+scoring status and can never change the CER-AI disposition.
 
 Source rules: the user-supplied Turkish ML7 reference (MED-LOGICS document
 200-0386, Rev. 22) plus the binding CER-AI temporal-default hinge rule and
@@ -11,7 +10,7 @@ steep-meridian amendment for a K spread >4.00 D.
 from dataclasses import asdict, dataclass, field
 from typing import Optional, Tuple
 import math
-from clinical_core.disposition import CAUTION, PASS, PASS_WITH_CAUTION
+from clinical_core.disposition import CAUTION, PASS, PASS_WITH_CAUTION, STOP_DEFER, ASSESSMENT_INCOMPLETE
 from clinical_core.safety import lasik_rsb_hard_stop, lasik_rsb_um, pta_hard_stop, pta_percent
 
 FAVORABLE_PLANNING_STATUSES = frozenset({PASS, PASS_WITH_CAUTION, CAUTION})
@@ -142,11 +141,11 @@ def _hinge_location_for_steep_meridian(steep_axis_deg: float) -> tuple[Optional[
 def plan_microkeratome(inp: MicrokeratomePlanningInput) -> MicrokeratomePlan:
     """Return a non-eligibility-changing surgeon-review recommendation."""
     status = (inp.assessment_status or "").upper()
-    if (inp.procedure or "").upper() != "LASIK" or status not in FAVORABLE_LASIK_STATUSES:
+    if (inp.procedure or "").upper() != "LASIK" or status not in FAVORABLE_LASIK_STATUSES | {STOP_DEFER, ASSESSMENT_INCOMPLETE}:
         return MicrokeratomePlan(
             False,
-            "NOT_FAVORABLE_LASIK",
-            notes=("Planning module runs only after a favorable LASIK assessment.",),
+            "NOT_APPLICABLE",
+            notes=("ML7 calculations apply only to a recognized LASIK assessment.",),
         )
 
     steep = _finite(inp.steepest_k_d)
@@ -157,6 +156,8 @@ def plan_microkeratome(inp: MicrokeratomePlanningInput) -> MicrokeratomePlan:
     hinge_low_k = _finite(inp.hinge_site_lowest_k_d)
     steep_axis = _finite(inp.steep_axis_deg)
     warnings = []
+    if status not in FAVORABLE_LASIK_STATUSES:
+        warnings.append("ML7 parameters are calculations only; STOP or incomplete assessment remains in force.")
     notes = ["Recommendation only; surgeon must verify anatomy, device setup, and the active ML7 manual before use."]
     blades = []
 
@@ -288,3 +289,4 @@ def plan_microkeratome(inp: MicrokeratomePlanningInput) -> MicrokeratomePlan:
         warnings=tuple(dict.fromkeys(warnings)),
         notes=tuple(dict.fromkeys(notes)),
     )
+
