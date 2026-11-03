@@ -1,0 +1,35 @@
+name: Refractive Completion UI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  synthetic-browser-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PYTHONPATH: ${{ github.workspace }}
+      OPENAI_API_KEY: test-key-for-import-only
+      CERAI_REFRACTIVE_BROWSER_REQUIRED: '1'
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+          cache: pip
+      - run: pip install --require-hashes -r requirements-dev.txt
+      - name: Ensure browser coverage cannot silently skip
+        shell: bash
+        run: |
+          if ! command -v chromium >/dev/null && ! command -v google-chrome >/dev/null; then
+            python -m playwright install --with-deps chromium
+          fi
+      - name: Synthetic mobile and desktop completion regression
+        run: python -m pytest -q tests/test_refractive_completion_browser.py tests/test_step11_analyze_completion_workflow.py tests/test_readiness_frontend.py

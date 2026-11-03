@@ -122,6 +122,7 @@
 window.HCReadiness = class {
   constructor(panel) { this.panel=panel; this.regionUrls=[]; this.reset(); }
   reset() {
+    if(this.validationPanel){this.validationPanel.hidden=true;this.validationPanel.replaceChildren();}
     for(const url of this.regionUrls||[])URL.revokeObjectURL(url);
     this.regionUrls=[];this.token=null;this.overrides={};this.sourceConfirmations={};this.hasCompletableInputs=false;this.requiresSourceReplacement=false;this.panel.hidden=true;this.panel.replaceChildren();
   }
@@ -152,14 +153,69 @@ window.HCReadiness = class {
       let value=input.value;
       if(input.tagName!=='SELECT') {
         const raw=value.trim().replace(/\s+/g,'').replace(/[−–—﹣－]/g,'-').replace(/[＋﹢]/g,'+').replace(',','.');
-        if(!/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(raw)||!Number.isFinite(Number(raw)))
-          throw new Error((window.CERAI_I18N?.locale==='tr'?'Geçerli bir sayı girin':'Enter a valid number for')+` ${input.dataset.eye} ${input.dataset.measurement}.`);
+        if(!/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(raw)||!Number.isFinite(Number(raw))){
+          const reason=window.CERAI_I18N?.locale==='tr'?'Geçerli bir sayı girin.':'Enter a valid number.';
+          input.setCustomValidity?.(reason);
+          if(input.form)this.validateForm(input.form);
+          throw new Error(`${this.fieldLabel(input)} — ${reason}`);
+        }
         value=Number(raw);
       }
       (current[input.dataset.eye]??={})[input.dataset.measurement]=value;
     }
     this.overrides=current;
     return current;
+  }
+  fieldLabel(field) {
+    const tr=value=>window.CERAI_I18N?.translate(value)??value;
+    const eye=field.dataset.eye||/^(od|os)_/i.exec(field.dataset.sourceForm||field.id||'')?.[1]?.toUpperCase();
+    const label=field.dataset.completionLabel||field.labels?.[0]?.textContent||field.closest?.('.row')?.querySelector('label')?.textContent||field.dataset.measurement||field.id;
+    const side=window.CERAI_I18N?.locale==='tr'?{OD:'OD (Sağ göz)',OS:'OS (Sol göz)'}:{OD:'OD (Right eye)',OS:'OS (Left eye)'};
+    return [side[eye]||eye,tr(label.trim())].filter(Boolean).join(' — ');
+  }
+  validateForm(form,focus=true) {
+    const turkish=window.CERAI_I18N?.locale==='tr';
+    if(!this.validationPanel){
+      this.validationPanel=document.createElement('div');
+      this.validationPanel.className='note';this.validationPanel.setAttribute('role','alert');
+      this.panel.before(this.validationPanel);
+      for(const event of ['input','change'])form.addEventListener(event,()=>{
+        if(!this.validationPanel.hidden)this.validateForm(form,false);
+      });
+    }
+    const copies=new Map([...form.querySelectorAll('[data-source-form]')].map(field=>[field.dataset.sourceForm,field]));
+    const errors=new Map();
+    for(const field of form.elements){
+      const target=copies.get(field.id)||field;
+      if(!field.willValidate||field.validity.valid){
+        if(target.dataset.validationMarked){target.removeAttribute('aria-invalid');delete target.dataset.validationMarked;}
+        continue;
+      }
+      const v=field.validity;
+      // badInput precedes valueMissing: browsers expose malformed numeric input as an empty value.
+      const reason=v.badInput||v.typeMismatch
+        ?(turkish?'Geçerli bir sayı girin.':'Enter a valid number.')
+        :v.customError?field.validationMessage
+        :v.valueMissing?(turkish?'Bu zorunlu alan boş.':'This required field is empty.')
+        :v.rangeUnderflow?(turkish?`Değer en az ${field.min} olmalı.`:`Value must be at least ${field.min}.`)
+        :v.rangeOverflow?(turkish?`Değer en fazla ${field.max} olmalı.`:`Value must be at most ${field.max}.`)
+        :v.stepMismatch?(turkish?`Sayısal hassasiyet uygun değil: ${field.step||'1'} adımlarında bir değer girin.`:`Invalid numeric precision: enter a value in steps of ${field.step||'1'}.`)
+        :field.validationMessage;
+      errors.set(target,`${this.fieldLabel(target)} — ${reason}`);
+    }
+    this.validationPanel.replaceChildren();this.validationPanel.hidden=!errors.size;
+    for(const [field,message] of errors){
+      field.setAttribute('aria-invalid','true');field.dataset.validationMarked='true';
+      const button=document.createElement('button');button.type='button';button.className='secondary';button.textContent=message;
+      button.addEventListener('click',()=>this.focusField(field));
+      const row=document.createElement('p');row.append(button);this.validationPanel.append(row);
+    }
+    if(errors.size&&focus)this.focusField(errors.keys().next().value);
+    return [...errors.values()].join('\n');
+  }
+  focusField(field) {
+    for(let parent=field.parentElement;parent;parent=parent.parentElement)if(parent.tagName==='DETAILS')parent.open=true;
+    field.scrollIntoView({block:'center',behavior:'instant'});field.focus({preventScroll:true});
   }
   collectSourceConfirmations() {
     const current={};
@@ -230,7 +286,9 @@ window.HCReadiness = class {
       if(input&&item.help&&item.kind==='form'){
         const help=document.createElement('p');help.className='note';help.textContent=tr(item.help);row.append(help);
       }
-      if(input){this.hasCompletableInputs=true;input.required=true;input.id=`completion_${seen.size}`;label.htmlFor=input.id;row.append(input);}
+      if(input){this.hasCompletableInputs=true;input.required=true;input.id=`completion_${seen.size}`;input.dataset.eye=item.eye;input.dataset.completionLabel=item.label;label.htmlFor=input.id;row.append(input);
+        input.addEventListener('input',()=>input.setCustomValidity(''));
+      }
       else {
         row.classList.add('completion-blocker');
         const help=document.createElement('span');help.textContent=tr(item.help);row.append(help);
@@ -261,3 +319,4 @@ window.HCReadiness = class {
     return true;
   }
 };
+

@@ -192,7 +192,7 @@ def test_patient_age_completion_uses_one_shared_field():
     html = (ROOT / 'static/index.html').read_text()
     translations = (ROOT / 'static/i18n.js').read_text()
     assert '<label>Patient age (years)</label>' in html
-    assert '/static/assessment-readiness.js?v=9' in html
+    assert '/static/assessment-readiness.js?v=10' in html
     assert 'Pentacam age unreadable; enter years' not in html
     assert 'Pentacam yaşı okunamadı; yıl olarak girin' not in translations
     assert item == {
@@ -324,3 +324,4 @@ def test_zone_completion_browser_transfers_visible_answer(width):
         assert page.locator('#os_ablation').input_value() == '40'
         assert page.locator('form').evaluate('(form)=>form.checkValidity()')
         browser.close()
+

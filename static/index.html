@@ -134,7 +134,7 @@
 <footer class="app-legal-footer">Developed by Hüseyin Cengiz, MD. All rights reserved. Final responsibility rests with the surgeon at all times and under all circumstances.</footer>
 
 <script src="/static/i18n.js?v=27"></script>
-<script src="/static/assessment-readiness.js?v=9"></script>
+<script src="/static/assessment-readiness.js?v=10"></script>
 <script>
 const i18n=window.CERAI_I18N;
 async function ceraiFetch(url,options={}){
@@ -925,9 +925,9 @@ f.addEventListener("submit", async (e) => {
     invalidERSSTopography.scrollIntoView({behavior:"smooth",block:"center"});
     invalidERSSTopography.focus();invalidERSSTopography.reportValidity();return;
   }
-  if(!f.checkValidity()){
-    showFormMessage("Please complete the required field highlighted by the browser.");
-    f.reportValidity();
+  const formError=readiness.validateForm(f);
+  if(formError){
+    showFormMessage(formError);
     return;
   }
   const unreviewedEyes=["od","os"].filter(eye=>!clinicalReviewState[eye]);
@@ -1087,3 +1087,4 @@ loadSharedImages();
 </script>
 </body>
 </html>
+
