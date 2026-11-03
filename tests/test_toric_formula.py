@@ -124,7 +124,7 @@ def test_surgeon_incision_axis_changes_toric_optical_result():
 
 
 @pytest.mark.parametrize("family", list(__import__('iol_module.toric_catalog', fromlist=['VERIFIED_LENS_STEPS']).VERIFIED_LENS_STEPS))
-def test_surgeon_policy_steps_down_catalog_and_recomputes_at_shifted_axis(family):
+def test_surgeon_policy_steps_down_catalog_and_preserves_original_axis(family):
     from iol_module.toric_catalog import VERIFIED_LENS_STEPS
     eye = ToricBiometry(24.01, 43.10, 44.53, 14, -6.30, -6.50, 167.4, 520, 119.20, .25, 180)
     args = dict(spherical_equivalent_iol_d=20, spherical_predicted_refraction_d=-.35)
@@ -135,18 +135,18 @@ def test_surgeon_policy_steps_down_catalog_and_recomputes_at_shifted_axis(family
     assert len({x.model for x in adjusted}) == len(raw)
     for candidate in adjusted:
         original = next(x for x in raw if x.model == candidate.model)
-        assert candidate.marker_axis_deg == pytest.approx((original.marker_axis_deg+2.5)%180)
+        assert candidate.marker_axis_deg == pytest.approx(original.marker_axis_deg)
         assert candidate.original_preferred_model == raw[0].model
         if candidate is adjusted[0]:
             assert candidate.residual_spectacle_cylinder_d == raw[0].residual_spectacle_cylinder_d
             assert candidate.residual_spectacle_axis_deg == raw[0].residual_spectacle_axis_deg
-            assert candidate.adjustment_policy == "SURGEON_FIELD_CALIBRATION_FIXED_RESIDUAL_V2"
+            assert candidate.adjustment_policy == "SURGEON_FIELD_CALIBRATION_FIXED_RESIDUAL_ORIGINAL_AXIS_V3"
         else:
             assert candidate.residual_spectacle_cylinder_d >= original.residual_spectacle_cylinder_d - 1e-6
     if family == 'clareon-vivity-toric-cnwet2':
         assert raw[0].model == 'CNWET4'
         assert adjusted[0].model == 'CNWET3'
-        assert adjusted[0].marker_axis_deg == pytest.approx(107.1)
+        assert adjusted[0].marker_axis_deg == pytest.approx(104.6)
         assert adjusted[0].residual_spectacle_cylinder_d == pytest.approx(.2152, abs=.0001)
 
 

@@ -246,7 +246,7 @@ def build_iol_report(report: IOLReportInput, surgeon: str = "", *, report_date: 
         if isinstance(posterior, dict):
             measurements += "\n" + tr("Posterior K1/K2", "Arka kornea K1/K2") + ": " + fmt(posterior.get("k1_d")) + " / " + fmt(posterior.get("k2_d")) + " D; " + tr("axes", "akslar") + " " + fmt(posterior.get("k1_axis_deg"), 1) + " / " + fmt(posterior.get("k2_axis_deg"), 1) + "°   |   CCT " + fmt(inp.get("cct_um"), 0) + " µm"
         warnings = []
-        if toric and toric.get("adjustment_policy") == "SURGEON_FIELD_CALIBRATION_FIXED_RESIDUAL_V2":
+        if toric and toric.get("adjustment_policy") in ("SURGEON_FIELD_CALIBRATION_FIXED_RESIDUAL_V2", "SURGEON_FIELD_CALIBRATION_FIXED_RESIDUAL_ORIGINAL_AXIS_V3"):
             warnings.append(tr("Residual: surgeon-reported field calibration estimate; original calculated residual retained.",
                                "Rezidüel: cerrahın bildirdiği saha kalibrasyonuna dayalı tahmin; özgün hesap değeri korunmuştur."))
         if toric:

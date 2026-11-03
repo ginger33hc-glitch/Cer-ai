@@ -290,13 +290,13 @@ def research_toric_candidates(
             model, spherical_equivalent_iol_d, cylinder, best_axis,
             refraction.cylinder_d, refraction.axis_deg, elp_mm))
         if apply_surgeon_adjustment:
-            adjusted_axis = (best_axis + 2.5) % 180
+            adjusted_axis = best_axis
             adjusted_refraction = spectacle_residual(adjusted_axis)
             adjusted_results.append(ToricResearchResult(
                 model, spherical_equivalent_iol_d, cylinder, adjusted_axis,
                 adjusted_refraction.cylinder_d, adjusted_refraction.axis_deg, elp_mm,
                 original_marker_axis_deg=best_axis,
-                adjustment_policy="SURGEON_ONE_STEP_LOWER_AXIS_PLUS_2_5_V1"))
+                adjustment_policy="SURGEON_ONE_STEP_LOWER_ORIGINAL_AXIS_V3"))
     ranked = sorted(results, key=lambda result: (result.residual_spectacle_cylinder_d,
                                                 result.cylinder_iol_d))
     if not apply_surgeon_adjustment:
@@ -312,11 +312,11 @@ def research_toric_candidates(
     # Surgeon-reported field calibration retains the original preferred
     # residual prediction. Label this provenance in both screen and PDF.
     adjusted_results = [replace(value,
-        marker_axis_deg=(ranked[0].marker_axis_deg + 2.5) % 180,
+        marker_axis_deg=ranked[0].marker_axis_deg,
         residual_spectacle_cylinder_d=ranked[0].residual_spectacle_cylinder_d,
         residual_spectacle_axis_deg=ranked[0].residual_spectacle_axis_deg,
         original_marker_axis_deg=ranked[0].marker_axis_deg,
-        adjustment_policy="SURGEON_FIELD_CALIBRATION_FIXED_RESIDUAL_V2")
+        adjustment_policy="SURGEON_FIELD_CALIBRATION_FIXED_RESIDUAL_ORIGINAL_AXIS_V3")
         if value.model == preferred else value for value in adjusted_results]
     return sorted(adjusted_results, key=lambda value: (
         value.model != preferred, value.residual_spectacle_cylinder_d, value.cylinder_iol_d))

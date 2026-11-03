@@ -485,7 +485,7 @@
         notes += `<div class="warning"><strong>TEST ONLY — unvalidated toric optical prototype.</strong> Independently check the source readings, model availability, implantation axis, and residual with the manufacturer's calculator before any clinical use.</div>`;
         html += `<h3>Embedded toric calculation — ${fmt(candidates[0]?.spherical_equivalent_iol_d)} D ${formula} <span>spherical equivalent</span></h3>`;
         html += `<div class="recommendation">${fmt(candidates[0]?.spherical_equivalent_iol_d)} D · ${candidates[0]?.model ?? "—"} · ${fmt(candidates[0]?.marker_axis_deg, 1)}° marker axis</div>`;
-        if (candidates[0]?.adjustment_policy === "SURGEON_FIELD_CALIBRATION_FIXED_RESIDUAL_V2") {
+        if (["SURGEON_FIELD_CALIBRATION_FIXED_RESIDUAL_V2", "SURGEON_FIELD_CALIBRATION_FIXED_RESIDUAL_ORIGINAL_AXIS_V3"].includes(candidates[0]?.adjustment_policy)) {
           html += `<p>${tr("Residual: estimate based on surgeon-reported field calibration; retained from the original calculation.")}</p>`;
         }
         html += `<p>Predicted residual cylinder: ${fmt(candidates[0]?.residual_spectacle_cylinder_d)} D at ${fmt(candidates[0]?.residual_spectacle_axis_deg, 1)}° (prototype estimate).</p>`;
