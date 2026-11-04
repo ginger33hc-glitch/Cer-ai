@@ -9,6 +9,7 @@ on:
       - 'static/public-tr-home-overrides.js'
       - 'tests/test_public_developer_locale.py'
       - 'scripts/check_public_developer_locale.py'
+      - 'scripts/check_public_home_locale.py'
       - '.github/workflows/public-developer-locale.yml'
   push:
     branches: [main, 'staging/canonical-validation-2026-09-08']
@@ -18,6 +19,7 @@ on:
       - 'static/public-tr-home-overrides.js'
       - 'tests/test_public_developer_locale.py'
       - 'scripts/check_public_developer_locale.py'
+      - 'scripts/check_public_home_locale.py'
       - '.github/workflows/public-developer-locale.yml'
 
 permissions:
@@ -58,6 +60,14 @@ jobs:
           SERVER_PID=$!
           trap 'kill "$SERVER_PID"' EXIT
           python scripts/check_public_developer_locale.py --baseline-ref cf903be1db314a7477a7132af1945374236bdb6a
+      - name: Install desktop and Safari-engine browsers
+        run: python -m playwright install --with-deps chromium webkit
+      - name: New homepage content in desktop and iPhone WebKit
+        run: |
+          python -m http.server 8766 --bind 127.0.0.1 >/tmp/cerai-home-http.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID"' EXIT
+          python scripts/check_public_home_locale.py --url http://127.0.0.1:8766/static/public-home.html
       # Live HTTP verification cannot run inside a pre-deploy check: Railway waits
       # for every GitHub check suite before promotion. Post-deploy verification is
       # performed separately after Railway reports SUCCESS.
