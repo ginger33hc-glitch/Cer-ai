@@ -157,6 +157,7 @@ class DemoAccessLedger:
                 requests[request_id].setdefault("approval_notifications", {})[event["channel"]] = {
                     "status": event.get("notification_status"),
                     "provider": event.get("notification_provider"),
+                    "message_id": event.get("notification_message_id"),
                     "error_code": event.get("notification_error_code"),
                     "attempted_at_utc": event.get("created_at_utc"),
                 }
@@ -321,7 +322,7 @@ class DemoAccessLedger:
             "approved_at_utc": event["created_at_utc"],
         }
 
-    def notify_approval(self, request_id: str, notifier) -> dict[str, Any]:
+    def notify_approval(self, request_id: str, notifier, *, retry_unknown_email: bool = False) -> dict[str, Any]:
         # Persist the attempt before contacting the provider. A timeout or crash
         # is uncertain, never an invitation to send a duplicate automatically.
         with _lock:
@@ -330,13 +331,16 @@ class DemoAccessLedger:
                 raise HTTPException(409, "Only approved requests can receive an approval notification.")
             for channel in ("email", "sms"):
                 previous = item.get("approval_notifications", {}).get(channel, {}).get("status")
-                if previous in {"ACCEPTED", "SENDING", "UNKNOWN"}:
+                if previous in {"ACCEPTED", "SENDING"} or (
+                    previous == "UNKNOWN" and not (channel == "email" and retry_unknown_email)
+                ):
                     continue
                 def record(result):
                     self._write("DEMO_APPROVAL_NOTIFICATION", {
                         "request_id": request_id, "channel": channel,
                         "notification_status": result.status,
                         "notification_provider": result.provider,
+                        "notification_message_id": result.message_id,
                         "notification_error_code": result.error_code,
                     })
                 record(NotificationResult("SENDING", channel.upper()))
@@ -519,9 +523,12 @@ def install(core: Any) -> None:
         return result
 
     @core.app.post("/demo-access/admin/requests/{request_id}/notify-approval", include_in_schema=False)
-    def notify_approved_demo(request_id: str):
+    def notify_approved_demo(request_id: str, payload: dict[str, Any] = Body(default={})):
         _require_owner()
-        return {"approval_notifications": ledger.notify_approval(request_id, approval_notifier)}
+        return {"approval_notifications": ledger.notify_approval(
+            request_id, approval_notifier,
+            retry_unknown_email=payload.get("retry_unknown_email") is True,
+        )}
 
     @core.app.post("/demo-access/admin/requests/{request_id}/reject", include_in_schema=False)
     def reject_demo(request_id: str):
@@ -538,3 +545,4 @@ def install(core: Any) -> None:
 def _reset_rate_limit_for_tests() -> None:
     with _lock:
         _request_starts.clear()
+
