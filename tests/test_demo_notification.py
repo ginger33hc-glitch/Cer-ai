@@ -1,4 +1,6 @@
 import json
+import pytest
+from urllib.error import HTTPError
 from urllib.error import URLError
 from urllib.parse import parse_qs
 
@@ -16,6 +18,56 @@ def _request_record():
         "specialty": "Ophthalmology",
         "created_at_utc": "2026-09-27T19:00:00+00:00",
     }
+
+
+def _resend_config(monkeypatch):
+    monkeypatch.setenv("CERAI_SMTP_HOST", "smtp.resend.com")
+    monkeypatch.setenv("CERAI_SMTP_PASSWORD", "re_test_secret")
+    monkeypatch.setenv("CERAI_SMTP_FROM", "CER-AI <demo@example.org>")
+
+
+def test_resend_uses_https_existing_credentials_and_stable_idempotency(monkeypatch):
+    _resend_config(monkeypatch)
+    calls = []
+    def transport(request, timeout):
+        calls.append(request)
+        return {"id": "email-123"}
+    monkeypatch.setattr(demo_notification.DemoEmailNotifier, "_urlopen_transport", staticmethod(transport))
+    notifier = demo_notification.DemoApprovalNotifier()
+    for _ in range(2):
+        result = notifier.send("email", dict(_request_record(), username="demo.doctor"))
+        assert result.status == "ACCEPTED"
+        assert result.message_id == "email-123"
+        assert "re_test_secret" not in json.dumps(result.public())
+    assert calls[0].full_url == "https://api.resend.com/emails"
+    assert calls[0].get_header("Authorization") == "Bearer re_test_secret"
+    assert calls[0].get_header("Idempotency-key") == calls[1].get_header("Idempotency-key")
+    body = json.loads(calls[0].data)
+    assert body["to"] == ["doctor@example.org"]
+    assert body["from"] == "CER-AI <demo@example.org>"
+    assert "demo.doctor" in body["text"]
+    assert "phone" not in body
+
+
+@pytest.mark.parametrize("code,status", [(401,"FAILED"),(403,"FAILED"),(422,"FAILED"),(429,"FAILED"),(500,"UNKNOWN"),(409,"UNKNOWN")])
+def test_resend_rejection_and_uncertain_response_are_distinct(monkeypatch, code, status):
+    _resend_config(monkeypatch)
+    def transport(request, timeout):
+        raise HTTPError(request.full_url, code, "private detail", {}, None)
+    monkeypatch.setattr(demo_notification.DemoEmailNotifier, "_urlopen_transport", staticmethod(transport))
+    result = demo_notification.DemoApprovalNotifier().send("email", _request_record())
+    assert result.status == status
+    assert result.error_code == f"HTTP_{code}"
+    assert "private detail" not in json.dumps(result.public())
+
+
+def test_resend_timeout_does_not_claim_delivery(monkeypatch):
+    _resend_config(monkeypatch)
+    def transport(request, timeout):
+        raise TimeoutError("private detail")
+    monkeypatch.setattr(demo_notification.DemoEmailNotifier, "_urlopen_transport", staticmethod(transport))
+    result = demo_notification.DemoApprovalNotifier().send("email", _request_record())
+    assert result.status == "UNKNOWN"
 
 
 def test_formsubmit_notification_contains_only_reference_and_owner_panel():
@@ -135,3 +187,4 @@ def test_sms_uses_exact_application_recipient_and_reports_acceptance(monkeypatch
     assert result.status == "ACCEPTED"
     assert captured["To"] == ["+905550000000"]
     assert "drhuseyincengiz@hotmail.com" in captured["Body"][0]
+

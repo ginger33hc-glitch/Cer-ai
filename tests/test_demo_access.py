@@ -201,3 +201,28 @@ def test_legacy_phone_missing_does_not_break_contact_inventory(ledger):
     ledger.approve(request["request_id"], "legacy.doctor", "strong-demo-password", owner)
     assert ledger.doctor_accounts()[0]["phone"] == ""
     assert ledger.doctor_accounts()[0]["email"] == "doctor@example.org"
+
+
+def test_unknown_email_requires_explicit_retry_and_accepted_is_never_resent(ledger):
+    request = _request(ledger)
+    owner = user_access.Principal("owner-1", "owner", "Owner", "OWNER")
+    ledger.approve(request["request_id"], "demo.retry", "strong-demo-password", owner)
+    calls = []
+    class Notifier:
+        def send(self, channel, item):
+            calls.append(channel)
+            if channel == "sms":
+                return NotificationResult("UNKNOWN", "TEST")
+            if calls.count("email") == 1:
+                return NotificationResult("UNKNOWN", "SMTP")
+            return NotificationResult("ACCEPTED", "RESEND", message_id="email-123")
+    notifier = Notifier()
+    ledger.notify_approval(request["request_id"], notifier)
+    ledger.notify_approval(request["request_id"], notifier)
+    assert calls == ["email", "sms"]
+    result = ledger.notify_approval(request["request_id"], notifier, retry_unknown_email=True)
+    assert calls == ["email", "sms", "email"]
+    assert result["email"]["message_id"] == "email-123"
+    ledger.notify_approval(request["request_id"], notifier, retry_unknown_email=True)
+    assert calls == ["email", "sms", "email"]
+

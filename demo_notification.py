@@ -212,6 +212,10 @@ class DemoApprovalNotifier:
         return self._email(item) if channel == "email" else self._sms(item)
 
     def _email(self, item: dict[str, Any]) -> NotificationResult:
+        # Resend's SMTP password is its API key. Use HTTPS on hosts where
+        # outbound SMTP is unavailable; keep the same sender and recipient.
+        if os.getenv("CERAI_SMTP_HOST", "").strip().lower() == "smtp.resend.com":
+            return self._resend_email(item)
         import smtplib
         import ssl
         from email.message import EmailMessage
@@ -251,6 +255,47 @@ class DemoApprovalNotifier:
         except ValueError:
             return NotificationResult("FAILED", "SMTP", error_code="INVALID_CONFIGURATION")
 
+    def _resend_email(self, item: dict[str, Any]) -> NotificationResult:
+        import re
+
+        token = os.getenv("CERAI_SMTP_PASSWORD", "").strip()
+        sender = os.getenv("CERAI_SMTP_FROM", "").strip()
+        recipient = str(item.get("email") or "").strip()
+        request_id = str(item.get("request_id") or "")
+        if not token or not sender:
+            return NotificationResult("NOT_CONFIGURED", "RESEND", error_code="MISSING_CONFIGURATION")
+        if not recipient:
+            return NotificationResult("FAILED", "RESEND", error_code="MISSING_EMAIL")
+        if not re.fullmatch(r"[0-9a-f]{32}", request_id):
+            return NotificationResult("FAILED", "RESEND", error_code="MISSING_REQUEST_ID")
+        request = Request(
+            "https://api.resend.com/emails",
+            data=json.dumps({
+                "from": sender, "to": [recipient],
+                "subject": "CER-AI account approved / Kullanıcı kaydınız onaylandı",
+                "reply_to": "drhuseyincengiz@hotmail.com",
+                "text": approval_message(item),
+            }).encode("utf-8"),
+            method="POST", headers={
+                "Authorization": "Bearer " + token,
+                "Content-Type": "application/json",
+                "User-Agent": "CER-AI/2.0",
+                "Idempotency-Key": "demo-approval/" + request_id,
+            },
+        )
+        try:
+            response = DemoEmailNotifier._urlopen_transport(request, 10.0)
+            if response.get("id"):
+                return NotificationResult("ACCEPTED", "RESEND", message_id=str(response["id"]))
+            return NotificationResult("UNKNOWN", "RESEND", error_code="DELIVERY_UNCONFIRMED")
+        except HTTPError as exc:
+            # Do not retain response bodies: they may echo personal data.
+            uncertain = exc.code >= 500 or exc.code == 409
+            return NotificationResult("UNKNOWN" if uncertain else "FAILED", "RESEND",
+                                      error_code=f"HTTP_{exc.code}")
+        except (URLError, TimeoutError, OSError, ValueError):
+            return NotificationResult("UNKNOWN", "RESEND", error_code="DELIVERY_UNCONFIRMED")
+
     def _sms(self, item: dict[str, Any]) -> NotificationResult:
         import base64
         import re
@@ -281,3 +326,4 @@ class DemoApprovalNotifier:
             return NotificationResult("FAILED", "TWILIO_SMS", error_code=f"HTTP_{exc.code}")
         except (URLError, TimeoutError, OSError, ValueError):
             return NotificationResult("UNKNOWN", "TWILIO_SMS", error_code="DELIVERY_UNCONFIRMED")
+
