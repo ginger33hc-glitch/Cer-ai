@@ -178,6 +178,8 @@ def _selected_procedure_summary(planning: Mapping[str, Any]) -> tuple[str, str] 
     fields = (
         (("OZ", "optical_zone_mm", "mm"),
          ("Cap", "smile_cap_um", "µm"),
+         ("Estimated LT (preliminary only)", "estimated_lenticule_thickness_um", "µm"),
+         ("Estimate edge", "lenticule_estimate_edge_um", "µm"),
          ("Maximum Lenticule Thickness", "max_lenticule_thickness_um", "µm"))
         if procedure == "SMILE"
         else (("OZ", "optical_zone_mm", "mm"),
@@ -188,6 +190,10 @@ def _selected_procedure_summary(planning: Mapping[str, Any]) -> tuple[str, str] 
     for name, key, unit in fields:
         if selected.get(key) is not None:
             details.append(f"{name} {_text(selected.get(key))} {unit}")
+    if procedure == "SMILE":
+        for label_key, key in (("Device", "laser_platform"), ("Estimate model", "lenticule_estimate_model")):
+            if selected.get(key):
+                details.append(f"{label_key}: {_text(selected[key])}")
     if procedure == "SMILE" and selected.get("lenticule_source"):
         details.append(f"LT source: {_text(selected.get('lenticule_source'))}")
     return label, " — ".join(details) or "Plan parameters not documented"

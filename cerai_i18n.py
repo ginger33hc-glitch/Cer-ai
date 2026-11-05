@@ -407,6 +407,19 @@ TR = {
 
 
 TR_CLINICAL = {
+    'Enter the actual MAXIMUM lenticule thickness from the VisuMax treatment screen and recalculate. Central thickness is acceptable only if confirmed identical to the maximum. Theoretical estimates cannot establish surgical clearance.': 'VisuMax tedavi ekranındaki gerçek MAKSİMUM lentikül kalınlığını girip yeniden hesaplayın. Santral kalınlık ancak maksimum ile aynı olduğu doğrulanırsa kullanılabilir. Teorik tahminler kesin cerrahi uygunluk oluşturamaz.',
+    'SMILE RSB 300 um and cap-inclusive PTA 40% are retained institutional precaution rules, not independently validated SMILE safety thresholds. ERSS is LASIK-derived. Calculations use thinnest pachymetry, not central corneal thickness.': 'SMILE için RSB 300 µm ve kap dahil PTA %40, korunan kurumsal ihtiyat kurallarıdır; SMILE için bağımsız doğrulanmış güvenlik eşikleri değildir. ERSS, LASIK kökenlidir. Hesaplamalarda santral kornea kalınlığı değil en ince pakimetri kullanılır.',
+    'smile_device_max_lenticule_um': 'VisuMax ekranındaki gerçek maksimum lentikül kalınlığı (µm)',
+    'SURGEON_ENTERED_VISUMAX_MAXIMUM': 'Cerrahın VisuMax ekranından girdiği maksimum değer',
+    'DEVICE_MAXIMUM_REQUIRED': 'Cihazın maksimum değeri gerekli',
+    'Estimated LT (preliminary only)': 'Tahmini lentikül kalınlığı (yalnızca ön planlama)',
+    'Estimate model': 'Tahmin modeli',
+    'Estimate edge': 'Tahminin kenar kalınlığı',
+    'LT source': 'Lentikül kalınlığı kaynağı',
+    'Maximum Lenticule Thickness': 'Maksimum lentikül kalınlığı',
+    'Cap': 'Kap',
+    'Device': 'Cihaz',
+
     "Temporal hinge (default)": "Temporal menteşe (varsayılan)",
     "Plan A — flap 100 µm; optical zone 6.5 mm; transition zone 9.0 mm": "Plan A — flep 100 µm; optik zon 6,5 mm; geçiş zonu 9,0 mm",
     "Plan B — flap 100 µm; optical zone 6.0 mm; transition zone 8.5 mm": "Plan B — flep 100 µm; optik zon 6,0 mm; geçiş zonu 8,5 mm",

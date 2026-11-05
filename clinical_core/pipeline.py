@@ -72,6 +72,7 @@ class ClinicalCoreInput:
     intended_axis_deg: Optional[float] = None
     flap_um: Optional[float] = None
     ablation_um: Optional[float] = None
+    smile_device_max_confirmed: bool = False
     preop_kmean_d: Optional[float] = None
     intended_mrse_d: Optional[float] = None
     final_bad_d: Optional[float] = None
@@ -254,6 +255,8 @@ def _safety_status(
         missing.append("intended_axis_deg")
     if procedure == "LASIK" and not _finite(inp.flap_um):
         missing.append("flap_um")
+    if procedure == "SMILE" and not inp.smile_device_max_confirmed:
+        missing.append("smile_device_max_lenticule_um")
     if procedure == "SMILE" and not _finite(inp.flap_um):
         missing.append("smile_cap_um")
     if (procedure == "LASIK" and rsb is None
@@ -367,6 +370,18 @@ def evaluate_normalized_case(
 
     active_safety_stops = [key for key, stopped in safety_stops.items() if stopped]
     safety_detail = "Independent tissue/refractive safety gates"
+    if procedure == "SMILE":
+        safety_detail += (
+            "; SMILE RSB 300 um and cap-inclusive PTA 40% are retained institutional precaution rules, "
+            "not independently validated SMILE safety thresholds. ERSS is LASIK-derived. "
+            "Calculations use thinnest pachymetry, not central corneal thickness."
+        )
+        if not inp.smile_device_max_confirmed:
+            safety_detail += (
+                "; Enter the actual MAXIMUM lenticule thickness from the VisuMax treatment screen "
+                "and recalculate. Central thickness is acceptable only if confirmed identical to the maximum. "
+                "Theoretical estimates cannot establish surgical clearance."
+            )
     if active_safety_stops:
         safety_detail += "; hard stop(s): " + ", ".join(active_safety_stops)
     if safety_missing:
@@ -414,6 +429,7 @@ def evaluate_normalized_case(
         "ps3_status": ps3_status,
         "ps3_decision": ps3_decision,
         "procedural_safety": {
+            **({"SMILE_interpretation": safety_detail} if procedure == "SMILE" else {}),
             "LASIK_RSB_um": rsb if procedure == "LASIK" else None,
             "SMILE_RSB_um": rsb if procedure == "SMILE" else None,
             "PRK_RST_um": rst,
