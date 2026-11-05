@@ -28,11 +28,12 @@ SMILE_MYOPIC_UM_PER_D_AT_6MM = 13.0
 
 
 def estimate_smile_max_lenticule_um(intended_mrse_d, optical_zone_mm):
-    """Return the approved CER-AI theoretical myopic SMILE LT fallback.
+    """Return the unvalidated CER-AI theoretical spherical SMILE estimate.
 
     LT = 15 + 13 * |MRSE| * (OZ / 6)^2.
-    This is a planning estimate only. A measured/device treatment-plan maximum
-    lenticule thickness is authoritative whenever supplied.
+    Legacy MRSE argument is only supported for a zero-cylinder correction.
+    Report metadata only: never use this estimate for surgical clearance.
+    The surgeon-entered device treatment-plan maximum is required for safety.
     """
     if (
         not isinstance(intended_mrse_d, (int, float))

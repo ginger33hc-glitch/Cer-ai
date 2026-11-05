@@ -451,12 +451,13 @@ def _request(eye, message, extracted):
     procedure = ""
     if isinstance(effective_plans, dict):
         procedure = str((effective_plans.get(eye) or {}).get("procedure") or "").upper()
-    if lower == "safety: ablation_um" and procedure == "SMILE":
+    if (lower in {"safety: ablation_um", "safety: smile_device_max_lenticule_um", "randleman: rsb"}
+            and procedure == "SMILE"):
         return {
             "eye": eye, "label": "Maximum lenticule thickness", "kind": "form",
             "key": "max_lenticule_thickness_um", "destination": "source",
             "form_id": f"{prefix}_lenticule",
-            "help": "Enter the SMILE maximum lenticule thickness from the treatment plan.",
+            "help": "Enter the actual MAXIMUM lenticule thickness from the VisuMax treatment screen and recalculate. Central thickness is acceptable only if confirmed identical to the maximum. Theoretical estimates cannot establish surgical clearance.",
             "required_for": ["Safety"],
             "source_screen": "SMILE treatment plan",
             "source_box": "Maximum lenticule thickness",

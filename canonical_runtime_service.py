@@ -482,8 +482,12 @@ def _attach_selected_procedure_plan(planning, eye_name, effective_plan, core_res
         selected.update({
             "smile_cap_um": _plan_number(effective_plan or {}, "smile_cap_um", "cap_um", "flap_um"),
             "max_lenticule_thickness_um": _plan_number(
-                effective_plan or {}, "max_lenticule_thickness_um", "lenticule_thickness_um", "ablation_um"
-            ),
+                effective_plan or {}, "max_lenticule_thickness_um"
+            ) if (effective_plan or {}).get("smile_device_max_confirmed") else None,
+            "estimated_lenticule_thickness_um": (effective_plan or {}).get("estimated_lenticule_thickness_um"),
+            "lenticule_estimate_model": (effective_plan or {}).get("lenticule_estimate_model"),
+            "lenticule_estimate_edge_um": (effective_plan or {}).get("lenticule_estimate_edge_um"),
+            "laser_platform": (effective_plan or {}).get("laser_platform"),
             "lenticule_source": (effective_plan or {}).get("lenticule_source")
                 or (effective_plan or {}).get("ablation_source"),
         })
@@ -661,25 +665,19 @@ def evaluate_case(
                 normalized = build_clinical_core_input(
                     eye, plan, age_years=age_years, extracted=extracted, plan_already_resolved=True,
                 )
-        if procedure == "SMILE" and _plan_number(plan, "max_lenticule_thickness_um", "lenticule_thickness_um") is None:
-            if intended is not None and refractive_group(intended) == MYOPIC:
+        if procedure == "SMILE":
+            # The MRSE approximation is not a validated maximum LT for cylinder.
+            # Retain a sphere-only estimate as report metadata, never as tissue input.
+            estimated_lt = None
+            if (intended is not None and refractive_group(intended) == MYOPIC
+                    and normalized.intended_cylinder_d == 0):
                 estimated_lt = estimate_smile_max_lenticule_um(
                     normalized.intended_mrse_d, _plan_number(plan, "optical_zone_mm"),
                 )
-                if estimated_lt is not None:
-                    plan = dict(
-                        plan,
-                        max_lenticule_thickness_um=float(estimated_lt),
-                        lenticule_thickness_um=float(estimated_lt),
-                        ablation_um=float(estimated_lt),
-                        max_ablation_um=float(estimated_lt),
-                        lenticule_source="CERAI_THEORETICAL_MYOPIC_SMILE_ESTIMATE",
-                        ablation_source="CERAI_THEORETICAL_MYOPIC_SMILE_ESTIMATE",
-                    )
-                    effective_plans[eye_name] = plan
-                    normalized = build_clinical_core_input(
-                        eye, plan, age_years=age_years, extracted=extracted, plan_already_resolved=True,
-                    )
+            plan = dict(plan, estimated_lenticule_thickness_um=estimated_lt,
+                        lenticule_estimate_model="CERAI_SPHERICAL_LT_V1: 15 + 13 * |sphere| * (OZ/6)^2",
+                        lenticule_estimate_edge_um=15.0)
+            effective_plans[eye_name] = plan
 
         if procedure == "LASIK":
             core_result, effective_plan, planning = _evaluate_lasik_planning(

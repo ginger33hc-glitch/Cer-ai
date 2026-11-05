@@ -239,13 +239,15 @@ def resolve_eye_plan(
         resolved["flap_status"] = "NOT_APPLICABLE"
     elif procedure == "SMILE":
         resolved["flap_um"] = _first_number(resolved, "smile_cap_um", "cap_um")
-        smile_lt = _first_number(resolved, "max_lenticule_thickness_um", "lenticule_thickness_um")
-        if smile_lt is not None:
-            resolved["ablation_um"] = smile_lt
-            resolved["max_ablation_um"] = smile_lt
-            resolved["ablation_source"] = str(
-                resolved.get("lenticule_source") or "SMILE_MAXIMUM_LENTICULE_THICKNESS"
-            )
+        smile_lt = _first_number(resolved, "max_lenticule_thickness_um")
+        source = str(resolved.get("lenticule_source") or "SURGEON_ENTERED_VISUMAX_MAXIMUM")
+        confirmed = (_finite(smile_lt) and smile_lt > 0
+                     and source in {"SURGEON_ENTERED_VISUMAX_MAXIMUM", "SMILE_MAXIMUM_LENTICULE_THICKNESS"})
+        resolved["smile_device_max_confirmed"] = confirmed
+        resolved["ablation_um"] = smile_lt if confirmed else None
+        resolved["max_ablation_um"] = smile_lt if confirmed else None
+        resolved["lenticule_source"] = source if confirmed else "DEVICE_MAXIMUM_REQUIRED"
+        resolved["ablation_source"] = resolved["lenticule_source"]
         resolved["flap_status"] = "SMILE_CAP"
     elif procedure == "LASIK" and resolved.get("flap_status") == "NOT_APPLICABLE":
         resolved.pop("flap_status", None)
@@ -431,6 +433,7 @@ def build_clinical_core_input(
         intended_axis_deg=intended_axis,
         flap_um=_first_number(resolved, "flap_um"),
         ablation_um=_ablation(resolved),
+        smile_device_max_confirmed=resolved.get("smile_device_max_confirmed") is True,
         preop_kmean_d=_first_number(eye, "Kmean_D"),
         intended_mrse_d=intended_mrse,
         final_bad_d=_first_number(eye, "BAD_D"),

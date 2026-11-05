@@ -27,6 +27,7 @@ def _inter_eye():
 
 def _case(procedure="LASIK", ps3_eye=None, **overrides):
     values = dict(
+        smile_device_max_confirmed=procedure == "SMILE",
         procedure=procedure, age_years=35, thinnest_um=495.0, i_s_d=0.0,
         derived_srax_deg=10.0, srax_gt20_confirmed=False,
         manifest_mrse_d=-2.0, intended_sphere_d=-2.0,
