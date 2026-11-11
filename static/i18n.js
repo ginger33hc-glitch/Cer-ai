@@ -375,7 +375,7 @@
     "Pentacam 4 Maps Refractive (toric)":"Pentacam 4 Maps Refractive (torik)","Same operative eye. Cornea Back K1/K2 and a principal axis are transcribed. Embedded toric results are unvalidated and for surgeon testing only.":"Ameliyat edilecek aynı göze ait Cornea Back K1/K2 ve bir ana meridyen aksı aktarılır. Uygulama içindeki torik sonuçlar doğrulanmamıştır; yalnızca cerrah testi içindir.",
     "PDF ready and archived. Contains patient information.":"PDF hazır ve arşivlendi. Hasta bilgileri içerir.",
     "Incision axis, degrees (steep K2)":"İnsizyon aksı, derece (dik K2)","SIA axis, degrees (steep K2)":"SIA aksı, derece (dik K2)",
-    "TEST ONLY":"YALNIZCA TEST","TEST ONLY — unvalidated toric optical prototype.":"YALNIZCA TEST — doğrulanmamış torik optik prototip.",
+    "TEST ONLY":"YALNIZCA TEST","Unvalidated toric optical prototype.":"Doğrulanmamış torik optik prototip.",
     "Independently check the source readings, model availability, implantation axis, and residual with the manufacturer's calculator before any clinical use.":"Herhangi bir klinik kullanımdan önce kaynak ölçümlerini, model bulunabilirliğini, yerleştirme aksını ve rezidüeli üreticinin hesaplayıcısıyla bağımsız olarak doğrulayın.",
     "Model":"Model","IOL cylinder":"IOL silindiri","Marker axis":"İşaretleme aksı","Predicted residual cylinder":"Tahmini rezidüel silindir",
     "No embedded toric model or axis available.":"Uygulama içinde torik model veya aks sonucu yok.","Upload the same-eye Pentacam 4 Maps Refractive image and verify Pachy Vertex.":"Aynı göze ait Pentacam 4 Maps Refractive görüntüsünü yükleyin ve Pachy Vertex değerini doğrulayın.","Review source measurements and the selected lens family.":"Kaynak ölçümlerini ve seçili lens ailesini gözden geçirin.",
