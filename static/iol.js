@@ -348,7 +348,7 @@
     const options = lensCatalog.filter(lens => eligible.has(lens.category) && (toric ? lens.subtype?.toLowerCase().includes("toric") : !lens.subtype?.toLowerCase().includes("toric")));
     const lensPrompt = recommendation.recommendation_scope === "OPTICAL_ONLY" ? "Select an optical candidate for surgeon review" : "Select an eligible lens";
     $("selectedLens").innerHTML = `<option value="">${tr(lensPrompt)}</option>` + options.map(lens => {
-      const route = toric ? (lens.embedded_toric_supported ? " — embedded prototype (TEST ONLY)" : " — external toric verification required") : "";
+      const route = toric ? (lens.embedded_toric_supported ? " — embedded prototype" : " — external toric verification required") : "";
       return `<option value="${lens.id}">${lens.name} — ${lens.category} — A ${lens.a_constant.toFixed(1)}${route}</option>`;
     }).join("");
   }
@@ -482,7 +482,7 @@
           const note = tr(reference.note).replace(/[&<>"']/g, char => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
           notes += `<p>${note}</p>`;
         }
-        notes += `<div class="warning"><strong>TEST ONLY — unvalidated toric optical prototype.</strong> Independently check the source readings, model availability, implantation axis, and residual with the manufacturer's calculator before any clinical use.</div>`;
+        notes += `<div class="warning"><strong>Unvalidated toric optical prototype.</strong> Independently check the source readings, model availability, implantation axis, and residual with the manufacturer's calculator before any clinical use.</div>`;
         html += `<h3>Embedded toric calculation — ${fmt(candidates[0]?.spherical_equivalent_iol_d)} D ${formula} <span>spherical equivalent</span></h3>`;
         html += `<div class="recommendation">${fmt(candidates[0]?.spherical_equivalent_iol_d)} D · ${candidates[0]?.model ?? "—"} · ${fmt(candidates[0]?.marker_axis_deg, 1)}° marker axis</div>`;
         if (["SURGEON_FIELD_CALIBRATION_FIXED_RESIDUAL_V2", "SURGEON_FIELD_CALIBRATION_FIXED_RESIDUAL_ORIGINAL_AXIS_V3"].includes(candidates[0]?.adjustment_policy)) {
