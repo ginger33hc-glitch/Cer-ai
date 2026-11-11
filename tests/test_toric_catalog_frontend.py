@@ -25,7 +25,10 @@ for(const model of JSON.parse(process.argv[1])) {
   vm.runInNewContext(block,state);
   assert(state.html.includes(`<td>${model}</td>`),model);
   assert(!state.html.includes('TEST ONLY'));
-  assert(state.notes.includes('TEST ONLY'));
+  assert(!state.notes.includes('TEST ONLY'));
+  assert(state.notes.includes('Unvalidated toric optical prototype.'));
+  assert(state.notes.includes("manufacturer's calculator"));
+  assert.equal(tr('Unvalidated toric optical prototype.'), 'Doğrulanmamış torik optik prototip.');
 }
 '''
     subprocess.run(["node", "-e", script, json.dumps([
