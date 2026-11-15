@@ -1,4 +1,4 @@
-/* Build transfers only from the completed, per-eye canonical power plans. */
+/* Browser tab isolation diagnostic. Build transfers only from the completed, per-eye canonical power plans. */
 (() => {
   "use strict";
 
