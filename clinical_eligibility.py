@@ -58,6 +58,8 @@ def evaluate_eligibility(
     # Absence of its three answers must not imply a reassuring assessment
     # or block tomography-only evaluation.
     clinical_questions_omitted = all(value == "unknown" for value in (stable, progression, cdva))
+    prior_unverified = str(plan.get("prior") or "").strip().lower() == "unknown"
+    lens_unverified = str(modifiers.get("contact_lens_type") or "").strip().upper() == "UNKNOWN"
 
     required = {
         "refractive_stability": stable,
@@ -76,7 +78,18 @@ def evaluate_eligibility(
             required.pop(key)
     if clinical_questions_omitted and all(value == "unknown" for value in modifiers.values() if isinstance(value, str)):
         # No clinical questionnaire was administered; this is not a clinical PASS.
-        return EligibilityResult((), (), ("Clinical eligibility not assessed by CER-AI; surgeon review required.",))
+        findings = []
+        if prior_unverified:
+            findings.append(DecisionFinding(
+                "prior_cornea_history_unverified", ASSESSMENT_INCOMPLETE,
+                "Prior corneal refractive surgery was not assessed; a virgin-cornea surgical clearance cannot be issued.",
+            ))
+        if lens_unverified:
+            findings.append(DecisionFinding(
+                "contact_lens_history_unverified", ASSESSMENT_INCOMPLETE,
+                "Contact-lens use and washout were not assessed; tomography-based surgical clearance cannot be issued.",
+            ))
+        return EligibilityResult(tuple(findings), (), ("Clinical eligibility not assessed by CER-AI; surgeon review required.",))
     missing = tuple(key for key, value in required.items() if value == "unknown")
 
     findings: list[DecisionFinding] = []
@@ -136,6 +149,17 @@ def evaluate_eligibility(
         notes.append("Chronic eye rubbing/repetitive ocular trauma present.")
     if family_history == "yes":
         notes.append("Family history of keratoconus present.")
+
+    if prior_unverified:
+        findings.append(DecisionFinding(
+            "prior_cornea_history_unverified", ASSESSMENT_INCOMPLETE,
+            "Prior corneal refractive surgery was not assessed; a virgin-cornea surgical clearance cannot be issued.",
+        ))
+    if lens_unverified:
+        findings.append(DecisionFinding(
+            "contact_lens_history_unverified", ASSESSMENT_INCOMPLETE,
+            "Contact-lens use and washout were not assessed; tomography-based surgical clearance cannot be issued.",
+        ))
 
     if not findings and not clinical_questions_omitted:
         findings.append(DecisionFinding(
