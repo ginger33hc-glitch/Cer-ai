@@ -99,7 +99,7 @@ def test_completion_corrects_invalid_depth_and_reaches_report_without_reupload(b
             assert requests == []
         field.fill("35")
         page.locator("#assessBtn").click()
-        assert page.locator("#reportCard").is_visible(), {"progress": page.locator("#assessmentProgress").inner_text(), "readiness": page.locator("#readinessPanel").inner_text(), "requests": requests, "errors": errors}
+        expect(page.locator("#reportCard")).to_be_visible(timeout=12000)
         expect(page.locator("#readinessPanel")).to_be_hidden()
         assert len(requests) == 1
         assert requests[0]["eye_plans"]["OS"]["ablation_um"] == 105
