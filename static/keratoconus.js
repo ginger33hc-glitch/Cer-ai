@@ -23,6 +23,7 @@ function scoreDetails(eye,card){
  const nice=eye.nice||{};node('h5','NICE',section);
  const niceRows=[['K2','K2_D','K2 (D)'],['central_pachymetry','central_pachy_um',tr('Central pachymetry (µm)','Santral pakimetri (µm)')],['B_Ele_Th','B_Ele_Th_um','B.Ele.Th (µm)'],['I_S','I_S_D','I-S (D)']];
  const tbl=node('table','',section);for(const [key,valueKey,label] of niceRows){const row=node('tr','',tbl);node('td',label,row);node('td',nice.values?.[valueKey]==null?'—':String(nice.values[valueKey]),row);node('td',nice.rows?.[key]==null?'—':String(nice.rows[key])+tr(' points',' puan'),row);}
+ node('p',tr('NICE point bands: K2 <45 = 1, 45–47 = 2, >47 = 3 D; central pachymetry >520 = 1, 500–520 = 2, <500 = 3 µm; B.Ele.Th ≤15.5 = 1, >15.5 to <18 = 2, ≥18 = 3 µm; I-S <1 = 1, 1–1.4 = 2, >1.4 = 3 D.','NICE puan eşikleri: K2 <45 = 1, 45–47 = 2, >47 = 3 D; santral pakimetri >520 = 1, 500–520 = 2, <500 = 3 µm; B.Ele.Th ≤15,5 = 1, >15,5 ile <18 = 2, ≥18 = 3 µm; I-S <1 = 1, 1–1,4 = 2, >1,4 = 3 D.'),section);
  node('p',tr('NICE total','NICE toplam')+': '+(nice.total==null?tr('incomplete','eksik'):String(nice.total))+'; '+tr('category','kategori')+': '+String(nice.category??'—'),section);
  node('p',tr('Point assignments and totals are returned by the clinical scoring engine, not recomputed in the browser.','Puanlar ve toplam klinik puanlama motorundan alınır; tarayıcıda yeniden hesaplanmaz.'),section);
  const ps=eye.ps3||{};node('h5','PS3',section);
