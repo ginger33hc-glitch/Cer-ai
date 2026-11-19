@@ -123,6 +123,7 @@ def test_screening_browser(locale, width, needs_input):
         expect(page.locator("h1")).to_have_text(
             "Keratokonus Tarama" if locale == "tr" else "Keratoconus Screening"
         )
+        expect(page.locator("label.file-picker span")).to_have_text("5 Pentacam görüntüsü seçin" if locale == "tr" else "Choose 5 Pentacam images")
         assert page.locator("input[type=number]").count() == 7
         assert (
             page.locator("select").count() == 1
@@ -157,6 +158,8 @@ def test_screening_browser(locale, width, needs_input):
             page.locator('#completionForm [data-key="srax"]').select_option("NO")
             page.locator("#completeScreening").click()
         expect(page.locator("#results .NEGATIVE")).to_have_count(2)
+        expect(page.locator("#results .notice h4")).to_have_count(2)
+        expect(page.locator("#results .notice h4").first).to_have_text("Progresyon — hekim değerlendirmesi" if locale == "tr" else "Progression — physician review")
         expect(page.locator("#output")).to_be_visible()
         expect(page.locator("#progressPercent")).to_have_text("100%")
         expect(page.locator("#progressBar")).to_have_attribute("value", "100")
