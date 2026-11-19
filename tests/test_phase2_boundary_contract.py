@@ -75,7 +75,13 @@ def test_precore_readiness_consumes_single_contact_lens_policy(modifiers):
         eye_plans={"OD": {"prior": "no", "procedure": "LASIK"}},
         patient_modifiers=modifiers,
     )
-    assert actual["contact_lens_washout"] == expected
+    if modifiers["contact_lens_type"] == "UNKNOWN":
+        # Omitted questionnaire: explicitly unverified, not a fabricated NONE.
+        # An INCOMPLETE clinical finding now prevents PASS in the canonical scorer.
+        assert expected is not None
+        assert actual["contact_lens_washout"] is None
+    else:
+        assert actual["contact_lens_washout"] == expected
 
 
 def test_clinical_core_does_not_own_transport_report_or_archive_layers():
