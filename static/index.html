@@ -60,7 +60,6 @@
       <div class="row"><label>Pentacam/topography and treatment-card images <span class="required">*</span></label><div class="file-picker-wrap"><label class="localized-file-picker" for="imageInput"><span id="imagePickerLabel">Choose Pentacam images</span><input id="imageInput" name="images" type="file" accept="image/*" multiple required aria-label="Choose Pentacam images"></label><div id="selectedFiles" class="selected-files" aria-live="polite"></div></div></div>
       <p id="sourceSetStatus" class="note" hidden aria-live="polite"></p>
       <p id="sharedImageNotice" class="alert" hidden></p>
-      <div class="row"><label for="contact_lens_type" id="contactLensQuestion">Do you wear contact lenses?</label><select id="contact_lens_type" required aria-label="Do you wear contact lenses?"><option value="">Select</option><option value="UNKNOWN">Yes</option><option value="NONE">No</option></select></div>
       <h3>Eye-specific plans</h3>
       <div class="grid">
         <fieldset><legend>OD</legend><div id="od-fields"></div></fieldset>
@@ -132,7 +131,6 @@ async function ceraiFetch(url,options={}){
   return fetch(url,{...requestOptions,headers});
 }
 window.ceraiFetch=ceraiFetch;
-const contactLensType=document.getElementById("contact_lens_type");
 const eyeTemplate = (eye) => `
   <div class="row"><label>Prior corneal refractive surgery?</label><select id="${eye}_prior"><option value="no" selected>No</option><option value="prk">Yes — PRK</option><option value="lasik">Yes — LASIK</option><option value="smile">Yes — SMILE</option><option value="unknown">Not documented</option></select></div>
   <div class="row"><label>Procedure</label><select id="${eye}_procedure"><option value="">Select</option><option value="PRK">PRK</option><option value="LASIK">LASIK</option><option value="SMILE">SMILE</option></select></div>
@@ -172,9 +170,6 @@ function syncImagePickerLanguage(){
   const text=english?"Choose Pentacam images":"Pentacam görüntülerini seç";
   document.getElementById("imagePickerLabel").textContent=text;
   document.getElementById("imageInput").setAttribute("aria-label",text);
-  const lensQuestion=english?"Do you wear contact lenses?":"Kontakt lens kullanıyor musunuz?";
-  document.getElementById("contactLensQuestion").textContent=lensQuestion;
-  document.getElementById("contact_lens_type").setAttribute("aria-label",lensQuestion);
 }
 i18n.translateDOM(document.body);
 syncImagePickerLanguage();
@@ -605,7 +600,7 @@ function patientModifiers(){
   const keys=["eye_rubbing","family_history","pregnancy_nursing","collagen_tissue_disease","drug_usage","dry_eye","systemic_disease"];
   const result=Object.fromEntries(keys.map(key=>[key,"unknown"]));
   result.selected_modifiers=[];
-  result.contact_lens_type=value("contact_lens_type")||"UNKNOWN";
+  result.contact_lens_type="UNKNOWN";
   result.contact_lens_discontinuation_days=null;
   return result;
 }
