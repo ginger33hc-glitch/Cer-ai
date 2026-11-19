@@ -522,3 +522,21 @@ def test_stream_reads_uploaded_files_before_response_cleanup(monkeypatch):
         ],
     )
     assert json.loads(response.text.splitlines()[-1])["type"] == "result"
+
+
+def test_screening_report_score_breakdown_uses_canonical_components():
+    from keratoconus_module.report import _score_rows, build_screening_pdf
+    extracted, refs = fixture_case()
+    result = evaluate_extracted(extracted, refs)
+    eye = result["eyes"][0]
+    rows = _score_rows(eye, True)
+    as_dict = dict(rows)
+    assert as_dict["NICE toplam"].startswith("4 |")
+    assert as_dict["NICE K2 (D)"] == "44.0 -> 1 puan"
+    assert as_dict["Randleman/ERSS topografi"].endswith("topography points 0")
+    assert "PS3 anterior_km [NORMAL]" in as_dict
+    assert "Final BAD-D" in as_dict
+    assert "BAD-D eşikleri" in as_dict
+    assert "topografi" in as_dict["ERSS kapsamı"]
+    snapshot = {**result, "locale": "tr"}
+    assert build_screening_pdf(snapshot).startswith(b"%PDF")
