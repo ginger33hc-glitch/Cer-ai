@@ -73,8 +73,6 @@ def test_completion_corrects_invalid_depth_and_reaches_report_without_reupload(b
         page.evaluate("""pending => {
           document.getElementById('patient_name').value='SYNTHETIC QA';
           document.getElementById('age').value='21';
-          document.getElementById('contact_lens_type').value='NONE';
-          document.querySelector('[name=patient_modifier][value=none]').checked=true;
           for(const eye of ['od','os']){
             const fields={procedure:'LASIK',manifest_sphere:eye==='os'?'.75':'-2',
               manifest_cylinder:eye==='os'?'1.75':'-1',sphere:eye==='os'?'.75':'-2',
