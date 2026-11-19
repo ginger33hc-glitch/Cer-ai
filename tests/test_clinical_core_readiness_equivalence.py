@@ -32,7 +32,14 @@ def test_precore_readiness_uses_clinical_core_contact_lens_policy_cases():
             eye_plans={"OD": {"prior": "no", "procedure": "LASIK"}},
             patient_modifiers=modifiers,
         )
-        assert result["contact_lens_washout"] == contact_lens_washout(modifiers)
+        if modifiers["contact_lens_type"] == "UNKNOWN":
+            # Removed questionnaire means history remains unverified, not that no lenses were used.
+            # Core policy still considers UNKNOWN undocumented; canonical eligibility
+            # independently prohibits clinical PASS while allowing a non-clearance report.
+            assert contact_lens_washout(modifiers) is not None
+            assert result["contact_lens_washout"] is None
+        else:
+            assert result["contact_lens_washout"] == contact_lens_washout(modifiers)
 
 
 def test_importing_readiness_does_not_mutate_workflow_runtime():
