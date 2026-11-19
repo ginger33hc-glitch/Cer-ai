@@ -143,7 +143,7 @@ for(const eye of ['od','os'])for(const suffix of ['manifest_sphere','manifest_cy
 const context={document:{getElementById:id=>fields[id]},Event:class{constructor(type){this.type=type;}},numberOrNull:id=>{const raw=fields[id].value.trim();return raw===''?null:Number(raw);}};
 vm.createContext(context);
 const start=html.indexOf('// Manifest is the surgeon');
-const end=html.indexOf('const clinicalReviewState',start);
+const end=html.indexOf('function enforceNonnegativeAblation',start);
 vm.runInContext(html.slice(start,end),context);
 fields.od_manifest_sphere.value='-3.25';fields.od_manifest_sphere.dispatchEvent(new context.Event('input'));
 assert.equal(fields.od_sphere.value,'-3.25');
