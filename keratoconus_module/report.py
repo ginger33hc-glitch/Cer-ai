@@ -69,6 +69,13 @@ def build_screening_pdf(snapshot):
             )
         ]
         story += [para(finding["detail"]) for finding in eye.get("findings", [])]
+        story += [
+            para(
+                "Progresyon — hekim değerlendirmesi: Bu tek taramadan progresyon belirlenemez. Tarihi doğrulanmış seri tomografileri (Kmax, en ince pakimetri, ön/arka yüz ve varsa ABCD progresyonu), refraksiyon ve klinik muayene ile karşılaştırın. Pozitif tarama progresyon kanıtı değildir."
+                if tr
+                else "Progression — physician review: This single screening assessment cannot establish progression. Compare date-verified serial tomography (Kmax, thinnest pachymetry, anterior/posterior changes and ABCD progression when available), refraction and clinical examination. Positive screening does not prove progression."
+            )
+        ]
         if eye.get("missing"):
             story += [
                 para(
