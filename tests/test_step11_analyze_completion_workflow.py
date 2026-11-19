@@ -307,13 +307,10 @@ def test_frontend_supports_all_nonready_states_and_never_leaves_analyze_stuck_di
     assert "hard_stop_summary" in html
 
 
-def test_prior_surgery_ui_submits_specific_procedure_not_ambiguous_yes():
+def test_prior_surgery_question_removed_without_asserting_no_surgery():
     html = (ROOT / "static" / "index.html").read_text()
-    assert '<option value="prk">Yes — PRK</option>' in html
-    assert '<option value="lasik">Yes — LASIK</option>' in html
-    assert '<option value="smile">Yes — SMILE</option>' in html
-    prior_row = next(line for line in html.splitlines() if 'id="${eye}_prior"' in line)
-    assert '<option value="yes">Yes</option>' not in prior_row
+    assert 'id="${eye}_prior"' not in html
+    assert 'prior:"unknown"' in html
 
 
 def test_browser_result_view_consumes_canonical_report_payload_only():
