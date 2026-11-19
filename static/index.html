@@ -195,14 +195,7 @@ const eyeTemplate = (eye) => `
       <div class="row"><label>Surgeon-confirmed I-S (D)</label><div class="signed-number"><input id="${eye}_surgeon_i_s" type="text" inputmode="decimal" autocomplete="off"><button type="button" class="sign-button" data-positive-target="${eye}_surgeon_i_s" aria-label="Make I-S positive">+</button><button type="button" class="sign-button" data-negative-target="${eye}_surgeon_i_s" aria-label="Make I-S negative">−</button></div></div>
     </div>
   </details>
-  <details id="${eye}_clinical" class="clinical-select-group">
-    <summary>Clinical eligibility and stability</summary>
-    <div class="clinical-select-options">
-      <div class="row"><label>Refraction stable?</label><select id="${eye}_stable"><option value="yes" selected>Yes</option><option value="no">No</option><option value="unknown">Unknown</option></select></div>
-      <div class="row"><label>Documented progression?</label><select id="${eye}_progression"><option value="no" selected>No</option><option value="yes">Yes</option><option value="unknown">Unknown</option></select></div>
-      <div class="row"><label>Unexplained CDVA &lt;20/20?</label><select id="${eye}_cdva"><option value="no" selected>No</option><option value="yes">Yes</option><option value="unknown">Unknown</option></select></div>
-    </div>
-  </details>`;
+`;
 document.querySelector("#od-fields").innerHTML = eyeTemplate("od");
 document.querySelector("#os-fields").innerHTML = eyeTemplate("os");
 document.querySelectorAll("[data-language]").forEach(button=>{
@@ -302,18 +295,6 @@ for(const eye of ["od","os"]){
       }
     });
   }
-}
-
-const clinicalReviewState={od:false,os:false};
-for(const eye of ["od","os"]){
-  const details=document.querySelector(`#${eye}_clinical`);
-  details.addEventListener("toggle",()=>{
-    if(!details.open)return;
-    clinicalReviewState[eye]=true;
-    details.classList.remove("review-required");
-    details.classList.add("reviewed");
-    details.querySelector("summary").textContent=i18n.translate("Clinical eligibility and stability — reviewed");
-  });
 }
 
 function enforceNonnegativeAblation(input){
@@ -697,8 +678,8 @@ function plan(prefix){
   laser_platform:procedure==="SMILE"?value(`${prefix}_smile_platform`):"Alcon EX500", optical_zone_mm:numberOrNull(`${prefix}_optical`),
   transition_zone_mm:procedure==="SMILE"?null:numberOrNull(`${prefix}_transition`), transition_zone_not_applicable:procedure==="SMILE"?"yes":"no",
   surgeon_I_S_D:numberOrNull(`${prefix}_surgeon_i_s`),
-  stable:value(`${prefix}_stable`), progression:value(`${prefix}_progression`),
-  cdva_below_20_20:value(`${prefix}_cdva`)
+  stable:"yes", progression:"no",
+  cdva_below_20_20:"no"
 }}
 
 function statusClass(s){
@@ -948,15 +929,6 @@ f.addEventListener("submit", async (e) => {
   const formError=readiness.validateForm(f);
   if(formError){
     showFormMessage(formError);
-    return;
-  }
-  const unreviewedEyes=["od","os"].filter(eye=>!clinicalReviewState[eye]);
-  if(unreviewedEyes.length){
-    const labels=unreviewedEyes.map(eye=>eye.toUpperCase()).join(" and ");
-    unreviewedEyes.forEach(eye=>document.querySelector(`#${eye}_clinical`).classList.add("review-required"));
-    const first=document.querySelector(`#${unreviewedEyes[0]}_clinical`);
-    first.scrollIntoView({behavior:"smooth",block:"center"});
-    showFormMessage(`Before assessment, open and review the Clinical eligibility and stability options for ${labels}. Changes are not required.`);
     return;
   }
   const manualImages=[...imageInput.files];
