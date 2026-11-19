@@ -59,7 +59,22 @@ def main() -> int:
         print(f"CI gate {sha[:12]}: {state}: {detail}", flush=True)
         if state == "success":
             return 0
-        if state == "failed" or time.monotonic() >= deadline:
+        if state == "failed":
+            for run in runs:
+                if (run.get("head_sha") == sha and run.get("event") == "push"
+                        and run.get("conclusion") == "failure"):
+                    try:
+                        jobs_url = f"https://api.github.com/repos/{REPOSITORY}/actions/runs/{run['id']}/jobs?per_page=100"
+                        with urlopen(Request(jobs_url, headers={"User-Agent": "CER-AI-CI-diagnostics"}), timeout=20) as response:
+                            jobs = json.load(response).get("jobs", [])
+                        for job in jobs:
+                            if job.get("conclusion") == "failure":
+                                steps = [(step.get("name"), step.get("conclusion")) for step in job.get("steps", []) if step.get("conclusion") == "failure"]
+                                print(f"Failed CI job: {job.get('name')}; steps: {steps}; job ID: {job.get('id')}", flush=True)
+                    except Exception as exc:
+                        print(f"CI diagnostics unavailable: {type(exc).__name__}", flush=True)
+            return 1
+        if time.monotonic() >= deadline:
             return 1
         time.sleep(30)
 
