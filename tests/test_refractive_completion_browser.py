@@ -43,7 +43,7 @@ def test_completion_corrects_invalid_depth_and_reaches_report_without_reupload(b
     context = browser.new_context(viewport={"width": width, "height": 900}, service_workers="block", reduced_motion="reduce")
     context.add_init_script("localStorage.setItem('cerai-language'," + json.dumps(locale) + ");")
     page = context.new_page()
-    requests, errors = [], []
+    requests, errors, responses = [], [], []
     page.on("pageerror", lambda error: errors.append(str(error)))
 
     def route_request(route):
@@ -58,6 +58,7 @@ def test_completion_corrects_invalid_depth_and_reaches_report_without_reupload(b
             result = workflow._respond(core, "synthetic-token", session, payload["age"],
                 payload["eye_plans"], payload["patient_modifiers"], payload["patient_metadata"],
                 payload["clinical_overrides"], payload["source_confirmations"])
+            responses.append({"status": result.get("workflow_status"), "missing": result.get("missing"), "requests": result.get("input_requests"), "decision": (result.get("decision") or {}).get("status")})
             route.fulfill(json=result)
         elif path.startswith("/static/") or path == "/favicon.ico":
             route.fulfill(status=204)
@@ -100,7 +101,7 @@ def test_completion_corrects_invalid_depth_and_reaches_report_without_reupload(b
         field.fill("35")
         page.locator("#assessBtn").click()
         page.wait_for_function("() => !document.getElementById('assessBtn').disabled", timeout=20000)
-        assert page.locator("#reportCard").is_visible(), {"progress": page.locator("#assessmentProgress").inner_text(), "readiness": page.locator("#readinessPanel").inner_text(), "requests": requests, "errors": errors}
+        assert page.locator("#reportCard").is_visible(), {"progress": page.locator("#assessmentProgress").inner_text(), "readiness": page.locator("#readinessPanel").inner_text(), "requests": requests, "responses": responses, "errors": errors}
         expect(page.locator("#readinessPanel")).to_be_hidden()
         assert len(requests) == 1
         assert requests[0]["eye_plans"]["OS"]["ablation_um"] == 105
