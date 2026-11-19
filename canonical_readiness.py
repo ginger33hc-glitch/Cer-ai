@@ -47,7 +47,10 @@ def evaluate_precore_readiness(
     if age_issue:
         blockers.append({"eye": "PATIENT", "key": "age", "message": age_issue})
 
-    lens_block = contact_lens_washout(dict(patient_modifiers or {}))
+    # The removed questionnaire supplies UNKNOWN, never an invented NONE.
+    # The canonical eligibility layer will prevent a surgical PASS when history is unknown.
+    lens_unknown = str((patient_modifiers or {}).get("contact_lens_type") or "").upper() == "UNKNOWN"
+    lens_block = None if lens_unknown else contact_lens_washout(dict(patient_modifiers or {}))
     if lens_block:
         blockers.append({
             "eye": "PATIENT",
@@ -65,18 +68,18 @@ def evaluate_precore_readiness(
             continue
 
         prior = str(plan.get("prior") or "").strip().lower()
-        if prior not in KNOWN_PRIOR_STATES:
+        if prior not in KNOWN_PRIOR_STATES and prior != "unknown":
             blockers.append({
                 "eye": eye,
                 "key": "prior",
                 "message": "Prior corneal refractive-surgery status must be documented.",
             })
             continue
-        if prior != "no":
+        if prior in {"prk", "lasik", "smile"}:
             pathways[eye] = POST_REFRACTIVE
             continue
 
-        pathways[eye] = VIRGIN
+        pathways[eye] = VIRGIN if prior == "no" else "VIRGIN_HISTORY_UNVERIFIED"
         procedure = str(plan.get("procedure") or "").strip().upper()
         if procedure not in SUPPORTED_PROCEDURES:
             blockers.append({
