@@ -80,7 +80,6 @@ def test_completion_corrects_invalid_depth_and_reaches_report_without_reupload(b
               manifest_cylinder:eye==='os'?'1.75':'-1',sphere:eye==='os'?'.75':'-2',
               cylinder:eye==='os'?'1.75':'-1',axis:'90',ablation:eye==='os'?'105':'50',flap:'100'};
             for(const [key,value] of Object.entries(fields))document.getElementById(`${eye}_${key}`).value=value;
-            document.getElementById(`${eye}_clinical`).open=true;
           }
           readiness.show(pending);
         }""", pending)
