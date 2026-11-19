@@ -162,7 +162,7 @@ def test_screening_browser(locale, width, needs_input):
         expect(page.locator("#results .score-details").first).to_contain_text("NICE")
         expect(page.locator("#results .score-details").first).to_contain_text("PS3")
         expect(page.locator("#results .score-details").first).to_contain_text("Final BAD-D")
-        expect(page.locator("#results .score-details").first).to_contain_text("Randleman/ERSS")
+        expect(page.locator("#results .score-details").first).to_contain_text("ERSS")
         expect(page.locator("#results .notice h4")).to_have_count(2)
         expect(page.locator("#results .notice h4").first).to_have_text("Progresyon — hekim değerlendirmesi" if locale == "tr" else "Progression — physician review")
         expect(page.locator("#output")).to_be_visible()
