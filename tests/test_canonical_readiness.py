@@ -41,7 +41,7 @@ def test_post_refractive_eye_routes_outside_virgin_core_without_requiring_proced
     assert result["pathways"]["OD"] == POST_REFRACTIVE
 
 
-def test_unknown_prior_or_unsupported_virgin_procedure_blocks():
+def test_unverified_prior_never_claims_virgin_status_and_unsupported_procedure_blocks():
     unknown = evaluate_precore_readiness(
         age_years=35,
         eye_plans={"OD": _plan(prior="unknown")},
@@ -52,7 +52,8 @@ def test_unknown_prior_or_unsupported_virgin_procedure_blocks():
         eye_plans={"OD": _plan(procedure="OTHER")},
         patient_modifiers={"contact_lens_type": "NONE"},
     )
-    assert any(item["key"] == "prior" for item in unknown["blockers"])
+    assert unknown["ready"] is True
+    assert unknown["pathways"]["OD"] == "VIRGIN_HISTORY_UNVERIFIED"
     assert any(item["key"] == "procedure" for item in unsupported["blockers"])
 
 
@@ -105,3 +106,22 @@ def test_precore_readiness_has_no_tomography_or_scoring_dependency_table():
         "evaluate_ps3",
     ):
         assert token not in source
+
+
+def test_removed_questionnaire_unknown_is_not_mistaken_for_no_lens_or_no_surgery():
+    unverified = evaluate_precore_readiness(
+        age_years=35,
+        eye_plans={"OD": _plan(prior="unknown")},
+        patient_modifiers={"contact_lens_type": "UNKNOWN"},
+    )
+    assert unverified["ready"] is True
+    assert unverified["pathways"]["OD"] == "VIRGIN_HISTORY_UNVERIFIED"
+    assert unverified["contact_lens_washout"] is None
+    # Known insufficient wear-time always remains a hard gate.
+    worn = evaluate_precore_readiness(
+        age_years=35,
+        eye_plans={"OD": _plan(prior="unknown")},
+        patient_modifiers={"contact_lens_type": "RIGID", "contact_lens_discontinuation_days": 1},
+    )
+    assert worn["ready"] is False
+    assert worn["contact_lens_washout"]["required_days"] == 21
