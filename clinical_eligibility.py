@@ -74,6 +74,9 @@ def evaluate_eligibility(
     if clinical_questions_omitted:
         for key in ("refractive_stability", "documented_progression", "unexplained_cdva_below_20_20"):
             required.pop(key)
+    if clinical_questions_omitted and all(value == "unknown" for value in modifiers.values() if isinstance(value, str)):
+        # No clinical questionnaire was administered; this is not a clinical PASS.
+        return EligibilityResult((), (), ("Clinical eligibility not assessed by CER-AI; surgeon review required.",))
     missing = tuple(key for key, value in required.items() if value == "unknown")
 
     findings: list[DecisionFinding] = []
