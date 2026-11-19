@@ -76,7 +76,7 @@ def evaluate_eligibility(
     if clinical_questions_omitted:
         for key in ("refractive_stability", "documented_progression", "unexplained_cdva_below_20_20"):
             required.pop(key)
-    if clinical_questions_omitted and all(value == "unknown" for value in modifiers.values() if isinstance(value, str)):
+    if clinical_questions_omitted and all(value.strip().lower() == "unknown" for value in modifiers.values() if isinstance(value, str)):
         # No clinical questionnaire was administered; this is not a clinical PASS.
         findings = []
         if prior_unverified:
