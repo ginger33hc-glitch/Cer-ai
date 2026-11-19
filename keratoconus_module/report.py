@@ -29,6 +29,9 @@ def _score_rows(eye, tr):
         ("I-S (D)", "I_S_D", "I_S"),
     ):
         rows.append((f"NICE {label}", f"{values.get(value_key, '—')} -> {points.get(point_key, '—')} {'puan' if tr else 'points'}"))
+    rows.append(("NICE scoring bands" if not tr else "NICE puan eşikleri",
+                 "K2: <45=1, 45–47=2, >47=3 D; central pachy: >520=1, 500–520=2, <500=3 um; B.Ele.Th: <=15.5=1, (15.5,18)=2, >=18=3 um; I-S: <1=1, 1–1.4=2, >1.4=3 D."
+                 if not tr else "K2: <45=1, 45–47=2, >47=3 D; santral pakimetri: >520=1, 500–520=2, <500=3 um; B.Ele.Th: <=15,5=1, (15,5–18)=2, >=18=3 um; I-S: <1=1, 1–1,4=2, >1,4=3 D."))
     rows.append(("NICE total" if not tr else "NICE toplam", f"{nice.get('total', '—')} | {nice.get('category', '—')}"))
     ps3 = eye.get("ps3") or {}
     rows.append(("PS3 counts" if not tr else "PS3 sayımlar",
