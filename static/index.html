@@ -835,7 +835,7 @@ const showFormMessage=(message)=>{
   assessmentProgress.textContent=message;
   assessmentProgress.hidden=false;
 };
-const allowLoadingStateToPaint=()=>new Promise(resolve=>requestAnimationFrame(()=>setTimeout(resolve,0)));
+const allowLoadingStateToPaint=()=>new Promise(resolve=>setTimeout(resolve,0));
 
 f.addEventListener("submit", async (e) => {
   e.preventDefault();
