@@ -10,6 +10,44 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Tabl
 from reports import PDF_UNICODE_REGULAR, PDF_UNICODE_BOLD
 
 
+def _score_rows(eye, tr):
+    """Display canonical outputs only; do not calculate or revise clinical scores."""
+    rows = []
+    top = eye.get("topography") or {}
+    measurements = eye.get("measurements") or {}
+    rows.append(("Randleman/ERSS topography" if not tr else "Randleman/ERSS topografi",
+                 f"I-S {measurements.get('I_S', '—')} D; SRAX {measurements.get('srax_deg', '—')}; category {top.get('category', '—')}; topography points {top.get('points', '—')}"))
+    rows.append(("ERSS scope" if not tr else "ERSS kapsamı",
+                 "Topography component only; NOT total surgical ERSS (age, MRSE, thickness, RSB excluded)."
+                 if not tr else "Yalnız topografi bileşeni; toplam cerrahi ERSS DEĞİL (yaş, MRSE, kalınlık, RSB hariç)."))
+    nice = eye.get("nice") or {}
+    values, points = nice.get("values") or {}, nice.get("rows") or {}
+    for label, value_key, point_key in (
+        ("K2 (D)", "K2_D", "K2"),
+        ("Central pachymetry (um)" if not tr else "Santral pakimetri (um)", "central_pachy_um", "central_pachymetry"),
+        ("B.Ele.Th (um)", "B_Ele_Th_um", "B_Ele_Th"),
+        ("I-S (D)", "I_S_D", "I_S"),
+    ):
+        rows.append((f"NICE {label}", f"{values.get(value_key, '—')} -> {points.get(point_key, '—')} {'puan' if tr else 'points'}"))
+    rows.append(("NICE total" if not tr else "NICE toplam", f"{nice.get('total', '—')} | {nice.get('category', '—')}"))
+    ps3 = eye.get("ps3") or {}
+    rows.append(("PS3 counts" if not tr else "PS3 sayımlar",
+                 f"HIGH: {ps3.get('high_count', '—')} | MODERATE: {ps3.get('moderate_count', '—')} | complete: {ps3.get('complete', '—')}"))
+    for finding in ps3.get("findings") or []:
+        rows.append((f"PS3 {finding.get('key', '—')} [{finding.get('status', '—')}]", finding.get("detail", "—")))
+    bad = eye.get("bad_d") or {}
+    rows.append(("Final BAD-D", f"{bad.get('value', '—')} | {bad.get('classification', '—')}"))
+    rows.append(("BAD-D thresholds" if not tr else "BAD-D eşikleri",
+                 "normal <=1.60; suspicious >1.60 and <2.60; abnormal >=2.60"
+                 if not tr else "normal <=1,60; şüpheli >1,60 ve <2,60; anormal >=2,60"))
+    rows.append(("BAD-D context" if not tr else "BAD-D bağlam",
+                 "Df/Db/Dp/Dt/Da/PPI/ARTmax are contextual, NOT added to Final D."
+                 if not tr else "Df/Db/Dp/Dt/Da/PPI/ARTmax bağlamsaldır; Final D'ye EKLENMEZ."))
+    for key, value in (bad.get("context") or {}).items():
+        rows.append((f"BAD {key}", str(value) if value is not None else "—"))
+    return rows
+
+
 def build_screening_pdf(snapshot):
     tr = snapshot.get("locale") == "tr"
     labels = {
@@ -76,6 +114,20 @@ def build_screening_pdf(snapshot):
                 else "Progression — physician review: This single screening assessment cannot establish progression. Compare date-verified serial tomography (Kmax, thinnest pachymetry, anterior/posterior changes and ABCD progression when available), refraction and clinical examination. Positive screening does not prove progression."
             )
         ]
+        story.append(para("Scoring breakdown (canonical clinical engine)" if not tr else "Puanlama ayrıntıları (kanonik klinik motor)", heading))
+        score_table = Table(
+            [[para(key), para(value)] for key, value in _score_rows(eye, tr)],
+            colWidths=[175, 265],
+            hAlign="LEFT",
+            repeatRows=0,
+        )
+        score_table.setStyle(TableStyle([
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ("LINEBELOW", (0, 0), (-1, -1), 0.25, colors.HexColor("#d9e0e6")),
+            ("LEFTPADDING", (0, 0), (-1, -1), 4),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 4),
+        ]))
+        story.extend([score_table, Spacer(1, 10)])
         if eye.get("missing"):
             story += [
                 para(
