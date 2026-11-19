@@ -54,6 +54,11 @@ def evaluate_eligibility(
     dry_eye = _tri(modifiers.get("dry_eye"))
     systemic = _tri(modifiers.get("systemic_disease"))
 
+    # The optional clinical eligibility panel was removed from the UI.
+    # Absence of its three answers must not imply a reassuring assessment
+    # or block tomography-only evaluation.
+    clinical_questions_omitted = all(value == "unknown" for value in (stable, progression, cdva))
+
     required = {
         "refractive_stability": stable,
         "documented_progression": progression,
@@ -66,6 +71,9 @@ def evaluate_eligibility(
         "dry_eye": dry_eye,
         "systemic_disease": systemic,
     }
+    if clinical_questions_omitted:
+        for key in ("refractive_stability", "documented_progression", "unexplained_cdva_below_20_20"):
+            required.pop(key)
     missing = tuple(key for key, value in required.items() if value == "unknown")
 
     findings: list[DecisionFinding] = []
@@ -126,7 +134,7 @@ def evaluate_eligibility(
     if family_history == "yes":
         notes.append("Family history of keratoconus present.")
 
-    if not findings:
+    if not findings and not clinical_questions_omitted:
         findings.append(DecisionFinding(
             "clinical_eligibility",
             PASS,
