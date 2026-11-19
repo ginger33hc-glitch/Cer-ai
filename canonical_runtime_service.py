@@ -622,7 +622,7 @@ def evaluate_case(
         if eye is None or not isinstance(plan, Mapping):
             continue
         prior = str(plan.get("prior") or "").strip().lower()
-        if prior and prior != "no":
+        if prior and prior not in {"no", "unknown"}:
             results.append(_post_refractive_eye_payload(eye_name))
             continue
         procedure = str(plan.get("procedure") or "").strip().upper()
