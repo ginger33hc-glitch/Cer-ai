@@ -126,3 +126,18 @@ def test_removed_duplicate_and_unused_controls_are_absent_from_ui():
     assert 'value="inter_eye_asymmetry"' not in html
     assert "enhancement_anticipated" not in html
     assert "Enhancement anticipated?" not in html
+
+
+def test_unanswered_removed_history_fields_never_produce_pass():
+    modifiers = {key: "unknown" for key in (
+        "eye_rubbing", "family_history", "pregnancy_nursing", "collagen_tissue_disease",
+        "drug_usage", "dry_eye", "systemic_disease",
+    )}
+    modifiers["contact_lens_type"] = "UNKNOWN"
+    result = evaluate_eligibility({"prior": "unknown"}, modifiers)
+    assert result.missing == ()
+    assert _statuses(result) == {
+        "prior_cornea_history_unverified": ASSESSMENT_INCOMPLETE,
+        "contact_lens_history_unverified": ASSESSMENT_INCOMPLETE,
+    }
+    assert "surgeon review required" in result.notes[0]
