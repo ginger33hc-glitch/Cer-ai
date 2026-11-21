@@ -58,7 +58,24 @@
     try{
       const doctors=(await api("/demo-access/admin/doctors")).doctors||[];
       document.getElementById("doctorCount").textContent=doctors.length;
-      registeredDoctors.innerHTML=doctors.length?doctors.map(doctor=>`<div class="meta" style="border-top:1px solid var(--line);padding-top:10px"><div><details><summary>${esc(doctor.doctor_name)} · ${esc(doctor.username)}</summary>${contactDetails(doctor)}</details></div><div><span class="badge" style="${doctor.status==="ACTIVE"?"color:var(--green)":"color:var(--red)"}">${esc(doctor.status==="ACTIVE"?"AKTİF":"PASİF")}</span> · ${esc(doctor.access_plan)}</div></div>`).join(""):`<div class="empty">Kayıtlı doktor bulunamadı.</div>`;
+      registeredDoctors.innerHTML=doctors.length?doctors.map(doctor=>`<div class="meta" style="border-top:1px solid var(--line);padding-top:10px"><div><details><summary>${esc(doctor.doctor_name)} · ${esc(doctor.username)}</summary>${contactDetails(doctor)}</details></div><div><span class="badge" style="${doctor.status==="ACTIVE"?"color:var(--green)":"color:var(--red)"}">${esc(doctor.status==="ACTIVE"?"AKTİF":"PASİF")}</span> · ${esc(doctor.access_plan)} <button type="button" class="editDoctor" data-id="${esc(doctor.user_id)}">Edit / Şifre değiştir</button></div></div>`).join(""):`<div class="empty">Kayıtlı doktor bulunamadı.</div>`;
+      registeredDoctors.querySelectorAll(".editDoctor").forEach(button=>button.addEventListener("click",async()=>{
+        const doctor=doctors.find(d=>d.user_id===button.dataset.id);
+        if(!doctor)return;
+        const password=prompt("New password (leave blank to keep current password):","");
+        if(password===null)return;
+        const plan=prompt("Access plan: DEMO or FULL",doctor.access_plan);
+        if(plan===null)return;
+        const enabled=confirm("Keep account active? Cancel will disable the account.");
+        try{
+          await api("/demo-access/admin/doctors/"+encodeURIComponent(doctor.user_id),{
+            method:"PATCH",headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({password,access_plan:plan.trim().toUpperCase(),enabled})
+          });
+          alert("Account updated. Existing sessions may require signing in again.");
+          registeredDoctorsButton.click();
+        }catch(err){alert(err.message||String(err));}
+      }));
       registeredDoctorsPanel.hidden=false;
     }catch(error){status.className="status error";status.textContent=error.message;}finally{registeredDoctorsButton.disabled=false;}
   });
