@@ -231,26 +231,59 @@ class DemoAccessLedger:
         if not self.enabled:
             return []
         accounts: list[user_access.UserAccount] = []
-        for event in self._events():
+        events = self._events()
+        updates = {}
+        for event in events:
+            if event.get("event_type") == "ACCOUNT_UPDATED":
+                updates[str(event.get("user_id"))] = event
+        for event in events:
             event_type = event.get("event_type")
             if event_type not in {"DEMO_APPROVED", "FULL_DOCTOR_CREATED"}:
                 continue
+            update = updates.get(str(event["user_id"]), {})
             is_full = event_type == "FULL_DOCTOR_CREATED"
             principal = user_access.Principal(
                 user_id=str(event["user_id"]),
                 username=str(event["username"]),
                 display_name=str(event["doctor_name"]),
                 role=user_access.ROLE_DOCTOR,
-                access_plan="FULL" if is_full else "DEMO",
+                access_plan=update.get("access_plan", "FULL" if is_full else "DEMO"),
                 demo_quota_limit=None if is_full else int(event.get("quota_limit") or DEMO_QUOTA_LIMIT),
                 demo_request_id=None if is_full else str(event["request_id"]),
             )
             accounts.append(user_access.UserAccount(
                 principal=principal,
-                password_hash=str(event["password_hash"]),
-                enabled=True,
+                password_hash=str(update.get("password_hash") or event["password_hash"]),
+                enabled=bool(update.get("enabled", True)),
             ))
         return accounts
+
+    def update_doctor(self, user_id: str, payload: dict[str, Any], owner) -> dict[str, Any]:
+        """Owner-only updates to persistent accounts."""
+        with _lock:
+            account = self.account_for_user_id(user_id)
+            if account is None:
+                raise HTTPException(404, "Persistent doctor account not found; deployment-defined accounts cannot be edited here.")
+            plan = payload.get("access_plan", account.principal.access_plan)
+            if plan not in ("DEMO", "FULL"):
+                raise HTTPException(422, "Invalid access plan.")
+            if plan == "DEMO" and not account.principal.demo_request_id:
+                raise HTTPException(422, "A demo account must be linked to an approved demo request.")
+            enabled = payload.get("enabled", account.enabled)
+            if not isinstance(enabled, bool):
+                raise HTTPException(422, "Enabled must be boolean.")
+            password_hash = account.password_hash
+            if payload.get("password"):
+                try:
+                    password_hash = user_access.hash_password(str(payload["password"]))
+                except ValueError as exc:
+                    raise HTTPException(422, str(exc)) from exc
+            self._write("ACCOUNT_UPDATED", {
+                "user_id": user_id, "password_hash": password_hash,
+                "access_plan": plan, "enabled": enabled,
+                "updated_by_user_id": owner.user_id,
+            })
+        return {"status": "UPDATED", "user_id": user_id, "access_plan": plan, "enabled": enabled}
 
     def doctor_accounts(self) -> list[dict[str, Any]]:
         """Owner-safe doctor inventory from the authoritative static + persistent registries."""
@@ -493,6 +526,11 @@ def install(core: Any) -> None:
         return ledger.create_full_doctor(
             payload.get("doctor_name"), payload.get("username"), payload.get("password"), owner
         )
+
+    @core.app.patch("/demo-access/admin/doctors/{user_id}", include_in_schema=False)
+    def update_doctor(user_id: str, payload: dict[str, Any] = Body(...)):
+        owner = _require_owner()
+        return ledger.update_doctor(user_id, payload, owner)
 
     @core.app.get("/demo-access/admin/notification-setup", include_in_schema=False)
     def demo_notification_setup():
