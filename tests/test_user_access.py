@@ -240,3 +240,45 @@ def test_retired_trial_flag_does_not_bypass_password_authentication(monkeypatch)
         assert events[-1][1]["details"]["authentication_mode"] == "PASSWORD"
     finally:
         user_access._reset_for_tests()
+
+
+@pytest.mark.parametrize("dynamic", [False, True])
+def test_phone_alert_only_for_successful_doctor_login(monkeypatch, dynamic):
+    from demo_notification import DemoPushNotifier, NotificationResult
+    owner = account_payload()
+    doctor = account_payload(role="DOCTOR", username="doctor", user_id="doctor-1")
+    monkeypatch.setenv("CERAI_USERS_JSON", json.dumps([owner] if dynamic else [owner, doctor]))
+    user_access._reset_for_tests()
+    monkeypatch.setattr(user_access, "NAMED_USERS_ENABLED", True)
+    alerts = []
+    def send(_self, occurred_at):
+        alerts.append(occurred_at)
+        return NotificationResult("SENT", "NTFY", message_id="test-message")
+    monkeypatch.setattr(DemoPushNotifier, "send_login", send)
+    core = SimpleNamespace(app=FastAPI())
+    try:
+        user_access.install(core)
+        if dynamic:
+            user_access.set_dynamic_account_lookup(lambda username: user_access.UserAccount(
+                user_access.Principal("doctor-1", "doctor", "Doctor", "DOCTOR", "DEMO"),
+                doctor["password_hash"],
+            ) if username == "doctor" else None)
+        client = TestClient(core.app, base_url="https://testserver")
+        assert client.post("/auth/login", json={"username": "owner", "password": "long-owner-password"}).status_code == 200
+        assert client.post("/auth/login", json={"username": "doctor", "password": "wrong"}).status_code == 401
+        assert alerts == []
+        assert client.post("/auth/login", json={"username": "doctor", "password": "long-owner-password"}).status_code == 200
+        assert len(alerts) == 1
+        assert client.get("/auth/me").status_code == 200
+        assert client.get("/auth/me").status_code == 200
+        assert len(alerts) == 1
+        client.post("/auth/logout")
+        assert client.post("/auth/login", json={"username": "doctor", "password": "long-owner-password"}).status_code == 200
+        assert len(alerts) == 2
+        def broken(*_args):
+            raise OSError("provider unavailable")
+        monkeypatch.setattr(DemoPushNotifier, "send_login", broken)
+        assert client.post("/auth/login", json={"username": "doctor", "password": "long-owner-password"}).status_code == 200
+        assert client.get("/auth/me").status_code == 200
+    finally:
+        user_access._reset_for_tests()

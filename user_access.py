@@ -11,8 +11,10 @@ from __future__ import annotations
 from collections import OrderedDict, defaultdict, deque
 from contextvars import ContextVar, Token
 from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
 import hashlib
 import json
+import logging
 import os
 import re
 import secrets
@@ -21,7 +23,7 @@ from threading import RLock
 from time import monotonic
 from typing import Any, Callable, Dict, Optional
 
-from fastapi import Body, HTTPException, Request
+from fastapi import BackgroundTasks, Body, HTTPException, Request
 from fastapi.responses import JSONResponse
 
 
@@ -433,9 +435,23 @@ def install(core: Any) -> None:
         if callback is not None:
             callback(event_type, **kwargs)
 
+    def notify_doctor_login(principal: Principal, occurred_at: str) -> None:
+        # Run after the response: a phone-provider failure must not block sign-in.
+        from demo_notification import DemoPushNotifier
+        try:
+            result = DemoPushNotifier.from_environment().send_login(occurred_at)
+            logging.getLogger(__name__).info(
+                "Doctor login push: status=%s provider=%s error=%s",
+                result.status, result.provider, result.error_code,
+            )
+            audit("LOGIN_NOTIFICATION", actor=principal, details=result.public())
+        except Exception:
+            # Never log exception text, which can contain the secret topic URL.
+            logging.getLogger(__name__).warning("Doctor login push failed")
+
     if NAMED_USERS_ENABLED:
         @core.app.post("/auth/login")
-        def login(payload: Dict[str, Any] = Body(...)):
+        def login(background_tasks: BackgroundTasks, payload: Dict[str, Any] = Body(...)):
             principal = authenticate_credentials(payload.get("username"), payload.get("password"))
             auth_mode = "PASSWORD"
             token = create_session(principal)
@@ -458,6 +474,9 @@ def install(core: Any) -> None:
                 samesite="strict",
                 path="/",
             )
+            if principal.role == ROLE_DOCTOR:
+                occurred_at = datetime.now(timezone(timedelta(hours=3))).strftime("%d.%m.%Y %H:%M:%S")
+                background_tasks.add_task(notify_doctor_login, principal, occurred_at)
             return response
 
         @core.app.post("/auth/logout")

@@ -188,3 +188,22 @@ def test_sms_uses_exact_application_recipient_and_reports_acceptance(monkeypatch
     assert captured["To"] == ["+905550000000"]
     assert "drhuseyincengiz@hotmail.com" in captured["Body"][0]
 
+
+
+def test_login_push_reuses_phone_topic_and_has_turkish_time(monkeypatch):
+    monkeypatch.setenv("CERAI_DEMO_NTFY_TOPIC", "a" * 40)
+    notifier = demo_notification.DemoPushNotifier.from_environment()
+    requests = []
+    def transport(request, timeout):
+        requests.append(request)
+        assert timeout == 6.0
+        return {"id": "login-message", "event": "message"}
+    notifier.transport = transport
+    assert notifier.send_login("23.11.2026 23:45:00").status == "SENT"
+    assert requests[0].full_url == "https://ntfy.sh/" + "a" * 40
+    assert "Bir doktor CER-AI sistemine giriş yaptı." in requests[0].data.decode()
+    assert "23.11.2026 23:45:00" in requests[0].data.decode()
+    assert requests[0].get_header("Title") == "CER-AI doktor girisi"
+    notifier.transport = lambda *_args: {"event": "error"}
+    assert notifier.send_login("23.11.2026 23:45:00").status == "FAILED"
+    assert demo_notification.DemoPushNotifier(topic="").send_login("").status == "NOT_CONFIGURED"

@@ -161,6 +161,29 @@ class DemoPushNotifier:
                 "User-Agent": "CER-AI/2.0",
             },
         )
+        return self._publish(request)
+
+    def send_login(self, occurred_at: str) -> NotificationResult:
+        """Use the installed phone channel without publishing account identifiers."""
+        if not self.configured:
+            return NotificationResult("NOT_CONFIGURED", "NTFY", error_code="MISSING_CONFIGURATION")
+        request = Request(
+            f"{NTFY_ENDPOINT}/{self.topic}",
+            data=(f"Bir doktor CER-AI sistemine giriş yaptı.\n"
+                  f"Türkiye saati: {occurred_at}").encode("utf-8"),
+            method="POST",
+            headers={
+                "Accept": "application/json",
+                "Content-Type": "text/plain; charset=UTF-8",
+                "Title": "CER-AI doktor girisi",
+                "Click": OWNER_PANEL_URL,
+                "Priority": "high",
+                "User-Agent": "CER-AI/2.0",
+            },
+        )
+        return self._publish(request)
+
+    def _publish(self, request: Request) -> NotificationResult:
         try:
             response = self.transport(request, 6.0)
             if not response.get("id") or response.get("event") != "message":
