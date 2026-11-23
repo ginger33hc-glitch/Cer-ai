@@ -293,8 +293,8 @@ def test_static_public_pages_have_page_specific_discovery_identity(
     assert schema["url"] == f"https://cer-ai.com{path}"
     assert schema["name"] == title
     expected_date = {
-        "/corneal-ectasia-risk-assessment": "2026-11-01",
-        "/iol-calculation-software": "2026-10-17",
+        "/corneal-ectasia-risk-assessment": "2026-11-23",
+        "/iol-calculation-software": "2026-11-23",
         "/toric-iol-calculator": "2026-10-12",
         "/clinical-evidence": "2026-09-12",
         "/references": "2026-09-12",
@@ -477,7 +477,7 @@ def test_iol_locales_have_consistent_metadata_and_crawlable_links(public_app, pa
     descriptions = [a['content'] for a in page.attributes('meta') if a.get('name') == 'description']
     assert descriptions == [schema['description']]
     assert title == schema['name']
-    lastmod = '2026-10-17'
+    lastmod = '2026-11-23'
     assert f'<loc>https://cer-ai.com{path}</loc><lastmod>{lastmod}</lastmod>' in sitemap.text
     if language == 'tr':
         for phrase in ('göz içi mercek', 'akıllı mercek'):
