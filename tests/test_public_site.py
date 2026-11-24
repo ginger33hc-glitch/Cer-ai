@@ -139,6 +139,8 @@ def test_sitemap_contains_only_public_discovery_pages():
         assert response.headers["content-type"].startswith("application/xml")
         text = response.text
         for path in (
+            "/learning/borderline-surgical-decisions",
+            "/tr/learning/borderline-surgical-decisions",
             "/learning-center", "/learning/corneal-ectasia-basics",
             "/learning/pentacam-education", "/learning/bad-d-component-indices",
             "/learning/topometric-indices", "/learning/randleman-erss",
@@ -169,7 +171,7 @@ def test_sitemap_contains_only_public_discovery_pages():
         ) in text
         assert (
             "<loc>https://cer-ai.com/learning-center</loc>"
-                "<lastmod>2026-10-29</lastmod>"
+                "<lastmod>2026-11-24</lastmod>"
         ) in text
         for private_path in ("/app", "/analyze", "/assessment/", "/archive"):
             assert f"<loc>https://cer-ai.com{private_path}" not in text
