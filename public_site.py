@@ -53,8 +53,10 @@ _PUBLIC_CANONICAL_BASE = os.getenv(
 _PUBLIC_CONTENT_LASTMOD = "2026-09-11"
 _INDEXNOW_KEY = "731d2001b05e7e15840a00e98f53447d"
 _PUBLIC_PAGE_LASTMOD = {
-    "/tr/learning-center": "2026-10-29",
-    "/learning-center": "2026-10-29",
+    "/learning/borderline-surgical-decisions": "2026-11-24",
+    "/tr/learning/borderline-surgical-decisions": "2026-11-24",
+    "/tr/learning-center": "2026-11-24",
+    "/learning-center": "2026-11-24",
     '/tr/keratokonus-tarama': "2026-11-23",
     '/keratoconus-screening': "2026-11-23",
     "/about/huseyin-cengiz": "2026-10-11",

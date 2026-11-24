@@ -22,6 +22,27 @@ class Topic:
 
 TOPICS = (
     Topic(
+        "borderline-surgical-decisions",
+        "How can CER-AI help when a surgical decision is borderline?",
+        "Review the findings behind uncertainty: independent corneal risk pathways, procedure-specific tissue checks and lens-category assessment, with the final decision made by the surgeon.",
+        "Clinical decision support",
+        (
+            ("Start with the question that remains unresolved", "A borderline case may involve conflicting corneal findings, limited tissue margins or uncertainty about lens-category suitability. CER-AI organizes supported measurements and assessment results so the surgeon can identify which part of the proposed plan needs closer review. It does not convert uncertainty into a guarantee of suitability."),
+            ("Check the measurements before interpreting the result", "Upload the required Pentacam sources and complete the relevant clinical inputs. Review extracted values against the source images. Unreadable or conflicting decision-critical fields require completion or confirmation; a reassuring output cannot compensate for incorrect inputs."),
+            ("See why the risk pathways disagree", "ERSS, Final BAD-D, NICE and PS3 are presented separately. A reassuring result in one pathway does not erase a warning in another. Reviewing each pathway and its reasons helps the surgeon locate the finding behind the uncertainty instead of relying on an averaged score."),
+            ("Review the proposed procedure's tissue requirements", "Corneal risk assessment and tissue safety answer different questions. Review the selected procedure, intended correction, tissue removal and remaining tissue together. Changing from LASIK to PRK does not by itself establish suitability; any alternative plan requires its own assessment."),
+            ("For cataract planning, review lens suitability before power", "The separate IOL workflow supports assessment of lens categories before surgeon selection and power calculation. Required clinical information and biometry remain essential. The embedded toric model is a test-only prototype and requires independent manufacturer-calculator verification."),
+            ("An illustrative borderline situation", "Suppose one risk pathway is reassuring while another raises a warning. This is an educational example, not a patient result: review the responsible finding, its source and the planned tissue parameters. The surgeon can then decide whether additional examination, repeat measurements, a revised plan or deferral is appropriate. This page does not prescribe an operation."),
+            ("Keep the reasoning available for review", "The assessment report brings results, reasons and warnings together for review. AI assists image reading; separate rule-based assessment pathways organize the clinical output. The report supports the surgeon's reasoning and does not replace the examination."),
+            ("What CER-AI cannot establish", "A screening result is not surgical clearance, a patient-specific complication probability or a promise of safety. Published evidence for individual risk systems does not establish external validation of CER-AI as a complete product. Final eligibility and treatment decisions remain with the ophthalmic surgeon."),
+        ),
+        (
+            ("CER-AI: corneal assessment workflow", "https://cer-ai.com/corneal-ectasia-risk-assessment"),
+            ("CER-AI: IOL workflow and verification limits", "https://cer-ai.com/iol-calculation-software"),
+            ("Clinical evidence and validation limits", "https://cer-ai.com/clinical-evidence"),
+        ),
+    ),
+    Topic(
         "corneal-ectasia-basics",
         "Corneal ectasia: screening, risk factors, and preoperative assessment",
         "A surgeon-focused guide to corneal ectasia, keratoconus susceptibility, postoperative ectasia, topography, tomography, and preoperative refractive-surgery screening.",
@@ -240,6 +261,27 @@ TOPIC_BY_SLUG = {topic.slug: topic for topic in TOPICS}
 
 
 TR_TOPICS = (
+    Topic(
+        "borderline-surgical-decisions",
+        "Cerrahi karar vermekte zorlandığınız sınırda vakalarda CER-AI size nasıl yardımcı olur?",
+        "Kararsızlığa yol açan bulguları görünür hale getirin: bağımsız korneal risk değerlendirmeleri, işleme özgü doku kontrolleri ve mercek kategorisi değerlendirmesi. Son karar cerrahındır.",
+        "Klinik karar desteği",
+        (
+            ("Önce belirsizliğin kaynağını belirleyin", "Sınırda bir vakada kornea bulguları birbiriyle uyuşmayabilir, doku marjı sınırlı olabilir veya uygun mercek kategorisi konusunda tereddüt yaşanabilir. CER-AI, desteklenen ölçümleri ve değerlendirme sonuçlarını düzenleyerek planın hangi bölümünün daha ayrıntılı incelenmesi gerektiğini görmenize yardımcı olur. Belirsizliği kesin uygunluk garantisine dönüştürmez."),
+            ("Sonucu yorumlamadan önce ölçümleri kontrol edin", "Gerekli Pentacam görüntülerini yükleyin ve ilgili klinik bilgileri tamamlayın. Okunan değerleri kaynak görüntülerle karşılaştırın. Okunamayan veya çelişkili, karar açısından gerekli alanların tamamlanması ya da doğrulanması gerekir. Rahatlatıcı bir sonuç, yanlış girdileri telafi etmez."),
+            ("Risk değerlendirmelerinin neden farklılaştığını görün", "ERSS, Final BAD-D, NICE ve PS3 ayrı ayrı gösterilir. Bir değerlendirmedeki olumlu sonuç, diğerindeki uyarıyı ortadan kaldırmaz. Her değerlendirmenin sonucunu ve gerekçesini incelemek, ortalama bir puana dayanmak yerine belirsizliğe yol açan bulguyu belirlemenize yardımcı olur."),
+            ("Planladığınız işlemin doku gereksinimini ayrıca değerlendirin", "Kornea risk değerlendirmesi ile doku güvenliği farklı sorulara yanıt verir. Seçilen işlem, hedeflenen düzeltme, uzaklaştırılacak doku ve kalan dokuyu birlikte inceleyin. LASIK yerine PRK düşünmek tek başına uygunluk sağlamaz; alternatif plan ayrıca değerlendirilmelidir."),
+            ("Katarakt planlamasında güç hesabından önce mercek uygunluğunu inceleyin", "Ayrı IOL modülü, cerrahın mercek seçimi ve güç hesabı öncesinde mercek kategorilerinin değerlendirilmesini destekler. Gerekli klinik bilgiler ve biyometri ölçümleri zorunludur. Yerleşik torik model test amaçlı bir prototiptir; üretici hesaplayıcısıyla bağımsız doğrulama gerekir."),
+            ("Sınırda bir durumu nasıl ele alabilirsiniz?", "Bir risk değerlendirmesinin olumlu, diğerinin uyarılı olduğunu düşünün. Bu, gerçek bir hasta sonucu değil, eğitsel bir örnektir: uyarıya yol açan bulguyu, kaynak görüntüyü ve planlanan doku parametrelerini inceleyin. Ek muayene, ölçüm tekrarı, plan değişikliği veya erteleme gerekip gerekmediğine cerrah karar verir. Bu sayfa bir ameliyat önerisi oluşturmaz."),
+            ("Kararın gerekçesini gözden geçirilebilir hale getirin", "Değerlendirme raporu sonuçları, gerekçeleri ve uyarıları birlikte sunar. Yapay zekâ görüntü okumaya yardımcı olur; klinik çıktıyı ayrı kural tabanlı değerlendirmeler düzenler. Rapor, cerrahın değerlendirmesini destekler ve muayenenin yerini almaz."),
+            ("CER-AI hangi sonucu garanti etmez?", "Tarama sonucu ameliyat onayı, hastaya özgü komplikasyon olasılığı veya güvenlik garantisi değildir. Tek tek risk sistemlerini destekleyen yayınlar, CER-AI yazılımının bütün olarak dış doğrulamasının yapıldığı anlamına gelmez. Nihai uygunluk ve tedavi kararı göz cerrahına aittir."),
+        ),
+        (
+            ("CER-AI: korneal değerlendirme iş akışı", "https://cer-ai.com/tr/korneal-ektazi-risk-degerlendirmesi"),
+            ("CER-AI: IOL iş akışı ve doğrulama sınırları", "https://cer-ai.com/tr/akilli-mercek-iol-hesaplama"),
+            ("Klinik kanıtlar ve doğrulama sınırları", "https://cer-ai.com/clinical-evidence"),
+        ),
+    ),
     Topic(
         "corneal-ectasia-basics",
         "Korneal ektazi: klinik temeller",
@@ -975,7 +1017,7 @@ def render_topic(base: str, robots: str, topic: Topic, locale: str = "en") -> st
         "isPartOf": {"@id": f"{base}{_path(locale, '/learning-center')}#page"},
         "inLanguage": locale,
         "author": {"@id": f"{base}/#clinical-author"},
-        "dateModified": "2026-09-11",
+        "dateModified": "2026-11-24" if topic.slug == "borderline-surgical-decisions" else "2026-09-11",
         "copyrightHolder": {"@type": "Person", "name": "Hüseyin Cengiz, M.D."},
         "copyrightYear": 2026,
     }
