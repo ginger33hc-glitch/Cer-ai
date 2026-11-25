@@ -18,7 +18,7 @@ def test_screening_public_discovery(path,alternate,language):
         assert f'<loc>https://cer-ai.com{path}</loc>' in client.get('/sitemap.xml').text
         assert 'type="file"' not in response.text
         if language == 'tr':
-            assert '<h1>Keratokonus tarama testi</h1>' in response.text
+            assert '<h1>Keratokonus tarama testi, programı ve yazılımı</h1>' in response.text
             assert 'https://doi.org/10.4274/tjo.galenos.2023.68188' in response.text
             assert 'Bu çalışma CER-AI' in response.text
             assert '/tr/keratokonus-tarama' in client.get('/tr/learning-center').text
