@@ -846,7 +846,7 @@ def _head(base: str, canonical_path: str, title: str, description: str, robots: 
 <link rel="alternate" hreflang="tr" href="{base}{turkish_path}">
 <link rel="alternate" hreflang="x-default" href="{base}{english_path}">
 <link rel="describedby" type="text/markdown" href="{base}/llms.txt">
-<link rel="stylesheet" href="/static/technical-public.css?v=6">
+<link rel="stylesheet" href="/static/technical-public.css?v=7">
 <link rel="icon" type="image/png" sizes="32x32" href="/static/icons/favicon-32.png?v=8">
 <meta name="theme-color" content="#05090d">
 <script type="application/ld+json">{json.dumps(schema, ensure_ascii=False, separators=(",", ":"))}</script>"""
