@@ -140,8 +140,8 @@ def test_unresolved_srax_creates_one_question_shared_by_erss_and_ps3():
     assert "Exact 20.0° is NO" in requests[0]["help"]
 
 
-def test_contact_lens_washout_blocks_before_canonical_clinical_evaluation():
+def test_retired_contact_lens_fields_do_not_block_evaluation():
     result = _respond(modifiers=_modifiers(contact_lens_type="SOFT", contact_lens_discontinuation_days=9))
-    assert result["workflow_status"] == "CONTACT_LENS_WASHOUT_REQUIRED"
-    assert result["report_token"] is None
-    assert "decision" not in result
+    assert result["workflow_status"] == "READY"
+    assert result["report_token"]
+    assert "decision" in result

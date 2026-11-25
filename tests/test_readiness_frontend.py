@@ -72,9 +72,10 @@ def test_completion_answers_sync_before_validation_and_payload_serialization():
 
     collect = submit.index('clinicalOverrides=readiness.collect()')
     form_validation = submit.index('validateRefractionInputs()')
-    modifiers = submit.index('modifiers=patientModifiers()')
+    assert 'patientModifiers' not in html
+    assert 'contact_lens_type' not in html
     completion_request = submit.index("ceraiFetch('/assessment/complete'")
-    assert collect < form_validation < modifiers < completion_request
+    assert collect < form_validation < completion_request
     assert submit.count('readiness.collect()') == 1
     assert 'input.dataset.sourceForm=item.form_id;input.required=true' in readiness
     assert 'if(input){this.hasCompletableInputs=true;input.required=true;' in readiness

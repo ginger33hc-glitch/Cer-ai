@@ -11,7 +11,6 @@ from __future__ import annotations
 from math import isfinite
 from typing import Any, Mapping
 
-from clinical_core.readiness import contact_lens_washout
 from clinical_core.safety import ablation_um_is_valid
 
 SUPPORTED_PROCEDURES = frozenset({"LASIK", "PRK", "SMILE"})
@@ -46,17 +45,6 @@ def evaluate_precore_readiness(
     age_issue = _age_issue(age_years)
     if age_issue:
         blockers.append({"eye": "PATIENT", "key": "age", "message": age_issue})
-
-    # The removed questionnaire supplies UNKNOWN, never an invented NONE.
-    # The canonical eligibility layer will prevent a surgical PASS when history is unknown.
-    lens_unknown = str((patient_modifiers or {}).get("contact_lens_type") or "").upper() == "UNKNOWN"
-    lens_block = None if lens_unknown else contact_lens_washout(dict(patient_modifiers or {}))
-    if lens_block:
-        blockers.append({
-            "eye": "PATIENT",
-            "key": "contact_lens_discontinuation_days" if lens_block.get("form_id") == "contact_lens_days" else "contact_lens_type",
-            "message": lens_block.get("message"),
-        })
 
     plans = eye_plans if isinstance(eye_plans, Mapping) else {}
     for eye in ("OD", "OS"):
@@ -107,5 +95,4 @@ def evaluate_precore_readiness(
         "ready": not blockers,
         "blockers": blockers,
         "pathways": pathways,
-        "contact_lens_washout": lens_block,
     }

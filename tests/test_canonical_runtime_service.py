@@ -176,41 +176,14 @@ def test_unsupported_procedure_is_incomplete_not_pass():
     assert by_eye["OD"]["missing"] == ["procedure"]
 
 
-def test_eligibility_stop_enters_same_eye_final_disposition():
-    result = _evaluate(plans={"OD": _plan(stable="no"), "OS": _plan()})
-    by_eye = {eye["eye"]: eye for eye in result["eyes"]}
-    assert by_eye["OD"]["status"] == "STOP-DEFER"
-    assert by_eye["OS"]["status"] == "PASS"
-    assert any("Refractive instability" in reason for reason in by_eye["OD"]["reasons"])
-
-
-def test_eligibility_cautions_do_not_auto_stop():
-    result = _evaluate(
-        plans={"OD": _plan(cdva_below_20_20="yes"), "OS": _plan()},
-        modifiers=_modifiers(dry_eye="yes"),
-    )
-    by_eye = {eye["eye"]: eye for eye in result["eyes"]}
-    assert by_eye["OD"]["status"] == "CAUTION"
-    assert by_eye["OS"]["status"] == "CAUTION"
-    assert result["status"] == "CAUTION"
-
-
-def test_missing_eligibility_documentation_is_explicitly_incomplete():
-    result = _evaluate(modifiers=_modifiers(dry_eye="unknown"))
-    assert result["status"] == "ASSESSMENT INCOMPLETE"
-    assert all("Clinical eligibility: dry_eye" in eye["missing"] for eye in result["eyes"])
-
-
-def test_eye_rubbing_and_family_history_are_cautions():
-    result = _evaluate(modifiers=_modifiers(eye_rubbing="yes", family_history="yes"))
-    assert result["status"] == "CAUTION"
-    assert all(len(eye["clinical_modifiers"]) == 2 for eye in result["eyes"])
-
-
-def test_collagen_connective_tissue_disease_is_stop_defer():
-    result = _evaluate(modifiers=_modifiers(collagen_tissue_disease="yes"))
-    assert result["status"] == "STOP-DEFER"
-    assert all(eye["status"] == "STOP-DEFER" for eye in result["eyes"])
+def test_removed_questionnaire_does_not_change_measured_result():
+    baseline = _evaluate()
+    for modifiers in ({}, {"contact_lens_type": "UNKNOWN"}, _modifiers(dry_eye="unknown"),
+                      _modifiers(eye_rubbing="yes", family_history="yes")):
+        result = _evaluate(modifiers=modifiers)
+        assert result["status"] == baseline["status"]
+        assert all(eye["clinical_modifiers"] == [] for eye in result["eyes"])
+        assert all(not any("Clinical eligibility" in item for item in eye["missing"]) for eye in result["eyes"])
 
 
 def test_missing_safety_dependency_is_exposed_in_runtime_missing_list():
@@ -221,13 +194,9 @@ def test_missing_safety_dependency_is_exposed_in_runtime_missing_list():
     assert "Safety: intended_cylinder_d" in od["missing"]
 
 
-def test_patient_modifiers_are_required_not_silently_assumed_reassuring():
-    try:
-        evaluate_case(_case(), 35, {"OD": _plan(), "OS": _plan()}, None)
-    except TypeError as exc:
-        assert "patient_modifiers" in str(exc)
-    else:
-        raise AssertionError("Missing patient modifiers must not be treated as reassuring")
+def test_patient_modifiers_are_no_longer_required():
+    result = evaluate_case(_case(), 35, {"OD": _plan(), "OS": _plan()}, None)
+    assert result["status"] == "PASS"
 
 
 def test_runtime_service_contains_no_installer_or_clinical_threshold_table():

@@ -47,7 +47,7 @@ _SAFE_TRACE_KEYS = frozenset({
     *NUMERIC_FIELDS,
     *SELECT_FIELDS,
     EXAM_DATE_CONFIRMATION_KEY,
-    "age", "patient_name", "contact_lens_type", "contact_lens_discontinuation_days",
+    "age", "patient_name",
     "lasik_a_ablation_um", "lasik_bc_ablation_um",
     "prior", "procedure", "ablation_um", "flap_um", "max_lenticule_thickness_um", "smile_cap_um",
     "manifest_entered_sphere_D", "manifest_cylinder_signed_D", "manifest_axis_deg",
@@ -415,18 +415,6 @@ def _request(eye, message, extracted):
             "source_box": "Patient age",
         }
 
-    if "contact lens" in lower or "contact-lens" in lower:
-        form_id = "contact_lens_days" if "day" in lower or "discontinu" in lower else "contact_lens_type"
-        return {
-            "eye": "PATIENT", "label": text, "kind": "form",
-            "key": "contact_lens_discontinuation_days" if form_id == "contact_lens_days" else "contact_lens_type",
-            "destination": "source", "form_id": form_id,
-            "help": "Complete the contact-lens washout documentation before assessment.",
-            "required_for": ["Clinical readiness"],
-            "source_screen": "Clinical history",
-            "source_box": "Contact-lens type and discontinuation interval",
-        }
-
     if lower in {"randleman: srax", "ps3: srax"} or ("srax" in lower and "20" in lower):
         return _srax_request(eye)
 
@@ -493,28 +481,6 @@ def _request(eye, message, extracted):
             "required_for": [_required_system(text)],
             "source_screen": "Surgeon treatment/refraction inputs",
             "source_box": label,
-        }
-
-    if lower.startswith("clinical eligibility: "):
-        key = text.split(":", 1)[1].strip()
-        per_eye_forms = {
-            "stable": ("stable", "stable"),
-            "refractive_stability": ("stable", "stable"),
-            "progression": ("progression", "progression"),
-            "documented_progression": ("progression", "progression"),
-            "cdva_below_20_20": ("cdva_below_20_20", "cdva"),
-            "unexplained_cdva_below_20_20": ("cdva_below_20_20", "cdva"),
-        }
-        plan_key, suffix = per_eye_forms.get(key, (key, key))
-        form_id = f"{prefix}_{suffix}" if key in per_eye_forms else key
-        return {
-            "eye": eye if key in per_eye_forms else "PATIENT",
-            "label": f"Clinical eligibility: document {key.replace('_', ' ')}",
-            "kind": "form", "key": plan_key, "destination": "source", "form_id": form_id,
-            "help": "Document this clinical eligibility item before a final assessment can be issued.",
-            "required_for": ["Clinical eligibility"],
-            "source_screen": "Clinical eligibility and stability",
-            "source_box": key.replace("_", " "),
         }
 
     if lower == "procedure" or "select lasik, prk, or smile" in lower:
@@ -689,30 +655,23 @@ def _overrides(extracted, overrides):
 
 def _precore_response(token, session, readiness, plans):
     blockers = readiness.get("blockers") or []
-    lens = readiness.get("contact_lens_washout")
     requests = _dedupe_requests([
         _request(item.get("eye", "GLOBAL"), item.get("message", item.get("key", "")), session["extracted"])
         for item in blockers
     ])
-    status = "CONTACT_LENS_WASHOUT_REQUIRED" if lens else "NEEDS_INPUT"
     response = {
         "assessment_token": token,
         "extracted": deepcopy(session["extracted"]),
         "effective_eye_plans": deepcopy(plans),
-        "workflow_status": status,
+        "workflow_status": "NEEDS_INPUT",
         "missing": [
             {"eye": item.get("eye", "GLOBAL"), "message": item.get("message", item.get("key", ""))}
             for item in blockers
         ],
         "input_requests": requests,
         "report_token": None,
-        "message": (
-            lens.get("message") if lens
-            else "Complete the required pre-assessment information before canonical clinical evaluation."
-        ),
+        "message": "Complete the required pre-assessment information before canonical clinical evaluation.",
     }
-    if lens:
-        response["contact_lens_washout"] = lens
     session["ready"] = None
     session["region_requests"] = {
         (item.get("eye"), item.get("key")) for item in requests if item.get("source_region")
@@ -766,7 +725,8 @@ def _respond(core, token, session, age, plans, modifiers, metadata, overrides, s
         age = session["extracted"].get("derived_age_years")
     else:
         session["extracted"] = apply_surgeon_age_precedence(session["extracted"], age)
-    for value in (plans, modifiers, metadata):
+    modifiers = {}  # Legacy callers may send retired questionnaire fields; they are not inputs.
+    for value in (plans, metadata):
         if not isinstance(value, dict):
             raise HTTPException(422, "Clinical inputs must be objects.")
     if set(plans) - {"OD", "OS"} or any(not isinstance(value, dict) for value in plans.values()):

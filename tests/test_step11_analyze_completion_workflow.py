@@ -154,13 +154,11 @@ def test_missing_signed_i_s_request_names_all_systems_and_exact_registry_source(
     assert response["report_token"] is None
 
 
-def test_contact_lens_washout_returns_completable_requirement_not_generic_error():
+def test_retired_contact_lens_fields_do_not_request_removed_controls():
     response = _respond(modifiers=_modifiers(contact_lens_type="SOFT", contact_lens_discontinuation_days=9))
-    assert response["workflow_status"] == "CONTACT_LENS_WASHOUT_REQUIRED"
-    assert response["report_token"] is None
-    request = next(item for item in response["input_requests"] if item.get("form_id") == "contact_lens_days")
-    assert request["kind"] == "form"
-    assert "10" in response["message"]
+    assert response["workflow_status"] == "READY"
+    assert response["report_token"]
+    assert not response.get("input_requests")
 
 
 def test_ps3_factor_is_expanded_to_each_exact_missing_canonical_field():
@@ -301,7 +299,7 @@ def test_frontend_supports_all_nonready_states_and_never_leaves_analyze_stuck_di
     html = (ROOT / "static" / "index.html").read_text()
     readiness = (ROOT / "static" / "assessment-readiness.js").read_text()
     assert "this.panel.hidden=response.workflow_status==='READY'" in readiness
-    assert "CONTACT_LENS_WASHOUT_REQUIRED" in html
+    assert "CONTACT_LENS_WASHOUT_REQUIRED" not in html
     assert "const sourceBlocked=" not in html
     assert "assessBtn.disabled=false" in html
     assert "hard_stop_summary" in html
@@ -347,7 +345,7 @@ def test_browser_places_plan_definition_beside_name_and_marks_only_requested_saf
     assert "value.map(reportDisplayValue)" in html
 
 
-def test_readiness_javascript_renders_contact_lens_status_as_visible():
+def test_readiness_javascript_renders_missing_measurements_as_visible():
     if not shutil.which("node"):
         pytest.skip("Node is not available")
     script = r'''
@@ -362,27 +360,10 @@ const document={getElementById:id=>id==='imageInput'?null:null,createElement:tag
 const context={window:{},document,URL:{revokeObjectURL(){}},console};vm.createContext(context);
 vm.runInContext(fs.readFileSync('static/assessment-readiness.js','utf8'),context);
 const readiness=new context.window.HCReadiness(panel);
-const shown=readiness.show({assessment_token:'t',workflow_status:'CONTACT_LENS_WASHOUT_REQUIRED',input_requests:[]});
+const shown=readiness.show({assessment_token:'t',workflow_status:'NEEDS_INPUT',input_requests:[]});
 assert.equal(shown,true);assert.equal(panel.hidden,false);assert.equal(readiness.token,'t');
 '''
     subprocess.run(["node", "-e", script], cwd=ROOT, check=True, capture_output=True, text=True)
-
-
-@pytest.mark.parametrize(("canonical_key", "plan_key", "form_id"), [
-    ("refractive_stability", "stable", "od_stable"),
-    ("documented_progression", "progression", "od_progression"),
-    ("unexplained_cdva_below_20_20", "cdva_below_20_20", "od_cdva"),
-])
-def test_canonical_eligibility_missing_keys_map_back_to_editable_eye_controls(
-    canonical_key, plan_key, form_id,
-):
-    request = workflow._request(
-        "OD", f"Clinical eligibility: {canonical_key}", {"eyes": []},
-    )
-    assert request["eye"] == "OD"
-    assert request["kind"] == "form"
-    assert request["key"] == plan_key
-    assert request["form_id"] == form_id
 
 
 def test_workflow_trace_redacts_unlisted_blocker_text_and_never_logs_values(caplog):

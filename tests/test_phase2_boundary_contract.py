@@ -6,7 +6,6 @@ import pytest
 
 import mandatory_source_set_policy
 from canonical_readiness import evaluate_precore_readiness
-from clinical_core.readiness import contact_lens_washout
 
 
 def _source(screen, eye=None, *, document_type="PENTACAM_TOPOGRAPHY", laterality=None):
@@ -69,19 +68,14 @@ def test_more_than_six_images_still_rejected():
     ],
 )
 def test_precore_readiness_consumes_single_contact_lens_policy(modifiers):
-    expected = contact_lens_washout(modifiers)
     actual = evaluate_precore_readiness(
         age_years=30,
-        eye_plans={"OD": {"prior": "no", "procedure": "LASIK"}},
+        eye_plans={"OD": {"prior": "unknown", "procedure": "LASIK"}},
         patient_modifiers=modifiers,
     )
-    if modifiers["contact_lens_type"] == "UNKNOWN":
-        # Omitted questionnaire: explicitly unverified, not a fabricated NONE.
-        # An INCOMPLETE clinical finding now prevents PASS in the canonical scorer.
-        assert expected is not None
-        assert actual["contact_lens_washout"] is None
-    else:
-        assert actual["contact_lens_washout"] == expected
+    assert actual["ready"] is True
+    assert actual["blockers"] == []
+    assert "contact_lens_washout" not in actual
 
 
 def test_clinical_core_does_not_own_transport_report_or_archive_layers():

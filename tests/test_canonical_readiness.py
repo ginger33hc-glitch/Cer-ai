@@ -20,15 +20,14 @@ def test_reassuring_precore_readiness_allows_virgin_case():
     assert result["pathways"] == {"OD": VIRGIN, "OS": VIRGIN}
 
 
-def test_contact_lens_gate_blocks_before_core():
+def test_retired_contact_lens_fields_do_not_block_core():
     result = evaluate_precore_readiness(
         age_years=35,
         eye_plans={"OD": _plan()},
         patient_modifiers={"contact_lens_type": "SOFT", "contact_lens_discontinuation_days": 9},
     )
-    assert result["ready"] is False
-    assert result["contact_lens_washout"]["required_days"] == 10
-    assert any(item["key"] == "contact_lens_discontinuation_days" for item in result["blockers"])
+    assert result["ready"] is True
+    assert result["blockers"] == []
 
 
 def test_post_refractive_eye_routes_outside_virgin_core_without_requiring_procedure():
@@ -116,12 +115,12 @@ def test_removed_questionnaire_unknown_is_not_mistaken_for_no_lens_or_no_surgery
     )
     assert unverified["ready"] is True
     assert unverified["pathways"]["OD"] == "VIRGIN_HISTORY_UNVERIFIED"
-    assert unverified["contact_lens_washout"] is None
-    # Known insufficient wear-time always remains a hard gate.
+    assert "contact_lens_washout" not in unverified
+    # Retired fields from older clients are ignored.
     worn = evaluate_precore_readiness(
         age_years=35,
         eye_plans={"OD": _plan(prior="unknown")},
         patient_modifiers={"contact_lens_type": "RIGID", "contact_lens_discontinuation_days": 1},
     )
-    assert worn["ready"] is False
-    assert worn["contact_lens_washout"]["required_days"] == 21
+    assert worn["ready"] is True
+    assert worn["blockers"] == []

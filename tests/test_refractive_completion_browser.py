@@ -54,9 +54,10 @@ def test_completion_corrects_invalid_depth_and_reaches_report_without_reupload(b
             route.fulfill(content_type="application/javascript", body=(ROOT / path.lstrip("/")).read_text())
         elif path == "/assessment/complete":
             payload = route.request.post_data_json
+            assert "patient_modifiers" not in payload
             requests.append(payload)
             result = workflow._respond(core, "synthetic-token", session, payload["age"],
-                payload["eye_plans"], payload["patient_modifiers"], payload["patient_metadata"],
+                payload["eye_plans"], {}, payload["patient_metadata"],
                 payload["clinical_overrides"], payload["source_confirmations"])
             responses.append({"status": result.get("workflow_status"), "missing": result.get("missing"), "requests": result.get("input_requests"), "decision": (result.get("decision") or {}).get("status")})
             route.fulfill(json=result)

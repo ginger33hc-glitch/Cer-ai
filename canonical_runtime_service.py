@@ -2,9 +2,8 @@
 
 This module is the authoritative clinical runtime boundary. It does not install
 or wrap application functions. It receives already-reconciled extraction,
-surgeon plans, and documented patient modifiers; resolves treatment-role source
-precedence exactly once; maps each virgin eye into ``ClinicalCoreInput``; supplies
-pure eligibility findings; calls the canonical clinical core once; and projects
+surgeon plans; resolves treatment-role source precedence exactly once;
+maps each eye into ``ClinicalCoreInput``; calls the canonical clinical core once; and projects
 that result into the stable case payload consumed by workflow/report/archive.
 
 No Pentacam reading, clinical threshold table, score formula, or downstream
@@ -54,7 +53,6 @@ from clinical_core.refraction import (
 from clinical_core.report_payload import build_report_payload
 from clinical_core.safety import ablation_um_is_valid
 from clinical_core.version import CLINICAL_POLICY_VERSION, SRAX_POLICY_VERSION
-from clinical_eligibility import evaluate_eligibility
 from pentacam_canonical_source_lock import POLICY_VERSION as SOURCE_REGISTRY_VERSION
 from planning.microkeratome import MicrokeratomePlanningInput, plan_microkeratome
 from release_identity import deployment_sha
@@ -100,7 +98,7 @@ def _decision_reasons(core_result: Mapping[str, Any]) -> list[str]:
     return drivers
 
 
-def _missing(core_result: Mapping[str, Any], eligibility_missing=()) -> list[str]:
+def _missing(core_result: Mapping[str, Any]) -> list[str]:
     missing = []
     bad = core_result.get("bad_d") or {}
     if bad.get("classification") == "UNAVAILABLE":
@@ -123,8 +121,6 @@ def _missing(core_result: Mapping[str, Any], eligibility_missing=()) -> list[str
             missing.append(f"PS3: {key}")
     for key in safety_missing:
         missing.append(f"Safety: {key}")
-    for key in eligibility_missing or ():
-        missing.append(f"Clinical eligibility: {key}")
     return list(dict.fromkeys(missing))
 
 
@@ -195,8 +191,6 @@ def _virgin_eye_payload(
     core_result: Mapping[str, Any],
     software_version: str | None,
     *,
-    eligibility_missing=(),
-    eligibility_notes=(),
     planning=None,
     microkeratome_planning=None,
     astigmatic_disparity=None,
@@ -222,8 +216,8 @@ def _virgin_eye_payload(
         "hard_stops": _hard_stop_reasons(safety),
         "reasons": _decision_reasons(core_result),
         "warnings": [],
-        "clinical_modifiers": list(eligibility_notes or ()),
-        "missing": _missing(core_result, eligibility_missing),
+        "clinical_modifiers": [],
+        "missing": _missing(core_result),
         "planning": _plain(planning or {}),
         "report_payload": _report_payload(
             eye_name,
@@ -313,7 +307,7 @@ def _lasik_tissue_failure(planning):
     )
 
 
-def _evaluate_lasik_planning(source_eye, resolved_plan, *, age_years, extracted, eligibility):
+def _evaluate_lasik_planning(source_eye, resolved_plan, *, age_years, extracted):
     preliminary_plan = dict(resolved_plan)
     preliminary = build_clinical_core_input(
         source_eye,
@@ -325,7 +319,7 @@ def _evaluate_lasik_planning(source_eye, resolved_plan, *, age_years, extracted,
     intended = _intended_refraction_from_input(preliminary)
     intended_group = refractive_group(intended) if intended is not None else None
     preliminary_core = evaluate_normalized_case(
-        preliminary, external_findings=eligibility.findings
+        preliminary
     )
     if (_finite_number(preliminary.ablation_um)
             and not ablation_um_is_valid(preliminary.ablation_um)):
@@ -376,7 +370,7 @@ def _evaluate_lasik_planning(source_eye, resolved_plan, *, age_years, extracted,
             plan_already_resolved=True,
         )
         core_result = evaluate_normalized_case(
-            normalized, external_findings=eligibility.findings
+            normalized
         )
         status = str(core_result.get("status") or ASSESSMENT_INCOMPLETE)
         safety = core_result.get("procedural_safety") or {}
@@ -597,7 +591,7 @@ def evaluate_case(
     extracted: Mapping[str, Any],
     age_years: Any,
     eye_plans: Mapping[str, Mapping[str, Any]],
-    patient_modifiers: Mapping[str, Any],
+    patient_modifiers: Mapping[str, Any] | None = None,
     *,
     software_version: str | None = None,
     assessment_mode: str = "REFRACTIVE",
@@ -607,8 +601,6 @@ def evaluate_case(
         return _evaluate_keratoconus_case(extracted, eye_plans, software_version=software_version)
     if assessment_mode != "REFRACTIVE":
         raise ValueError("Unknown canonical assessment mode")
-    if not isinstance(patient_modifiers, Mapping):
-        raise TypeError("patient_modifiers must be a mapping")
 
     source = _eye_by_name(extracted)
     resolved_plans = resolve_case_plans(extracted, eye_plans)
@@ -647,7 +639,6 @@ def evaluate_case(
             })
             continue
 
-        eligibility = evaluate_eligibility(plan, patient_modifiers)
         normalized = build_clinical_core_input(
             eye, plan, age_years=age_years, extracted=extracted, plan_already_resolved=True,
         )
@@ -685,13 +676,11 @@ def evaluate_case(
                 plan,
                 age_years=age_years,
                 extracted=extracted,
-                eligibility=eligibility,
             )
             effective_plans[eye_name] = effective_plan
         else:
             core_result = evaluate_normalized_case(
                 normalized,
-                external_findings=eligibility.findings,
             )
             planning = _non_lasik_planning(procedure, normalized, core_result)
         lasik_assessment = None
@@ -702,7 +691,6 @@ def evaluate_case(
             # correction and optical zone, never the last rejected LASIK candidate.
             lasik_assessment = _virgin_eye_payload(
                 eye_name, eye, core_result, software_version,
-                eligibility_missing=eligibility.missing, eligibility_notes=eligibility.notes,
                 planning=_attach_selected_procedure_plan(planning, eye_name, effective_plans[eye_name], core_result),
                 microkeratome_planning=_microkeratome_planning(eye, effective_plans[eye_name], core_result),
                 astigmatic_disparity=astigmatic_disparity,
@@ -712,7 +700,7 @@ def evaluate_case(
                 eye, prk_plan, age_years=age_years, extracted=extracted,
                 plan_already_resolved=True,
             )
-            core_result = evaluate_normalized_case(normalized, external_findings=eligibility.findings)
+            core_result = evaluate_normalized_case(normalized)
             planning = _non_lasik_planning("PRK", normalized, core_result)
             transition_message = f"{eye_name}: LASIK tissue safety failed. Now evaluating PRK."
             planning["procedure_transition"] = transition_message
@@ -736,8 +724,6 @@ def evaluate_case(
             eye,
             core_result,
             software_version,
-            eligibility_missing=eligibility.missing,
-            eligibility_notes=eligibility.notes,
             planning=planning,
             microkeratome_planning=microkeratome_planning,
             astigmatic_disparity=astigmatic_disparity,

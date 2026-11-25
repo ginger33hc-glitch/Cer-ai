@@ -594,15 +594,6 @@ imageInput.addEventListener("change",()=>{
   }
 });
 
-function patientModifiers(){
-  const keys=["eye_rubbing","family_history","pregnancy_nursing","collagen_tissue_disease","drug_usage","dry_eye","systemic_disease"];
-  const result=Object.fromEntries(keys.map(key=>[key,"unknown"]));
-  result.selected_modifiers=[];
-  result.contact_lens_type="UNKNOWN";
-  result.contact_lens_discontinuation_days=null;
-  return result;
-}
-
 function plan(prefix){
   const procedure=value(`${prefix}_procedure`);
   return {
@@ -621,8 +612,6 @@ function plan(prefix){
   laser_platform:procedure==="SMILE"?value(`${prefix}_smile_platform`):"Alcon EX500", optical_zone_mm:numberOrNull(`${prefix}_optical`),
   transition_zone_mm:procedure==="SMILE"?null:numberOrNull(`${prefix}_transition`), transition_zone_not_applicable:procedure==="SMILE"?"yes":"no",
   surgeon_I_S_D:numberOrNull(`${prefix}_surgeon_i_s`),
-  stable:"unknown", progression:"unknown",
-  cdva_below_20_20:"unknown"
 }}
 
 function statusClass(s){
@@ -735,7 +724,7 @@ function renderEye(r){
     ${canonicalTable("Decision basis",["Level","Canonical decision driver"],driverRows)}
     ${canonicalTable("Canonical Pentacam values and provenance",["Canonical field","Value","Provenance"],sourceRows)}
     ${canonicalTable("Surgeon-completed values",["Field","Original","Surgeon-entered value","Provenance"],correctionRows)}
-    ${listBlock("Clinical modifiers",r.clinical_modifiers)}${listBlock("Warnings",r.warnings)}
+    ${listBlock("Warnings",r.warnings)}
   </div></section>`;
 }
 
@@ -877,8 +866,6 @@ f.addEventListener("submit", async (e) => {
   const manualImages=[...imageInput.files];
   const images=manualImages.length?manualImages:sharedImages;
   if(!images.length){showFormMessage("Select or share at least one image.");return}
-  let modifiers;
-  try{modifiers=patientModifiers()}catch(error){showFormMessage(error.message||String(error));return}
 
   const originalText=assessBtn.textContent;
   assessBtn.disabled=true; assessBtn.textContent="Assessing images... Please wait";
@@ -900,14 +887,13 @@ f.addEventListener("submit", async (e) => {
         await appendSharedImages(fd,sharedImages);
       }
       fd.set("eye_plans",JSON.stringify({OD:plan("od"),OS:plan("os")}));
-      fd.set("patient_modifiers",JSON.stringify(modifiers));
       fd.set("patient_metadata",JSON.stringify(patientPayload()));
       fd.set("assessment_request_id",requestId);
       return fd;
     };
     let r;
     if(readiness.token){
-      r=await ceraiFetch('/assessment/complete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({assessment_token:readiness.token,age:numberOrNull('age'),eye_plans:{OD:plan('od'),OS:plan('os')},patient_modifiers:modifiers,patient_metadata:patientPayload(),clinical_overrides:clinicalOverrides,source_confirmations:sourceConfirmations})});
+      r=await ceraiFetch('/assessment/complete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({assessment_token:readiness.token,age:numberOrNull('age'),eye_plans:{OD:plan('od'),OS:plan('os')},patient_metadata:patientPayload(),clinical_overrides:clinicalOverrides,source_confirmations:sourceConfirmations})});
     }else{
       const sendAssessment=async()=>ceraiFetch("/analyze",{method:"POST",body:await buildAnalyzeFormData()});
       try{
@@ -970,7 +956,7 @@ f.addEventListener("submit", async (e) => {
         const reasons=(stop.eyes||[]).flatMap(eye=>(eye.reasons||[]).map(reason=>`${eye.eye}: ${reason}`));
         overallNote.textContent=reasons.join(' • ')||'A definitive hard stop is present. Complete the requested values for the full report.';
       }else{
-        statusBox.textContent=j.workflow_status==='CONTACT_LENS_WASHOUT_REQUIRED'?'CONTACT-LENS WASHOUT REQUIRED':'REQUIRED INFORMATION';
+        statusBox.textContent='REQUIRED INFORMATION';
         statusBox.className='status insufficient';overallNote.textContent='';
       }
       showFormMessage(j.message);return;

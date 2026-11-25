@@ -1318,7 +1318,6 @@ async def analyze(
     images: List[UploadFile] = File(...),
     age: Optional[int] = Form(None),
     eye_plans: str = Form("{}"),
-    patient_modifiers: str = Form("{}"),
     patient_metadata: str = Form("{}"),
     assessment_request_id: Optional[str] = Form(None),
 ):
@@ -1332,13 +1331,13 @@ async def analyze(
         raise HTTPException(400, "No images supplied.")
     try:
         plans = json.loads(eye_plans)
-        modifiers = json.loads(patient_modifiers)
         metadata = json.loads(patient_metadata)
     except json.JSONDecodeError as exc:
         raise HTTPException(400, f"Invalid structured clinical input: {exc}") from exc
-    if not isinstance(plans, dict) or not isinstance(modifiers, dict) or not isinstance(metadata, dict):
-        raise HTTPException(400, "eye_plans, patient_modifiers, and patient_metadata must be JSON objects.")
+    if not isinstance(plans, dict) or not isinstance(metadata, dict):
+        raise HTTPException(400, "eye_plans and patient_metadata must be JSON objects.")
 
+    modifiers = {}  # Retired questionnaire is no longer an API input.
     mandatory_source_set_policy.validate_upload_count(len(images))
 
     from operational_security import read_uploads
