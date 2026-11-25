@@ -58,12 +58,12 @@ _PUBLIC_PAGE_LASTMOD = {
     "/tr/learning/borderline-surgical-decisions": "2026-11-24",
     "/tr/learning-center": "2026-11-24",
     "/learning-center": "2026-11-24",
-    '/tr/keratokonus-tarama': "2026-11-23",
-    '/keratoconus-screening': "2026-11-23",
+    '/tr/keratokonus-tarama': "2026-11-25",
+    '/keratoconus-screening': "2026-11-25",
     "/about/huseyin-cengiz": "2026-10-11",
-    "/tr/korneal-ektazi-risk-degerlendirmesi": "2026-11-23",
+    "/tr/korneal-ektazi-risk-degerlendirmesi": "2026-11-25",
     "/": "2026-11-04",
-    "/corneal-ectasia-risk-assessment": "2026-11-23",
+    "/corneal-ectasia-risk-assessment": "2026-11-25",
     "/iol-calculation-software": "2026-11-23",
     "/tr/akilli-mercek-iol-hesaplama": "2026-11-23",
     "/toric-iol-calculator": "2026-10-12",
@@ -87,16 +87,16 @@ _PUBLIC_PAGE_LAST_REVIEWED = {
 _PUBLIC_PAGE_METADATA = {
     '/keratoconus-screening': {
         "schema_type": "MedicalWebPage",
-        "title": "Keratoconus Screening with Pentacam | CER-AI",
-        "description": "CER-AI supports ophthalmologists reviewing manifest refraction and five Pentacam images for keratoconus screening. Results: negative, suspicious or positive.",
+        "title": "Keratoconus Screening Software, Program & Test | CER-AI",
+        "description": "CER-AI keratoconus screening software and program for ophthalmologists: Pentacam-based screening test, corneal topography and tomography review, and risk assessment.",
         "about": "Keratoconus screening",
         "in_language": "en",
         "alternate_path": "/tr/keratokonus-tarama"
     },
     '/tr/keratokonus-tarama': {
         "schema_type": "MedicalWebPage",
-        "title": "Keratokonus Tarama Testi | Pentacam Değerlendirmesi – CER-AI",
-        "description": "Keratokonus tarama testi nedir, nasıl yapılır? Kornea topografisi, Pentacam tomografisi ve sonuçların yorumu; göz hekimleri için CER-AI tarama yazılımı.",
+        "title": "Keratokonus Tarama Testi, Programı ve Yazılımı | CER-AI",
+        "description": "CER-AI keratokonus tarama testi, programı ve yazılımı: Pentacam, kornea topografisi ve tomografisiyle keratokonus risk değerlendirmesinde göz hekimlerine karar desteği.",
         "about": "Keratokonus tarama programı",
         "in_language": "tr",
         "alternate_path": "/keratoconus-screening",
@@ -104,8 +104,8 @@ _PUBLIC_PAGE_METADATA = {
     },
     "/tr/korneal-ektazi-risk-degerlendirmesi": {
         "schema_type": "MedicalWebPage",
-        "title": "Korneal Ektazi Tarama Programı | LASIK ve PRK – CER-AI",
-        "description": "CER-AI keratokonus erken tanı tarama programı: Pentacam bulguları ve korneal ektazi risk değerlendirmesiyle hekime karar desteği. Tek başına tanı koymaz.",
+        "title": "Refraktif Cerrahi Risk Analizi ve Tarama Yazılımı | CER-AI",
+        "description": "CER-AI refraktif cerrahi risk analizi yazılımı, tarama programı ve testi: LASIK, PRK, SMILE ve göz çizdirme öncesi Pentacam ile korneal ektazi risk değerlendirmesi.",
         "about": "Refraktif cerrahi öncesi korneal ektazi risk değerlendirmesi",
         "in_language": "tr",
         "keywords": [
@@ -119,9 +119,9 @@ _PUBLIC_PAGE_METADATA = {
     "/corneal-ectasia-risk-assessment": {
         "alternate_path": "/tr/korneal-ektazi-risk-degerlendirmesi",
         "schema_type": "MedicalWebPage",
-        "title": "Corneal Ectasia Screening Program | CER-AI",
+        "title": "Refractive Surgery Risk Analysis & Screening Software | CER-AI",
         "description": (
-            'CER-AI corneal ectasia screening program: clinical decision support using Pentacam images for preoperative LASIK, PRK and SMILE evaluation.'
+            "CER-AI refractive surgery risk analysis software and screening program: preoperative screening test for LASIK, PRK and SMILE, Pentacam review and corneal ectasia risk assessment."
         ),
         "about": "Corneal ectasia risk assessment before refractive surgery",
         "keywords": [
