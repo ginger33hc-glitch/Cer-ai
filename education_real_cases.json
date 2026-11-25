@@ -1,0 +1,413 @@
+[
+  {
+    "slug": "real-pass",
+    "key": "pass",
+    "title": {
+      "en": "Case 1: real PRK assessment — PASS",
+      "tr": "Vaka 1: gerçek PRK değerlendirmesi — PASS"
+    },
+    "summary": {
+      "en": "Anonymized real archived case. The saved analysis is reproduced without recalculation; it is not a new clinical assessment or evidence of postoperative outcome.",
+      "tr": "Anonimleştirilmiş gerçek arşiv vakası. Kayıtlı analiz yeniden hesaplanmadan aktarılmıştır; yeni klinik değerlendirme veya ameliyat sonrası sonuç kanıtı değildir."
+    },
+    "inputs": [
+      {
+        "label": {
+          "en": "Procedure",
+          "tr": "İşlem"
+        },
+        "value": "PRK — OD / OS"
+      },
+      {
+        "label": {
+          "en": "Thinnest pachymetry",
+          "tr": "En ince pakimetri"
+        },
+        "value": "OD 532 µm / OS 538 µm"
+      },
+      {
+        "label": {
+          "en": "K1 / K2",
+          "tr": "K1 / K2"
+        },
+        "value": "OD 41.7 / 42.2 D; OS 41.5 / 42.5 D"
+      },
+      {
+        "label": {
+          "en": "Signed I-S",
+          "tr": "İşaretli I-S"
+        },
+        "value": "OD -0.55 D / OS -0.14 D"
+      },
+      {
+        "label": {
+          "en": "Final BAD-D",
+          "tr": "Final BAD-D"
+        },
+        "value": "OD 0.46 / OS 0.35"
+      },
+      {
+        "label": {
+          "en": "Ablation depth",
+          "tr": "Ablasyon derinliği"
+        },
+        "value": "OD 35.625 µm / OS 37.5 µm"
+      },
+      {
+        "label": {
+          "en": "PRK RST / PTA",
+          "tr": "PRK RST / PTA"
+        },
+        "value": "OD 446.375 µm / 16.095%; OS 450.5 µm / 16.264%"
+      }
+    ],
+    "pathways": [
+      [
+        "ERSS",
+        "OD 1 / OS 1",
+        "PASS"
+      ],
+      [
+        "NICE",
+        "OD 4 / OS 4",
+        "PASS"
+      ],
+      [
+        "BAD-D",
+        "OD 0.46 / OS 0.35",
+        "PASS"
+      ],
+      [
+        "PS3",
+        "OD 0 Moderate, 0 High / OS 0 Moderate, 0 High",
+        "PASS"
+      ],
+      [
+        "PRK RST / PTA",
+        "OD 446.375 µm / 16.095%; OS 450.5 µm / 16.264%",
+        "PASS"
+      ]
+    ],
+    "final_result": "PASS",
+    "report_text": {
+      "en": "The archived PRK assessment is PASS in both eyes. All four scoring pathways and the recorded tissue checks pass. OD astigmatic axis disparity (12.8°) still requires measurement/refraction validation; the archived MMC guidance is RECOMMENDED.",
+      "tr": "Arşivdeki PRK değerlendirmesi iki gözde PASS sonucundadır. Dört skorlama yolu ve kayıtlı doku kontrolleri uygundur. Sağ gözdeki 12.8° astigmatik aks farkı ölçüm/refraksiyon doğrulaması gerektirir; kayıtlı MMC önerisi RECOMMENDED şeklindedir."
+    },
+    "learning_points": {
+      "en": [
+        "PASS is not a guarantee of zero risk or surgical clearance.",
+        "The photographed maps and the saved report are separate source records; any discrepancy needs surgeon review."
+      ],
+      "tr": [
+        "PASS sıfır risk veya ameliyat onayı anlamına gelmez.",
+        "Harita fotoğrafları ile kayıtlı rapor ayrı kaynak kayıtlardır; uyuşmazlıklar cerrahça incelenmelidir."
+      ]
+    }
+  },
+  {
+    "slug": "real-caution",
+    "key": "caution",
+    "title": {
+      "en": "Case 2: real LASIK assessment — PASS WITH CAUTION",
+      "tr": "Vaka 2: gerçek LASIK değerlendirmesi — DİKKATLE UYGUN"
+    },
+    "summary": {
+      "en": "Anonymized real archived case. The saved analysis is reproduced without recalculation; it is not a new clinical assessment or evidence of postoperative outcome.",
+      "tr": "Anonimleştirilmiş gerçek arşiv vakası. Kayıtlı analiz yeniden hesaplanmadan aktarılmıştır; yeni klinik değerlendirme veya ameliyat sonrası sonuç kanıtı değildir."
+    },
+    "inputs": [
+      {
+        "label": {
+          "en": "Procedure",
+          "tr": "İşlem"
+        },
+        "value": "LASIK — OD / OS"
+      },
+      {
+        "label": {
+          "en": "Thinnest pachymetry",
+          "tr": "En ince pakimetri"
+        },
+        "value": "OD 566 µm / OS 576 µm"
+      },
+      {
+        "label": {
+          "en": "Signed I-S",
+          "tr": "İşaretli I-S"
+        },
+        "value": "OD -0.78 D / OS -1.28 D"
+      },
+      {
+        "label": {
+          "en": "Final BAD-D",
+          "tr": "Final BAD-D"
+        },
+        "value": "OD 0.33 / OS -0.04"
+      },
+      {
+        "label": {
+          "en": "Plan A: flap / OZ / TZ",
+          "tr": "Plan A: flep / OZ / TZ"
+        },
+        "value": "100 µm / 6.5 mm / 9 mm"
+      },
+      {
+        "label": {
+          "en": "Ablation depth",
+          "tr": "Ablasyon derinliği"
+        },
+        "value": "OD 112.5 µm / OS 103.125 µm"
+      },
+      {
+        "label": {
+          "en": "LASIK RSB / PTA",
+          "tr": "LASIK RSB / PTA"
+        },
+        "value": "OD 353.5 µm / 37.544%; OS 372.875 µm / 35.265%"
+      }
+    ],
+    "pathways": [
+      [
+        "ERSS",
+        "OD 3 / OS 3; age / yaş: 3",
+        "CAUTION"
+      ],
+      [
+        "NICE",
+        "OD 4 / OS 4",
+        "PASS"
+      ],
+      [
+        "BAD-D",
+        "OD 0.33 / OS -0.04",
+        "PASS"
+      ],
+      [
+        "PS3",
+        "OD 0 Moderate, 0 High / OS 0 Moderate, 0 High",
+        "PASS"
+      ],
+      [
+        "LASIK RSB / PTA",
+        "OD 353.5 µm / 37.544%; OS 372.875 µm / 35.265%",
+        "PASS"
+      ]
+    ],
+    "final_result": "PASS WITH CAUTION",
+    "report_text": {
+      "en": "Both eyes are PASS WITH CAUTION in the archived LASIK assessment. ERSS is 3 in each eye, entirely from its age component. BAD-D, NICE and PS3 pass. Plan A meets the recorded tissue checks; the age-related caution remains visible.",
+      "tr": "Arşivdeki LASIK değerlendirmesi iki gözde DİKKATLE UYGUN (PASS WITH CAUTION) sonucundadır. Her gözde ERSS 3 puanın tamamı yaş bileşeninden gelir. BAD-D, NICE ve PS3 uygundur. Plan A kayıtlı doku kontrollerini karşılar; yaş kaynaklı uyarı devam eder."
+    },
+    "learning_points": {
+      "en": [
+        "Do not describe a caution as an unconditional pass.",
+        "The report also flags axis-validation and ML7 ring/transition-zone warnings; review the full archived findings."
+      ],
+      "tr": [
+        "Uyarılı sonuç koşulsuz uygun olarak sunulmaz.",
+        "Raporda aks doğrulama ve ML7 halka/geçiş zonu uyarıları da bulunur; kayıtlı bulgular birlikte incelenmelidir."
+      ]
+    }
+  },
+  {
+    "slug": "real-stop",
+    "key": "stop",
+    "title": {
+      "en": "Case 3: real LASIK assessment — STOP-DEFER",
+      "tr": "Vaka 3: gerçek LASIK değerlendirmesi — STOP-DEFER"
+    },
+    "summary": {
+      "en": "Anonymized real archived case. The saved analysis is reproduced without recalculation; it is not a new clinical assessment or evidence of postoperative outcome.",
+      "tr": "Anonimleştirilmiş gerçek arşiv vakası. Kayıtlı analiz yeniden hesaplanmadan aktarılmıştır; yeni klinik değerlendirme veya ameliyat sonrası sonuç kanıtı değildir."
+    },
+    "inputs": [
+      {
+        "label": {
+          "en": "Procedure",
+          "tr": "İşlem"
+        },
+        "value": "LASIK — OD / OS"
+      },
+      {
+        "label": {
+          "en": "Thinnest pachymetry",
+          "tr": "En ince pakimetri"
+        },
+        "value": "OD 534 µm / OS 543 µm"
+      },
+      {
+        "label": {
+          "en": "Posterior elevation at thinnest",
+          "tr": "En ince noktada arka elevasyon"
+        },
+        "value": "OD 16 µm / OS 14 µm"
+      },
+      {
+        "label": {
+          "en": "Final BAD-D",
+          "tr": "Final BAD-D"
+        },
+        "value": "OD 1.15 / OS 1.17"
+      },
+      {
+        "label": {
+          "en": "NICE",
+          "tr": "NICE"
+        },
+        "value": "OD 6 / OS 6"
+      },
+      {
+        "label": {
+          "en": "LASIK RSB / PTA",
+          "tr": "LASIK RSB / PTA"
+        },
+        "value": "OD 372.125 µm / 30.314%; OS 379.25 µm / 30.157%"
+      }
+    ],
+    "pathways": [
+      [
+        "ERSS",
+        "OD 0 / OS 1",
+        "PASS"
+      ],
+      [
+        "NICE",
+        "OD 6 / OS 6",
+        "CAUTION"
+      ],
+      [
+        "BAD-D",
+        "OD 1.15 / OS 1.17",
+        "PASS"
+      ],
+      [
+        "PS3 — OD",
+        "B.Ele.Th 16 µm > 15 µm; High",
+        "STOP-DEFER"
+      ],
+      [
+        "PS3 — OS",
+        "0 Moderate / 0 High",
+        "PASS"
+      ],
+      [
+        "OD",
+        "PS3 elevation / elevasyon",
+        "STOP-DEFER"
+      ],
+      [
+        "OS",
+        "NICE 6",
+        "PASS WITH CAUTION"
+      ]
+    ],
+    "final_result": "STOP-DEFER",
+    "report_text": {
+      "en": "The archived overall decision is STOP-DEFER: OD has a PS3 High elevation factor (B.Ele.Th 16 µm), while OS is PASS WITH CAUTION from NICE 6. Normal final BAD-D and passing tissue calculations do not cancel the recorded OD stop.",
+      "tr": "Arşivdeki genel karar STOP-DEFER: sağ gözde B.Ele.Th 16 µm nedeniyle PS3 yüksek elevasyon faktörü vardır; sol göz NICE 6 nedeniyle DİKKATLE UYGUN sonucundadır. Normal final BAD-D ve uygun doku hesapları sağ gözdeki durdurma kararını kaldırmaz."
+    },
+    "learning_points": {
+      "en": [
+        "Read the two eyes separately before the overall decision.",
+        "A geometrically feasible plan is not permission to operate when a scoring stop is present."
+      ],
+      "tr": [
+        "Genel karardan önce iki gözün sonuçları ayrı okunmalıdır.",
+        "Doku geometrisi uygun olsa da skorlama kaynaklı durdurma varken plan ameliyat onayı değildir."
+      ]
+    }
+  },
+  {
+    "slug": "real-iol",
+    "key": "iol",
+    "title": {
+      "en": "Case 4: real IOL planning example",
+      "tr": "Vaka 4: gerçek IOL planlama örneği"
+    },
+    "summary": {
+      "en": "Anonymized real archived case. The saved analysis is reproduced without recalculation; it is not a new clinical assessment or evidence of postoperative outcome.",
+      "tr": "Anonimleştirilmiş gerçek arşiv vakası. Kayıtlı analiz yeniden hesaplanmadan aktarılmıştır; yeni klinik değerlendirme veya ameliyat sonrası sonuç kanıtı değildir."
+    },
+    "inputs": [
+      {
+        "label": {
+          "en": "Lens family",
+          "tr": "Lens ailesi"
+        },
+        "value": "CLAREON Vivity Toric"
+      },
+      {
+        "label": {
+          "en": "Axial length",
+          "tr": "Aksiyel uzunluk"
+        },
+        "value": "OD 28.66 mm / OS 27.65 mm"
+      },
+      {
+        "label": {
+          "en": "ACD",
+          "tr": "ACD"
+        },
+        "value": "OD 3.37 mm / OS 3.12 mm"
+      },
+      {
+        "label": {
+          "en": "K1 / K2",
+          "tr": "K1 / K2"
+        },
+        "value": "OD 43.32 / 46.62 D; OS 43.38 / 46.94 D"
+      },
+      {
+        "label": {
+          "en": "Formula / A constant",
+          "tr": "Formül / A sabiti"
+        },
+        "value": "Cooke K6 / 119.20"
+      },
+      {
+        "label": {
+          "en": "SIA / incision",
+          "tr": "SIA / kesi"
+        },
+        "value": "0.25 D / 180°"
+      }
+    ],
+    "pathways": [
+      [
+        "OD",
+        "CNWET7 / 6.00 D / 97.0°",
+        "ARCHIVED / ARŞİV"
+      ],
+      [
+        "OS",
+        "CNWET8 / 7.50 D / 100.3°",
+        "ARCHIVED / ARŞİV"
+      ],
+      [
+        "Target / Hedef",
+        "OD -0.25 D / OS -0.25 D",
+        "ARCHIVED / ARŞİV"
+      ],
+      [
+        "Predicted / Öngörülen",
+        "OD -0.90 D / OS -0.40 D",
+        "ARCHIVED / ARŞİV"
+      ]
+    ],
+    "final_result": "IOL — ARCHIVED EXAMPLE",
+    "report_text": {
+      "en": "This is an anonymized copy of a real archived IOL report. Lens power, model, axis, residual estimates and the original TEST ONLY / independent-verification warnings are preserved. It is a historical teaching example, not a current lens recommendation.",
+      "tr": "Bu dosya gerçek bir arşiv IOL raporunun anonimleştirilmiş kopyasıdır. Lens gücü, model, aks, rezidüel tahminleri ve özgün TEST ONLY / bağımsız doğrulama uyarıları korunmuştur. Geçmiş bir eğitim örneğidir; güncel lens önerisi değildir."
+    },
+    "learning_points": {
+      "en": [
+        "The source IOLMaster images are not exposed by this archived IOL entry; the PDF is an output example, not an IOLMaster input file.",
+        "Verify model, power, axis and residual independently as stated in the original report."
+      ],
+      "tr": [
+        "Bu arşiv IOL kaydında kaynak IOLMaster görüntüleri sunulmuyor; PDF bir çıktı örneğidir, IOLMaster girdi dosyası değildir.",
+        "Özgün raporda belirtildiği gibi model, güç, aks ve rezidüel bağımsız doğrulanmalıdır."
+      ]
+    }
+  }
+]

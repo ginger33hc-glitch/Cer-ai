@@ -8,6 +8,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from html import escape
+from pathlib import Path
 
 
 @dataclass(frozen=True)
@@ -206,14 +207,12 @@ TOPICS = (
     Topic(
         "clinical-cases",
         "Clinical reasoning cases",
-        "De-identified teaching archetypes showing how surgeons can reconcile concordant, discordant, incomplete, and procedure-dependent ectasia-risk evidence.",
+        "Anonymized real PASS, PASS WITH CAUTION and STOP-DEFER cases with Pentacam photographs, saved analyses and an IOL report example.",
         "Case-learning module",
         (
-            ("Coming soon: real clinical case examples", "De-identified examples selected from real clinical cases will be added to this section soon. Until then, the worked cases below remain clearly labeled synthetic teaching cases and do not contain real patient data."),
-            ("Case A: concordant concern", "Anterior curvature asymmetry, corresponding posterior-elevation deviation, and abnormal pachymetric progression point toward the same region. The learning task is to verify acquisition quality and source identity, then explain why multiple independent channels are concordant rather than merely counting abnormal labels."),
-            ("Case B: isolated composite alert", "Final BAD-D is outside the device reference band while the anterior curvature map appears regular. The learning task is to inspect the component deviations, raw elevation and pachymetry displays, quality status, and fellow eye before deciding whether the composite is coherent or isolated."),
-            ("Case C: reassuring shape, unfavorable plan", "Topography and tomography appear reassuring, but planned flap and ablation geometry leave limited predicted stromal reserve. The learning task is to keep tissue safety independent from ectasia-pattern screening and reconsider the proposed procedure rather than allowing normal maps to override the plan."),
-            ("Case D: missing decision-critical source", "A required display is absent or unreadable. The learning task is not to infer a favorable result from missingness. Identify the exact field and source needed, obtain a repeat examination or surgeon-confirmed value when appropriate, and preserve the uncertainty in documentation."),
+            ("Real archived cases", "Three anonymized refractive cases show PASS, PASS WITH CAUTION and STOP-DEFER, each with five original Pentacam photographs and saved analysis results. A separate IOL report provides an output example."),
+            ("Read the saved result", "These are historical archived assessments, not recalculations with the current engine. Compare the source maps, individual pathway results and eye-specific decisions."),
+            ("What was removed", "Patient names, identifiers, birth and examination dates, identifying filenames and file metadata were removed from the public copies. Clinical source records remain unchanged in the protected archive."),
         ),
         (
             ("Randleman et al., Ophthalmology 2008", "https://pubmed.ncbi.nlm.nih.gov/17624434/"),
@@ -448,14 +447,12 @@ TR_TOPICS = (
     Topic(
         "clinical-cases",
         "Klinik örnek olgular",
-        "Uyumlu, uyumsuz, eksik ve işleme bağımlı ektazi risk kanıtlarının uzlaştırılmasını gösteren kimliksiz eğitim arketipleri.",
+        "Pentacam fotoğrafları ve kayıtlı analizleriyle anonim gerçek PASS, DİKKATLE UYGUN ve STOP-DEFER vakaları; ayrıca IOL rapor örneği.",
         "Olgu öğrenme modülü",
         (
-            ("Yakında: gerçek klinik vaka örnekleri", "Bu bölüme gerçek vakalardan seçilmiş, anonimleştirilmiş örnekler yakında eklenecektir. Bu örnekler eklenene kadar aşağıdaki işlenmiş olgular, gerçek hasta verisi içermeyen sentetik eğitim olguları olarak açıkça etiketli kalacaktır."),
-            ("Olgu A: birbiriyle uyumlu risk bulguları", "Ön eğrilik asimetrisi, aynı bölgeye karşılık gelen arka elevasyon sapması ve anormal pakimetrik progresyon aynı şüpheli örüntüyü destekler. Öğrenme görevi; çekim kalitesini ve kaynak kimliğini doğrulamak, ardından yalnızca anormal etiketleri saymak yerine birbirinden bağımsız kanalların anatomik olarak neden uyumlu olduğunu açıklamaktır."),
-            ("Olgu B: izole bileşik uyarı", "Final BAD-D cihaz referans bandının dışındayken ön eğrilik haritası düzenli görünür. Öğrenme görevi; bileşen sapmalarını, ham elevasyon ve pakimetri ekranlarını, kalite durumunu ve diğer gözü inceleyerek bileşik sinyalin tutarlı mı izole mi olduğunu belirlemektir."),
-            ("Olgu C: güven verici şekil, elverişsiz plan", "Topografi ve tomografi güven verici görünür, ancak planlanan flep ve ablasyon geometrisi sınırlı stromal rezerv bırakır. Öğrenme görevi; doku güvenliğini ektazi örüntü taramasından bağımsız tutmak ve normal haritaların planı geçersiz biçimde onaylamasına izin vermemektir."),
-            ("Olgu D: karar için kritik kaynak eksik", "Gerekli bir ekran yoktur veya okunamıyordur. Öğrenme görevi eksikliği olumlu sonuç olarak varsaymamak; gerekli alanı ve kaynağı açıkça tanımlamak, uygun olduğunda tekrar inceleme veya cerrahça doğrulanmış değer almak ve belirsizliği kayıtta korumaktır."),
+            ("Gerçek arşiv vakaları", "PASS, DİKKATLE UYGUN ve STOP-DEFER sonuçlu üç anonim refraktif vaka, her biri beş özgün Pentacam fotoğrafı ve kayıtlı analiz sonuçlarıyla sunulur. Ayrı bir IOL raporu da çıktı örneği sağlar."),
+            ("Kayıtlı sonucu okuyun", "Bunlar güncel motorla yeniden hesaplanan sonuçlar değil, geçmiş arşiv değerlendirmeleridir. Kaynak haritaları, ayrı skorlama yollarını ve göz bazında kararları karşılaştırın."),
+            ("Kaldırılan bilgiler", "Hasta adları, kimlik numaraları, doğum ve tetkik tarihleri, kimlik içeren dosya adları ve metaveriler yayımlanan kopyalardan kaldırılmıştır. Klinik asıllar korumalı arşivde değişmeden kalır."),
         ),
         (
             ("Randleman ve ark., Ophthalmology 2008", "https://pubmed.ncbi.nlm.nih.gov/17624434/"),
@@ -817,19 +814,19 @@ class SampleCase:
     learning_points: tuple[str, ...]
 
 
-SAMPLE_CASES = (
-    SampleCase("concordant-low-risk-lasik", "Case 1: concordant low-risk LASIK screen", "Synthetic example in which all four risk pathways and independent tissue-safety checks are complete.", (("Procedure", "LASIK"), ("Age / thinnest", "30 years / 540 µm"), ("I-S / SRAX", "-0.20 D / 10°"), ("Manifest MRSE", "-4.00 D"), ("Flap / ablation / RSB / PTA", "110 / 60 / 370 µm / 31.5%"), ("Final BAD-D", "1.20")), (("ERSS", "0", "PASS"), ("BAD-D", "1.20 normal", "PASS"), ("NICE", "4", "PASS"), ("PS3", "No Moderate/High factors", "PASS"), ("Tissue safety", "RSB 370 µm; PTA 31.5%", "PASS")), "PASS", "The report shows each pathway separately, preserves the source measurements, and states that PASS is decision support—not a guarantee of zero ectasia risk or autonomous surgical clearance.", ("Concordance strengthens interpretability but does not prove future stability.", "A negative signed I-S represents superior rather than inferior asymmetry; SRAX does not create an inferior-risk factor.", "All source identity, quality, eligibility, and surgeon-review requirements still apply.")),
-    SampleCase("two-caution-pathways", "Case 2: two independent caution pathways", "Synthetic LASIK example showing why CER-AI does not hide discordance inside one average score.", (("Procedure", "LASIK"), ("Age / thinnest", "25 years / 505 µm"), ("I-S / SRAX", "+0.80 D / 15°"), ("Manifest MRSE", "-5.00 D"), ("Flap / ablation / RSB", "110 / 70 / 325 µm"), ("Final BAD-D", "2.00"), ("NICE inputs", "K2 46 D; central 505 µm; B.Ele.Th 16 µm; I-S 0.80 D")), (("ERSS", "Topography 1 + pachymetry 1 = 2", "PASS"), ("BAD-D", "2.00 suspicious", "CAUTION"), ("NICE", "2 + 2 + 2 + 1 = 7", "CAUTION"), ("PS3", "Complete; no Moderate/High", "PASS"), ("Tissue safety", "Independent checks complete", "PASS")), "CAUTION", "The report lists BAD-D and NICE as separate caution drivers. Because exactly two of the four completed scoring systems are CAUTION and no stop is present, the combined result is CAUTION.", ("NICE points are not added to ERSS points.", "BAD-D component context does not create extra caution counts.", "The surgeon sees which pathways disagree and reviews the underlying maps.")),
-    SampleCase("srax-ps3-stop", "Case 3: SRAX-driven defer", "Synthetic case in which signed I-S establishes ERSS inferior steepening while confirmed SRAX >20° independently creates a PS3 High factor.", (("Procedure", "LASIK"), ("Age / thinnest", "28 years / 530 µm"), ("Signed I-S", "+1.20 D"), ("Measured SRAX", "25°; surgeon confirms >20°"), ("Final BAD-D / NICE", "1.20 / 5")), (("ERSS", "Signed I-S +1.20 D establishes inferior steepening = 3", "CAUTION"), ("BAD-D", "Normal", "PASS"), ("NICE", "5", "CAUTION"), ("PS3", "SRAX High factor", "STOP-DEFER"), ("Tissue safety", "No independent stop in this example", "PASS")), "STOP-DEFER", "The report preserves the ERSS and NICE cautions and the exact PS3 High finding. PS3's procedure disposition becomes a stop driver, and STOP-DEFER overrides all reassuring or caution results.", ("Signed I-S from >+1.00 D to <+1.40 D is classified as inferior steepening in ERSS.", "Exactly 20.0° is negative; >20° is positive only under the signed-I-S and confirmation policy.", "A confirmed stop remains visible even when other pathways pass.")),
-    SampleCase("incomplete-source", "Case 4: decision-critical source missing", "Synthetic example showing why missing tomography is not interpreted as normal.", (("Procedure", "PRK"), ("B.Ele.Th", "Unreadable / unavailable"), ("Other measurements", "Available but insufficient for complete NICE and PS3")), (("ERSS", "Complete", "PASS"), ("BAD-D", "Complete", "PASS"), ("NICE", "B.Ele.Th missing", "ASSESSMENT INCOMPLETE"), ("PS3", "Elevation factor not evaluated", "ASSESSMENT INCOMPLETE"), ("Report gate", "Decision-critical dependency unresolved", "No complete report token")), "ASSESSMENT INCOMPLETE", "CER-AI requests the exact missing BAD Display field or surgeon-confirmed value. It does not infer zero elevation, reuse a similarly named field, or issue a reassuring completed report.", ("Missingness is a workflow state, not a low-risk observation.", "Source-specific rereading protects against field interchange.", "The report becomes available only after completeness and integrity gates are satisfied.")),
-)
+# Public, explicitly de-identified teaching data only; no archive credentials or identifiers.
+_REAL_CASE_DATA = json.loads((Path(__file__).parent / "education_real_cases.json").read_text(encoding="utf-8"))
 
-TR_SAMPLE_CASES = (
-    SampleCase("concordant-low-risk-lasik", "Olgu 1: uyumlu düşük riskli LASIK taraması", "Dört risk yolunun ve bağımsız doku güvenliği kontrollerinin tamamlandığı sentetik örnek.", (("İşlem", "LASIK"), ("Yaş / en ince", "30 yıl / 540 µm"), ("I-S / SRAX", "-0.20 D / 10°"), ("Manifest MRSE", "-4.00 D"), ("Flep / ablasyon / RSB / PTA", "110 / 60 / 370 µm / %31.5"), ("Final BAD-D", "1.20")), (("ERSS", "0", "PASS"), ("BAD-D", "1.20 normal", "PASS"), ("NICE", "4", "PASS"), ("PS3", "Orta/Yüksek faktör yok", "PASS"), ("Doku güvenliği", "RSB 370 µm; PTA %31.5", "PASS")), "PASS", "Rapor her yolu ayrı gösterir, kaynak ölçümlerini korur ve PASS'ın sıfır ektazi riskini garanti etmediğini ve otonom cerrahi onay olmadığını belirtir.", ("Uyum yorumlanabilirliği güçlendirir ancak gelecekteki stabiliteyi kanıtlamaz.", "Negatif işaretli I-S superior asimetriyi gösterir; SRAX inferior risk faktörü oluşturmaz.", "Kaynak kimliği, kalite, uygunluk ve cerrah inceleme gereklilikleri devam eder.")),
-    SampleCase("two-caution-pathways", "Olgu 2: iki bağımsız uyarı yolu", "CER-AI'ın uyumsuzluğu tek ortalama skor içinde neden gizlemediğini gösteren sentetik LASIK örneği.", (("İşlem", "LASIK"), ("Yaş / en ince", "25 yıl / 505 µm"), ("I-S / SRAX", "+0.80 D / 15°"), ("Manifest MRSE", "-5.00 D"), ("Flep / ablasyon / RSB", "110 / 70 / 325 µm"), ("Final BAD-D", "2.00"), ("NICE girdileri", "K2 46 D; santral 505 µm; B.Ele.Th 16 µm; I-S 0.80 D")), (("ERSS", "Topografi 1 + pakimetri 1 = 2", "PASS"), ("BAD-D", "2.00 şüpheli", "CAUTION"), ("NICE", "2 + 2 + 2 + 1 = 7", "CAUTION"), ("PS3", "Tam; Orta/Yüksek yok", "PASS"), ("Doku güvenliği", "Bağımsız kontroller tam", "PASS")), "CAUTION", "Rapor BAD-D ve NICE'ı ayrı uyarı nedenleri olarak listeler. Dört tamamlanmış skorlama sisteminin tam ikisi CAUTION olduğundan ve durdurma bulunmadığından birleşik sonuç CAUTION olur.", ("NICE puanları ERSS puanlarına eklenmez.", "BAD-D bileşen bağlamı ek uyarı sayısı oluşturmaz.", "Cerrah hangi yolların uyumsuz olduğunu görür ve alttaki haritaları inceler.")),
-    SampleCase("srax-ps3-stop", "Olgu 3: SRAX kaynaklı erteleme", "İşaretli I-S'nin ERSS inferior dikleşmesini belirlediği, doğrulanmış SRAX >20° bulgusunun ise bağımsız olarak PS3 Yüksek faktör oluşturduğu sentetik olgu.", (("İşlem", "LASIK"), ("Yaş / en ince", "28 yıl / 530 µm"), ("İşaretli I-S", "+1.20 D"), ("Ölçülen SRAX", "25°; cerrah >20° olduğunu doğrular"), ("Final BAD-D / NICE", "1.20 / 5")), (("ERSS", "İşaretli I-S +1.20 D inferior dikleşmeyi belirler = 3", "CAUTION"), ("BAD-D", "Normal", "PASS"), ("NICE", "5", "CAUTION"), ("PS3", "SRAX Yüksek faktör", "STOP-DEFER"), ("Doku güvenliği", "Bu örnekte bağımsız durdurma yok", "PASS")), "STOP-DEFER", "Rapor ERSS ve NICE uyarılarını ve kesin PS3 Yüksek bulgusunu korur. PS3 işlem kararı durdurma nedeni olur ve STOP-DEFER bütün olumlu veya uyarılı sonuçlara üstün gelir.", ("ERSS'de işaretli I-S >+1.00 D ile <+1.40 D arasında olduğunda inferior dikleşme olarak sınıflandırılır.", "Tam 20.0° negatiftir; yalnızca >20° işaretli I-S ve doğrulama politikasında pozitiftir.", "Doğrulanmış durdurma diğer yollar geçse bile görünür kalır.")),
-    SampleCase("incomplete-source", "Olgu 4: karar için kritik kaynak eksik", "Eksik tomografinin neden normal olarak yorumlanmadığını gösteren sentetik örnek.", (("İşlem", "PRK"), ("B.Ele.Th", "Okunamıyor / yok"), ("Diğer ölçümler", "Var; ancak NICE ve PS3'ü tamamlamak için yetersiz")), (("ERSS", "Tam", "PASS"), ("BAD-D", "Tam", "PASS"), ("NICE", "B.Ele.Th eksik", "ASSESSMENT INCOMPLETE"), ("PS3", "Elevasyon faktörü değerlendirilmedi", "ASSESSMENT INCOMPLETE"), ("Rapor kapısı", "Karar-kritik bağımlılık çözülmedi", "Tam rapor belirteci yok")), "ASSESSMENT INCOMPLETE", "CER-AI tam eksik BAD Display alanını veya cerrahça doğrulanmış değeri ister. Elevasyonu sıfır varsaymaz, benzer adlı alanı kullanmaz ve güven verici tamamlanmış rapor üretmez.", ("Eksiklik düşük risk gözlemi değil, iş akışı durumudur.", "Kaynağa özgü yeniden okuma alan değişimini önler.", "Rapor yalnız tamlık ve bütünlük kapıları karşılandıktan sonra kullanılabilir.")),
-)
+def _real_cases(locale: str) -> tuple[SampleCase, ...]:
+    return tuple(SampleCase(
+        item["slug"], item["title"][locale], item["summary"][locale],
+        tuple((row["label"][locale], row["value"]) for row in item["inputs"]),
+        tuple(tuple(row) for row in item["pathways"]), item["final_result"],
+        item["report_text"][locale], tuple(item["learning_points"][locale]),
+    ) for item in _REAL_CASE_DATA)
+
+SAMPLE_CASES = _real_cases("en")
+TR_SAMPLE_CASES = _real_cases("tr")
 
 
 def _head(base: str, canonical_path: str, title: str, description: str, robots: str, schema: dict, locale: str) -> str:
@@ -900,48 +897,33 @@ def _technical_tables(locale: str, slug: str) -> str:
     return "".join(blocks)
 
 
-def _synthetic_pentacam_gallery(locale: str) -> str:
-    if locale == "tr":
-        heading = "Beş görüntülü sentetik Pentacam kaynak örneği"
-        introduction = "Bu set, bir şüpheli öğretim gözü (OD) ile bir normal öğretim gözünün (OS) beş zorunlu kaynak ekranında nasıl karşılaştırıldığını gösterir. Görseli tam boy açmak için üzerine tıklayın."
-        warning = "Bu görseller gerçek Pentacam cihaz çıktısı veya gerçek hasta verisi değildir. Yalnız ekran ailesini, göz tarafını, kaynak alanlarını ve standart yerleşimi öğretmek için hazırlanmıştır; tanı, tedavi kararı veya CER-AI hasta girdisi olarak kullanılamaz."
-        captions = (
-            ("1. OD — 4 Maps Refractive", "Şüpheli öğretim gözü; standart dört kadran yerleşimi"),
-            ("2. OS — 4 Maps Refractive", "Normal öğretim gözü; standart dört kadran yerleşimi"),
-            ("3. OD — Belin/Ambrósio BAD Display", "Şüpheli Final D ve ilişkili bileşen örüntüsü"),
-            ("4. OS — Belin/Ambrósio BAD Display", "Normal Final D ve karşılaştırma örüntüsü"),
-            ("5. Show 2 Exams Topometric — OD/OS", "Cornea Front, Cornea Back ve Center Indices (8 mm) için bilateral karşılaştırma"),
-        )
-    else:
-        heading = "Five-image synthetic Pentacam source example"
-        introduction = "This set demonstrates how one suspicious teaching eye (OD) and one normal teaching eye (OS) align across the five mandatory source screens. Select an image to open it at full size."
-        warning = "These figures are not real Pentacam device exports or real patient data. They teach screen family, laterality, source fields, and standard layout only; they must not be used for diagnosis, treatment decisions, or as CER-AI patient inputs."
-        captions = (
-            ("1. OD — 4 Maps Refractive", "Suspicious teaching eye; standard four-quadrant layout"),
-            ("2. OS — 4 Maps Refractive", "Normal teaching eye; standard four-quadrant layout"),
-            ("3. OD — Belin/Ambrósio BAD Display", "Suspicious Final D and related component pattern"),
-            ("4. OS — Belin/Ambrósio BAD Display", "Normal Final D comparison pattern"),
-            ("5. Show 2 Exams Topometric — OD/OS", "Bilateral Cornea Front, Cornea Back, and Center Indices (8 mm) comparison"),
-        )
-    images = (
-        ("four-maps-od.svg", 1956, 1500),
-        ("four-maps-os.svg", 1956, 1500),
-        ("bad-display-od.svg", 2067, 1435),
-        ("bad-display-os.svg", 2067, 1435),
-        ("show-2-exams-topometric.svg", 2223, 1468),
-    )
-    cards = "".join(
-        f'''<figure class="synthetic-source-card{' synthetic-source-wide' if index == 4 else ''}"><a href="/static/education/pentacam-synthetic/{filename}" target="_blank" rel="noopener"><img src="/static/education/pentacam-synthetic/{filename}" width="{width}" height="{height}" loading="lazy" alt="{escape(title)} — {escape(detail)}"></a><figcaption><strong>{escape(title)}</strong><span>{escape(detail)}</span></figcaption></figure>'''
-        for index, ((title, detail), (filename, width, height)) in enumerate(zip(captions, images, strict=True))
-    )
-    emphasis = "Önemli:" if locale == "tr" else "Important:"
-    return f'''<section class="synthetic-source-section"><h2>{escape(heading)}</h2><p>{escape(introduction)}</p><div class="synthetic-source-grid">{cards}</div><p class="synthetic-source-warning"><strong>{emphasis}</strong> {escape(warning)}</p></section>'''
+def _real_case_materials(slug: str, locale: str) -> str:
+    key = slug.removeprefix("real-")
+    if key not in {"pass", "caution", "stop", "iol"}:
+        return ""
+    tr = locale == "tr"
+    base = f"/static/education/real-cases/{key}"
+    report = f"{base}/summary-{locale}.pdf" if key != "iol" else f"{base}/archived-iol-report.pdf"
+    report_label = "Anonim analiz özeti PDF" if tr else "Anonymized analysis summary PDF"
+    if key == "iol":
+        report_label = "Anonim arşiv IOL raporu PDF (İngilizce)" if tr else "Anonymized archived IOL report PDF (English)"
+    heading = "Gerçek vaka dosyaları" if tr else "Real case files"
+    link = f'<p><a class="text-link" href="{report}" target="_blank" rel="noopener">{report_label}</a></p>'
+    if key == "iol":
+        note = "Kaynak IOLMaster görüntüleri bu arşiv kaydında sunulmuyor. Bu dosya çıktı örneğidir." if tr else "Source IOLMaster images are not available in this archive entry. This file is an output example."
+        return f'<section><h2>{heading}</h2>{link}<p>{note}</p></section>'
+    captions = ((5, "OD — 4 Maps Refractive"), (3, "OS — 4 Maps Refractive"),
+                (4, "OD — Belin/Ambrósio BAD Display"), (2, "OS — Belin/Ambrósio BAD Display"),
+                (1, "OD/OS — Show 2 Exams Topometric"))
+    cards = "".join(f'<figure class="case-source-card"><a href="{base}/source-{n}.jpg" target="_blank" rel="noopener"><img src="{base}/source-{n}.jpg" loading="lazy" alt="{escape(caption)}"></a><figcaption><strong>{escape(caption)}</strong></figcaption></figure>' for n, caption in captions)
+    note = ("Aynı gerçek vakaya ait beş kaynak fotoğrafı. Kimlik alanları kalıcı olarak silinmiştir; haritalar yeniden çizilmemiştir. Tam boy görmek için görsele tıklayın. Kimlik doğrulama alanları silindiği için bunları yeni hasta incelemesi olarak yüklemeyin." if tr else "Five source photographs from the same real case. Identity fields were permanently removed; maps were not redrawn. Select an image for full size. Do not submit these as a new patient assessment because identity-verification fields have been removed.")
+    return f'<section class="case-source-section"><h2>{heading}</h2><p>{note}</p>{link}<div class="case-source-grid">{cards}</div></section>'
 
 
 def _case_cards(locale: str) -> str:
     cases = TR_SAMPLE_CASES if locale == "tr" else SAMPLE_CASES
     label = "Olguya git" if locale == "tr" else "Open worked case"
-    return "".join(f'<article class="learning-card case-card"><span>{"Sentetik eğitim olgusu" if locale == "tr" else "Synthetic teaching case"}</span><h3><a href="{_path(locale, f"/learning/cases/{case.slug}")}">{escape(case.title)}</a></h3><p>{escape(case.summary)}</p><a class="text-link" href="{_path(locale, f"/learning/cases/{case.slug}")}">{label} <span aria-hidden="true">→</span></a></article>' for case in cases)
+    return "".join(f'<article class="learning-card case-card"><span>{"Anonim gerçek eğitim vakası" if locale == "tr" else "Anonymized real teaching case"}</span><h3><a href="{_path(locale, f"/learning/cases/{case.slug}")}">{escape(case.title)}</a></h3><p>{escape(case.summary)}</p><a class="text-link" href="{_path(locale, f"/learning/cases/{case.slug}")}">{label} <span aria-hidden="true">→</span></a></article>' for case in cases)
 
 
 def render_hub(base: str, robots: str, locale: str = "en") -> str:
@@ -982,11 +964,11 @@ def render_hub(base: str, robots: str, locale: str = "en") -> str:
     )
     if locale == "tr":
         boundary = ("Temel sınır", "Eğitim bilimi açıklar; yapılandırılmış değerlendirmeyi CER-AI uygulaması yapar.")
-        case_head = ("Çalışılmış örnekler", "Sentetik olgular ve rapor akışı", "Girdilerin ayrı risk yollarına, güvenlik kontrollerine ve yapılandırılmış rapora nasıl dönüştüğünü adım adım izleyin.")
+        case_head = ("Çalışılmış örnekler", "Gerçek vakalar ve rapor akışı", "Girdilerin ayrı risk yollarına, güvenlik kontrollerine ve yapılandırılmış rapora nasıl dönüştüğünü adım adım izleyin.")
         resources = '<div><p class="learning-kicker">Kanıt kütüphanesi</p><h2>İfadeleri kaynaklarına kadar izleyin</h2><p>Yol düzeyinde yorum için klinik kanıt haritasını, eksiksiz bibliyografya için aranabilir kayıt sistemini kullanın.</p><div class="learning-actions"><a class="learning-button" href="/clinical-evidence">Klinik kanıt</a><a class="learning-button secondary" href="/references">Kaynak kayıt sistemi</a></div></div><div><p class="learning-kicker">Sorular</p><h2>SSS ve eğitim asistanı sınırı</h2><p>Kısa yanıtları okuyun ve planlanan asistanın hastaya özgü klinik değerlendirmeden nasıl ayrı kalacağını görün.</p><div class="learning-actions"><a class="learning-button" href="/tr/learning/faq">SSS\'yi aç</a></div></div>'
     else:
         boundary = ("Core boundary", "Education explains the science; the CER-AI application performs the structured assessment.")
-        case_head = ("Worked examples", "Synthetic cases and report flow", "Follow how source inputs become independent risk pathways, safety checks, and a structured report.")
+        case_head = ("Worked examples", "Real cases and report flow", "Follow how source inputs become independent risk pathways, safety checks, and a structured report.")
         resources = '<div><p class="learning-kicker">Evidence library</p><h2>Trace statements to their sources</h2><p>Use the clinical evidence map for pathway-level interpretation and the searchable registry for the complete bibliography.</p><div class="learning-actions"><a class="learning-button" href="/clinical-evidence">Clinical evidence</a><a class="learning-button secondary" href="/references">Reference registry</a></div></div><div><p class="learning-kicker">Questions</p><h2>FAQ and educational assistant boundary</h2><p>Read concise answers and see how the planned assistant remains separated from patient-specific assessment.</p><div class="learning-actions"><a class="learning-button" href="/learning/faq">Open FAQ</a></div></div>'
     if locale == "tr":
         presentations = '''<section class="learning-section learning-alt"><div class="learning-wrap"><div class="learning-section-head"><p class="learning-kicker">Hekim sunumu</p><h2>CER-AI sunum örnekleri</h2><p>Program mantığını, kanonik veri kaynaklarını, bağımsız risk yollarını ve prosedüre özgü karar iş akışını 20 slaytlık sunumda inceleyin.</p><div class="learning-actions"><a class="learning-button" href="/static/education/presentations/CER-AI_English_Physician_Presentation_2026-09-15_v1.pptx" download>İngilizce sunumu indir</a><a class="learning-button secondary" href="/static/education/presentations/CER-AI_Turkce_Hekim_Tanitimi_2026-09-15_v5.pptx" download>Türkçe sunumu indir</a></div></div></div></section>'''
@@ -1039,8 +1021,8 @@ def render_topic(base: str, robots: str, topic: Topic, locale: str = "en") -> st
         evidence = ("Evidence boundary", "Clinical evidence map")
     cases = ""
     if topic.slug == "clinical-cases":
-        cases = f'<section><h2>{"Çalışılmış sentetik olgular" if locale == "tr" else "Worked synthetic cases"}</h2><div class="learning-grid case-grid">{_case_cards(locale)}</div></section>'
-    synthetic_gallery = _synthetic_pentacam_gallery(locale) if topic.slug == "pentacam-education" else ""
+        cases = f'<section><h2>{"Anonim gerçek vakalar" if locale == "tr" else "Anonymized real cases"}</h2><div class="learning-grid case-grid">{_case_cards(locale)}</div></section>'
+    case_gallery = _real_case_materials("real-pass", locale) if topic.slug == "pentacam-education" else ""
     assessment_link = ""
     if topic.slug in {"corneal-ectasia-basics", "pentacam-education"}:
         if locale == "tr":
@@ -1049,7 +1031,7 @@ def render_topic(base: str, robots: str, topic: Topic, locale: str = "en") -> st
             assessment_link = '<section class="assessment-context"><h2>From concepts to structured assessment</h2><p>Connect this educational module to the physician-focused <a href="/corneal-ectasia-risk-assessment">CER-AI corneal ectasia risk assessment</a> overview. Corneal topography and tomography are distinct evidence channels within the broader preoperative ectasia screening workflow.</p></section>'
     return f"""<!doctype html><html lang="{locale}"><head>{_head(base, path, topic.title, topic.description, robots, schema, locale)}</head><body>{_nav(locale, path)}<main>
 <article><header class="learning-hero article-hero"><div class="learning-wrap">{_breadcrumb(crumbs)}<p class="learning-kicker">{escape(topic.eyebrow)}</p><h1>{escape(topic.title)}</h1><p class="learning-lead">{escape(topic.description)}</p><div class="learning-principle"><strong>{scope[0]}</strong><span>{scope[1]}</span></div></div></header>
-<div class="learning-wrap article-layout"><div class="article-body">{sections}{assessment_link}{synthetic_gallery}{_technical_tables(locale, topic.slug)}{cases}<section class="article-references"><h2>{sources[0]}</h2><ol>{references}</ol><p>{sources[1]}</p></section></div><aside class="article-aside"><p class="learning-kicker">{continue_label}</p>{related_cards}<a class="related-card evidence" href="/clinical-evidence"><span>{evidence[0]}</span><strong>{evidence[1]}</strong></a></aside></div></article>
+<div class="learning-wrap article-layout"><div class="article-body">{sections}{assessment_link}{case_gallery}{_technical_tables(locale, topic.slug)}{cases}<section class="article-references"><h2>{sources[0]}</h2><ol>{references}</ol><p>{sources[1]}</p></section></div><aside class="article-aside"><p class="learning-kicker">{continue_label}</p>{related_cards}<a class="related-card evidence" href="/clinical-evidence"><span>{evidence[0]}</span><strong>{evidence[1]}</strong></a></aside></div></article>
 </main>{_footer(locale)}</body></html>"""
 
 
@@ -1092,19 +1074,19 @@ def render_faq(base: str, robots: str, locale: str = "en") -> str:
 def render_case(base: str, robots: str, case: SampleCase, locale: str = "en") -> str:
     path = _path(locale, f"/learning/cases/{case.slug}")
     description = case.summary
-    schema = {"@context": "https://schema.org", "@type": "MedicalWebPage", "@id": f"{base}{path}#page", "url": f"{base}{path}", "name": case.title, "description": description, "audience": {"@type": "MedicalAudience", "audienceType": "Ophthalmologists and refractive surgeons"}, "isPartOf": {"@id": f"{base}{_path(locale, '/learning/clinical-cases')}#page"}, "inLanguage": locale, "author": {"@id": f"{base}/#clinical-author"}, "dateModified": "2026-09-22", "copyrightHolder": {"@type": "Person", "name": "Hüseyin Cengiz, M.D."}, "copyrightYear": 2026}
+    schema = {"@context": "https://schema.org", "@type": "MedicalWebPage", "@id": f"{base}{path}#page", "url": f"{base}{path}", "name": case.title, "description": description, "audience": {"@type": "MedicalAudience", "audienceType": "Ophthalmologists and refractive surgeons"}, "isPartOf": {"@id": f"{base}{_path(locale, '/learning/clinical-cases')}#page"}, "inLanguage": locale, "author": {"@id": f"{base}/#clinical-author"}, "dateModified": "2026-11-25", "copyrightHolder": {"@type": "Person", "name": "Hüseyin Cengiz, M.D."}, "copyrightYear": 2026}
     input_rows = "".join(f"<tr><th scope=\"row\">{escape(label)}</th><td>{escape(value)}</td></tr>" for label, value in case.inputs)
     pathway_rows = "".join(f"<tr><th scope=\"row\">{escape(name)}</th><td>{escape(calculation)}</td><td><strong>{escape(status)}</strong></td></tr>" for name, calculation, status in case.pathways)
     points = "".join(f"<li>{escape(point)}</li>" for point in case.learning_points)
     if locale == "tr":
         crumbs = (("Ana Sayfa", "/"), ("Eğitim Merkezi", "/tr/learning-center"), ("Klinik olgular", "/tr/learning/clinical-cases"), (case.title, ""))
-        labels = ("Sentetik eğitim olgusu", "Gerçek hasta verisi değildir", "Bu çalışılmış örnek, güncel CER-AI v2.0 kurallarını öğretmek için oluşturulmuştur. Klinik karar değildir.", "Kaynak girdiler", "Alan", "Değer", "Yol değerlendirmesi", "Sistem", "Hesaplama / bulgu", "Sonuç", "Nihai CER-AI sonucu", "Rapor özeti", "Öğrenme noktaları")
+        labels = ("Anonim gerçek eğitim vakası", "Gerçek arşiv kaydından anonimleştirilmiştir", "Kayıtlı analiz korunmuştur; yeniden hesaplama yapılmamıştır. Yeni klinik karar değildir.", "Kaynak girdiler", "Alan", "Değer", "Yol değerlendirmesi", "Sistem", "Hesaplama / bulgu", "Sonuç", "Nihai CER-AI sonucu", "Rapor özeti", "Öğrenme noktaları")
         page_title = f"{case.title} — CER-AI eğitim olgusu"
     else:
         crumbs = (("Home", "/"), ("Learning Center", "/learning-center"), ("Clinical cases", "/learning/clinical-cases"), (case.title, ""))
-        labels = ("Synthetic teaching case", "Not real patient data", "This worked example was created to teach the current CER-AI v2.0 rules. It is not a clinical decision.", "Source inputs", "Field", "Value", "Pathway evaluation", "System", "Calculation / finding", "Result", "Final CER-AI result", "Report summary", "Learning points")
+        labels = ("Anonymized real teaching case", "Anonymized from a real archived record", "The saved analysis is preserved without recalculation. This is not a new clinical decision.", "Source inputs", "Field", "Value", "Pathway evaluation", "System", "Calculation / finding", "Result", "Final CER-AI result", "Report summary", "Learning points")
         page_title = f"{case.title} — CER-AI teaching case"
-    return f"""<!doctype html><html lang="{locale}"><head>{_head(base, path, page_title, description, robots, schema, locale)}</head><body>{_nav(locale, path)}<main><article><header class="learning-hero article-hero"><div class="learning-wrap">{_breadcrumb(crumbs)}<p class="learning-kicker">{labels[0]}</p><h1>{escape(case.title)}</h1><p class="learning-lead">{escape(case.summary)}</p><div class="learning-principle"><strong>{labels[1]}</strong><span>{labels[2]}</span></div></div></header><div class="learning-wrap case-detail"><section><h2>{labels[3]}</h2><div class="table-scroll"><table><thead><tr><th>{labels[4]}</th><th>{labels[5]}</th></tr></thead><tbody>{input_rows}</tbody></table></div></section><section><h2>{labels[6]}</h2><div class="table-scroll"><table><thead><tr><th>{labels[7]}</th><th>{labels[8]}</th><th>{labels[9]}</th></tr></thead><tbody>{pathway_rows}</tbody></table></div></section><section class="case-result"><p class="learning-kicker">{labels[10]}</p><h2>{escape(case.final_result)}</h2></section><section><h2>{labels[11]}</h2><p>{escape(case.report_text)}</p></section><section><h2>{labels[12]}</h2><ul>{points}</ul></section></div></article></main>{_footer(locale)}</body></html>"""
+    return f"""<!doctype html><html lang="{locale}"><head>{_head(base, path, page_title, description, robots, schema, locale)}</head><body>{_nav(locale, path)}<main><article><header class="learning-hero article-hero"><div class="learning-wrap">{_breadcrumb(crumbs)}<p class="learning-kicker">{labels[0]}</p><h1>{escape(case.title)}</h1><p class="learning-lead">{escape(case.summary)}</p><div class="learning-principle"><strong>{labels[1]}</strong><span>{labels[2]}</span></div></div></header><div class="learning-wrap case-detail"><section><h2>{labels[3]}</h2><div class="table-scroll"><table><thead><tr><th>{labels[4]}</th><th>{labels[5]}</th></tr></thead><tbody>{input_rows}</tbody></table></div></section><section><h2>{labels[6]}</h2><div class="table-scroll"><table><thead><tr><th>{labels[7]}</th><th>{labels[8]}</th><th>{labels[9]}</th></tr></thead><tbody>{pathway_rows}</tbody></table></div></section><section class="case-result"><p class="learning-kicker">{labels[10]}</p><h2>{escape(case.final_result)}</h2></section><section><h2>{labels[11]}</h2><p>{escape(case.report_text)}</p></section><section><h2>{labels[12]}</h2><ul>{points}</ul></section>{_real_case_materials(case.slug, locale)}</div></article></main>{_footer(locale)}</body></html>"""
 
 
 SAMPLE_CASE_BY_SLUG = {case.slug: case for case in SAMPLE_CASES}
@@ -1114,11 +1096,11 @@ TR_SAMPLE_CASE_BY_SLUG = {case.slug: case for case in TR_SAMPLE_CASES}
 def render_sample_preview(locale: str = "en") -> str:
     """Public teaching preview from the same source as the Learning Center."""
     tr = locale == "tr"
-    case = (TR_SAMPLE_CASE_BY_SLUG if tr else SAMPLE_CASE_BY_SLUG)["concordant-low-risk-lasik"]
-    title = "Sentetik eğitim örneği" if tr else "Synthetic teaching example"
-    notice = "Gerçek hasta verisi veya oluşturulmuş klinik rapor değildir. PASS, sıfır risk veya ameliyat onayı anlamına gelmez." if tr else "Not real patient data or a generated clinical report. PASS does not mean zero risk or surgical clearance."
+    case = (TR_SAMPLE_CASE_BY_SLUG if tr else SAMPLE_CASE_BY_SLUG)["real-pass"]
+    title = "Anonim gerçek eğitim vakası" if tr else "Anonymized real teaching case"
+    notice = "Gerçek arşiv vakasının anonim analiz özetidir. PASS, sıfır risk veya ameliyat onayı anlamına gelmez." if tr else "Anonymized analysis summary of a real archived case. PASS does not mean zero risk or surgical clearance."
     inputs = "Örnek girdiler" if tr else "Example inputs"
     results = "Bağımsız değerlendirme sonuçları" if tr else "Independent pathway results"
     rows = "".join(f"<tr><th scope='row'>{escape(k)}</th><td>{escape(v)}</td></tr>" for k, v in case.inputs)
     pathways = "".join(f"<tr><th scope='row'>{escape(k)}</th><td>{escape(v)}</td><td>{escape(status)}</td></tr>" for k, v, status in case.pathways)
-    return f"<section class='report-preview' id='synthetic-report'><h2>{title}</h2><p><strong>{notice}</strong></p><h3>{escape(case.title)}</h3><div class='report-scroll'><table><caption>{inputs}</caption><tbody>{rows}</tbody></table><table><caption>{results}</caption><tbody>{pathways}</tbody></table></div><p>{escape(case.report_text)}</p></section>"
+    return f"<section class='report-preview' id='real-case-report'><h2>{title}</h2><p><strong>{notice}</strong></p><h3>{escape(case.title)}</h3><div class='report-scroll'><table><caption>{inputs}</caption><tbody>{rows}</tbody></table><table><caption>{results}</caption><tbody>{pathways}</tbody></table></div><p>{escape(case.report_text)}</p></section>"

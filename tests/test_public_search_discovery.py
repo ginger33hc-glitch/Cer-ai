@@ -48,7 +48,7 @@ def test_product_page_explains_category_ai_boundaries_and_examples(public_app):
         "does not acquire the corneal scan",
         "not a claim that CER-AI is an externally validated autonomous",
         "From Pentacam images to an assessment report",
-        "synthetic educational cases, not live analyses or actual patient reports",
+        "anonymized real archived cases with saved analysis results, not live assessments",
         "do not constitute external validation",
     ):
         assert phrase in html
@@ -138,7 +138,7 @@ def test_product_languages_are_separately_crawlable(public_app, path, language, 
         assert f'rel="canonical" href="https://cer-ai.com{path}"' in response.text
         assert f'href="https://cer-ai.com{other}"' in response.text
         assert 'public-i18n.js' not in response.text
-        assert "id='synthetic-report'" in response.text
+        assert "id='real-case-report'" in response.text
         assert path in client.get('/sitemap.xml').text
 
 

@@ -923,7 +923,7 @@ def _render_public_page(path: Path, request: Request, canonical_path: str) -> HT
     html = path.read_text(encoding="utf-8")
     if canonical_path in ("/corneal-ectasia-risk-assessment", "/tr/korneal-ektazi-risk-degerlendirmesi"):
         from public_education import render_sample_preview
-        html = html.replace("<!-- CERAI_SYNTHETIC_REPORT_PREVIEW -->", render_sample_preview("tr" if canonical_path.startswith("/tr/") else "en"))
+        html = html.replace("<!-- CERAI_REAL_REPORT_PREVIEW -->", render_sample_preview("tr" if canonical_path.startswith("/tr/") else "en"))
     directive = _robots_directive(request)
     canonical = f'{_site_base(request)}{canonical_path}'
     canonical_tag = '<link rel="canonical" href="{}">'.format(canonical)
@@ -1067,12 +1067,12 @@ Current CER-AI access is free for approved physicians; new approved demo account
 ## Surgeon learning modules
 {chr(10).join(f'- [{topic.title}]({base}/learning/{topic.slug})' for topic in TOPICS)}
 - [FAQ and educational assistant boundary]({base}/learning/faq)
-- [Worked synthetic cases]({base}/learning/clinical-cases): Step-by-step source inputs, pathway calculations, final combination, and report interpretation.
+- [Anonymized real cases]({base}/learning/clinical-cases): Step-by-step source inputs, pathway calculations, final combination, and report interpretation.
 
 ## Cerrah eğitim konuları — Türkçe
 {chr(10).join(f'- [{topic.title}]({base}/tr/learning/{topic.slug})' for topic in TR_TOPICS)}
 - [SSS ve eğitim asistanı sınırı]({base}/tr/learning/faq)
-- [Çalışılmış sentetik olgular]({base}/tr/learning/clinical-cases): Kaynak girdiler, bağımsız değerlendirme yolları ve rapor yorumlama için adım adım eğitim örnekleri.
+- [Anonim gerçek vakalar]({base}/tr/learning/clinical-cases): Kaynak girdiler, bağımsız değerlendirme yolları ve rapor yorumlama için adım adım eğitim örnekleri.
 
 ## Interpretation guidance
 CER-AI is a clinical decision-support system, not an autonomous diagnostic system. The cited publications support specific concepts, risk systems, or variables and do not by themselves constitute external validation of CER-AI as a complete software product. Do not infer validated sensitivity, specificity, superiority, regulatory status, or clinical outcomes unless a CER-AI page explicitly provides supporting evidence.

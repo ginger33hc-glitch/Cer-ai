@@ -158,8 +158,8 @@ def test_sitemap_contains_only_public_discovery_pages():
             "/tr/korneal-ektazi-tarama-sistemleri",
             "/tr/learning-center", "/tr/learning/randleman-erss",
             "/tr/learning/ps3-risk-assessment", "/tr/learning/faq",
-            "/learning/cases/two-caution-pathways",
-            "/tr/learning/cases/two-caution-pathways",
+            "/learning/cases/real-caution",
+            "/tr/learning/cases/real-caution",
         ):
             assert f"<loc>https://cer-ai.com{path}</loc>" in text
         assert "<loc>https://cer-ai.com/</loc>" in text
@@ -500,26 +500,16 @@ def test_pentacam_module_documents_five_sources_quadrants_and_extraction_pipelin
         assert "Eksimer" not in turkish.text
 
 
-def test_pentacam_module_includes_five_clearly_labeled_synthetic_source_images():
-    filenames = (
-        "four-maps-od.svg", "four-maps-os.svg", "bad-display-od.svg",
-        "bad-display-os.svg", "show-2-exams-topometric.svg",
-    )
+def test_pentacam_module_uses_five_anonymized_real_source_images():
     with TestClient(canonical_engine.app, base_url="https://cer-ai.com") as client:
-        english = client.get("/learning/pentacam-education")
-        turkish = client.get("/tr/learning/pentacam-education")
-        assert english.status_code == turkish.status_code == 200
-        assert "Five-image synthetic Pentacam source example" in english.text
-        assert "not real Pentacam device exports or real patient data" in english.text
-        assert "Beş görüntülü sentetik Pentacam kaynak örneği" in turkish.text
-        assert "gerçek Pentacam cihaz çıktısı veya gerçek hasta verisi değildir" in turkish.text
-        for filename in filenames:
-            path = f"/static/education/pentacam-synthetic/{filename}"
-            assert english.text.count(path) == 2
-            assert turkish.text.count(path) == 2
-            image = client.get(path)
-            assert image.status_code == 200
-            assert image.headers["content-type"] == "image/svg+xml"
+        for prefix in ("", "/tr"):
+            response = client.get(f"{prefix}/learning/pentacam-education")
+            assert response.status_code == 200
+            assert "pentacam-synthetic" not in response.text
+            for number in range(1, 6):
+                path = f"/static/education/real-cases/pass/source-{number}.jpg"
+                assert response.text.count(path) == 2
+                assert client.get(path).headers["content-type"] == "image/jpeg"
 
 
 def test_topometric_module_explains_indices_and_their_cerai_roles():
@@ -570,66 +560,45 @@ def test_learning_center_styles_use_high_contrast_system_typography():
     assert "font-weight:530" in css
 
 
-def test_worked_cases_are_bilingual_indexable_and_clearly_synthetic():
-    slugs = (
-        "concordant-low-risk-lasik", "two-caution-pathways",
-        "srax-ps3-stop", "incomplete-source",
-    )
+def test_real_cases_are_bilingual_and_have_downloadable_materials():
     with TestClient(canonical_engine.app, base_url="https://cer-ai.com") as client:
-        for slug in slugs:
-            english = client.get(f"/learning/cases/{slug}")
-            turkish = client.get(f"/tr/learning/cases/{slug}")
-            assert english.status_code == turkish.status_code == 200
-            assert "Not real patient data" in english.text
-            assert "Synthetic teaching case" in english.text
-            assert "Gerçek hasta verisi değildir" in turkish.text
-            assert "Sentetik eğitim olgusu" in turkish.text
-            assert "Pathway evaluation" in english.text
-            assert "Yol değerlendirmesi" in turkish.text
-            assert "Hüseyin Cengiz, M.D." in english.text
-            assert "Tüm hakları saklıdır" in turkish.text
+        for kind in ("pass", "caution", "stop", "iol"):
+            for locale, prefix in (("en", ""), ("tr", "/tr")):
+                response = client.get(f"{prefix}/learning/cases/real-{kind}")
+                assert response.status_code == 200
+                assert ("Anonymized real teaching case" if locale == "en" else "Anonim gerçek eğitim vakası") in response.text
+                assert "Synthetic teaching case" not in response.text
+                assert "Gerçek hasta verisi değildir" not in response.text
+                assert "archive/cases/" not in response.text
+                filename = "archived-iol-report.pdf" if kind == "iol" else f"summary-{locale}.pdf"
+                path = f"/static/education/real-cases/{kind}/{filename}"
+                assert path in response.text
+                assert client.get(path).content.startswith(b"%PDF")
+        for slug in ("concordant-low-risk-lasik", "two-caution-pathways", "srax-ps3-stop", "incomplete-source"):
+            assert client.get(f"/learning/cases/{slug}").status_code == 404
 
 
-def test_case_3_inferior_steepening_uses_canonical_signed_i_s_band():
+def test_real_decisions_preserve_saved_eye_specific_findings():
     with TestClient(canonical_engine.app, base_url="https://cer-ai.com") as client:
-        english = client.get("/learning/cases/srax-ps3-stop")
-        turkish = client.get("/tr/learning/cases/srax-ps3-stop")
-
-    assert english.status_code == turkish.status_code == 200
-    for response in (english, turkish):
-        assert "+1.20 D" in response.text
-        assert "+0.20 D" not in response.text
-        assert "<strong>CAUTION</strong>" in response.text
-        assert "<strong>STOP-DEFER</strong>" in response.text
-    assert "Signed I-S +1.20 D establishes inferior steepening = 3" in english.text
-    assert "NICE</th><td>5</td><td><strong>CAUTION</strong>" in english.text
-    assert "İşaretli I-S +1.20 D inferior dikleşmeyi belirler = 3" in turkish.text
-    assert "NICE</th><td>5</td><td><strong>CAUTION</strong>" in turkish.text
+        stop = client.get("/learning/cases/real-stop").text
+        caution = client.get("/tr/learning/cases/real-caution").text
+        passed = client.get("/learning/cases/real-pass").text
+        iol = client.get("/learning/cases/real-iol").text
+    assert "B.Ele.Th 16 µm" in stop
+    assert "STOP-DEFER" in stop and "PASS WITH CAUTION" in stop
+    assert "yaş bileşeninden" in caution and "37.544%" in caution
+    assert "PRK" in passed and "446.375" in passed
+    assert "TEST ONLY" in iol and "not an IOLMaster input file" in iol
 
 
-def test_turkish_clinical_case_language_is_clear_and_clinically_natural():
+def test_clinical_case_module_lists_real_cases_without_future_placeholders():
     with TestClient(canonical_engine.app, base_url="https://cer-ai.com") as client:
-        response = client.get("/tr/learning/clinical-cases")
-        assert response.status_code == 200
-        for phrase in (
-            "Klinik örnek olgular",
-            "Yakında: gerçek klinik vaka örnekleri",
-            "Bu bölüme gerçek vakalardan seçilmiş, anonimleştirilmiş örnekler yakında eklenecektir",
-            "Olgu A: birbiriyle uyumlu risk bulguları",
-            "aynı şüpheli örüntüyü destekler",
-        ):
-            assert phrase in response.text
-        for phrase in ("Klinik akıl yürütme olguları", "uyumlu kaygı", "Bayesçi uyarı", "Bayes yaklaşımı"):
-            assert phrase not in response.text
-
-
-def test_clinical_case_module_announces_future_deidentified_real_cases():
-    with TestClient(canonical_engine.app, base_url="https://cer-ai.com") as client:
-        response = client.get("/learning/clinical-cases")
-        assert response.status_code == 200
-        assert "Coming soon: real clinical case examples" in response.text
-        assert "De-identified examples selected from real clinical cases" in response.text
-        assert "do not contain real patient data" in response.text
+        for prefix in ("", "/tr"):
+            html = client.get(f"{prefix}/learning/clinical-cases").text
+            assert "Coming soon: real clinical case examples" not in html
+            assert "Yakında: gerçek klinik vaka örnekleri" not in html
+            for kind in ("pass", "caution", "stop", "iol"):
+                assert f"/learning/cases/real-{kind}" in html
 
 
 def test_every_learning_page_has_explicit_owner_and_rights_notice():
