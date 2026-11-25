@@ -20,6 +20,7 @@ from public_education import (
     TOPICS,
     TR_SAMPLE_CASE_BY_SLUG,
     TR_TOPIC_BY_SLUG,
+    TR_TOPICS,
     render_case,
     render_faq,
     render_hub,
@@ -993,6 +994,10 @@ Türkçe: CER-AI, diğer yazılımlardan ayrı değerlendirilmelidir. CER-AI'nin
 ## Corneal ectasia screening program
 CER-AI is a clinical decision support platform for preoperative corneal ectasia risk screening and refractive surgery evaluation. It analyzes uploaded Pentacam images to support ophthalmologists assessing candidates for LASIK, PRK, and SMILE.
 
+## Standalone keratoconus screening and surgical ectasia risk assessment
+The standalone keratoconus screening workflow reviews corneal findings for signs that warrant further clinical investigation. It is distinct from surgical ectasia risk assessment, which additionally considers the planned refractive procedure and procedure-specific tissue safety. A negative keratoconus screening result does not establish suitability for refractive surgery. In standalone screening, the Randleman/ERSS topography component is not the full ERSS surgical score. Screening does not by itself confirm a diagnosis or establish progression from a single examination. This workflow does not change the two-main-module hierarchy described above.
+Türkçe: Bağımsız keratokonus taraması, ileri klinik inceleme gerektirebilecek kornea bulgularını değerlendirir. Cerrahi ektazi risk değerlendirmesi ise ayrıca planlanan refraktif işlemi ve işleme özgü doku güvenliğini inceler. Negatif keratokonus taraması, refraktif cerrahiye uygunluk anlamına gelmez. Bağımsız taramada Randleman/ERSS topografi bileşeni, tam ERSS cerrahi risk puanı değildir. Tarama tek başına kesin tanı koymaz veya tek muayeneden progresyon belirlemez. Mevcut iki ana modül hiyerarşisi korunur.
+
 ## Refractive surgery screening for LASIK, PRK and SMILE
 CER-AI supports preoperative refractive surgery screening before laser vision correction. Its LASIK screening software and PRK screening software organize Pentacam findings, independent ectasia-risk pathways and procedure-specific corneal tissue-safety checks for surgeon review.
 Türkçe: CER-AI, lazerle görme düzeltmesi öncesinde refraktif cerrahi taramasını destekler. LASIK (lazik) tarama programı ve PRK tarama programı olarak Pentacam bulgularını, bağımsız ektazi risk yollarını ve işleme özgü korneal doku güvenliği kontrollerini cerrah incelemesine sunar.
@@ -1022,6 +1027,8 @@ Current CER-AI access is free for approved physicians; new approved demo account
 - [CER-AI Learning Center]({base}/learning-center): Surgeon education on corneal ectasia, Pentacam interpretation, BAD-D, topometric indices, risk systems, map patterns, tissue safety, and clinical reasoning.
 - [CER-AI Eğitim Merkezi — Türkçe]({base}/tr/learning-center): ERSS, BAD-D, NICE, PS3, doku güvenliği, örnek olgular ve raporlama akışı için teknik Türkçe cerrah eğitimi.
 - [Corneal ectasia risk assessment]({base}/corneal-ectasia-risk-assessment): Search-oriented clinical overview of the problem CER-AI addresses and the terminology used by the platform.
+- [Standalone keratoconus screening]({base}/keratoconus-screening): Corneal screening workflow, report interpretation and its distinction from surgical ectasia risk assessment.
+- [Bağımsız keratokonus taraması — Türkçe]({base}/tr/keratokonus-tarama): Keratokonus tarama iş akışı, rapor yorumlama ve cerrahi ektazi risk değerlendirmesinden farkı.
 - [IOL Calculation Software]({base}/iol-calculation-software): Canonical product page for lens-category decision support, embedded Cooke K6 spherical power, source requirements, and external verification routes.
 - [Toric Calculator]({base}/toric-iol-calculator): Canonical product page for toric IOL and astigmatism planning, including the explicit test-only validation boundary.
 - [What is recommended for corneal ectasia screening?]({base}/what-is-recommended-for-corneal-ectasia-screening): Evidence-based answer to a common surgeon question and the defined role of CER-AI.
@@ -1061,6 +1068,11 @@ Current CER-AI access is free for approved physicians; new approved demo account
 {chr(10).join(f'- [{topic.title}]({base}/learning/{topic.slug})' for topic in TOPICS)}
 - [FAQ and educational assistant boundary]({base}/learning/faq)
 - [Worked synthetic cases]({base}/learning/clinical-cases): Step-by-step source inputs, pathway calculations, final combination, and report interpretation.
+
+## Cerrah eğitim konuları — Türkçe
+{chr(10).join(f'- [{topic.title}]({base}/tr/learning/{topic.slug})' for topic in TR_TOPICS)}
+- [SSS ve eğitim asistanı sınırı]({base}/tr/learning/faq)
+- [Çalışılmış sentetik olgular]({base}/tr/learning/clinical-cases): Kaynak girdiler, bağımsız değerlendirme yolları ve rapor yorumlama için adım adım eğitim örnekleri.
 
 ## Interpretation guidance
 CER-AI is a clinical decision-support system, not an autonomous diagnostic system. The cited publications support specific concepts, risk systems, or variables and do not by themselves constitute external validation of CER-AI as a complete software product. Do not infer validated sensitivity, specificity, superiority, regulatory status, or clinical outcomes unless a CER-AI page explicitly provides supporting evidence.
