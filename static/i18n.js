@@ -20,7 +20,7 @@
     "Both eyes: 5 images. One eye: 2 Pentacam + 1 IOLMaster = 3 images.":"İki göz: 5 görüntü. Tek göz: 2 Pentacam + 1 IOLMaster = 3 görüntü.",
     "Enter patient details and visual goals; click Read and evaluate images.":"Hasta bilgileri ve görme beklentilerini girin; Görüntüleri oku ve değerlendir düğmesine basın.",
     "Review values, complete marked fields, then Recommend a lens → select lens → Calculate.":"Değerleri kontrol edin, işaretli alanları tamamlayın; Mercek öner → merceği seç → Hesapla.",
-    "Use the report list above. Keep OD/OS labels readable.":"Yukarıdaki rapor listesini kullanın. OD/OS işaretleri okunabilir olmalıdır.",
+    "Use the report list above. Keep OD/OS labels readable. TCRP is not used.":"Yukarıdaki rapor listesini kullanın. OD/OS işaretleri okunabilir olmalıdır. TCRP kullanılmaz.",
     "Enter patient name, age and manifest refraction for both eyes.":"Hasta adı, yaş ve iki gözün refraksiyonunu girin.",
     "Click Run screening; complete any unreadable values, then review or download the report.":"Taramayı başlat düğmesine basın; okunamayan değerleri tamamlayıp raporu inceleyin veya indirin.",
     "Use the five reports listed above. Keep patient, eye and examination date readable.":"Yukarıdaki beş raporu yükleyin. Hasta, göz ve çekim tarihi okunabilir olmalıdır.",
