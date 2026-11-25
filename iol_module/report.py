@@ -183,7 +183,8 @@ def draw_eye(canvas, eye, x, top, axis, tr, radius=105, incision_axis=None):
         canvas.setStrokeColor(green);canvas.setLineWidth(1.5);canvas.setDash(6,5)
         canvas.line(*axis_endpoints(cx,cy,radius*1.1,axis));canvas.setDash()
         canvas.setFillColor(green);canvas.setFont("IOL-Bold",12)
-        canvas.drawRightString(cx-radius-17,cy-radius*.29,fmt(axis,1)+"°")
+        canvas.drawCentredString(cx, cy - radius - 41,
+                                 tr("Marker axis", "İşaret aksı") + ": " + fmt(axis, 1) + "°")
     # Large, low-contrast frontal half-nose, mirrored on OS.
     nasal = 1 if eye == "OD" else -1
     nx = cx + nasal*(radius+58)
