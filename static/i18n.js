@@ -3,6 +3,28 @@
   const stored = (localStorage.getItem("cerai-language") || "en").toLowerCase();
   const locale = stored === "tr" ? "tr" : "en";
   const TR = {
+    "Data checks":"Veri kontrolleri",
+    "Upload 5 Pentacam images together":"5 Pentacam görüntüsünü birlikte yükleyin",
+    "4 Maps Refractive: OD + OS (2 images)":"4 Maps Refractive: sağ + sol göz (2 görüntü)",
+    "Belin/Ambrósio Display (BAD-D): OD + OS (2 images)":"Belin/Ambrósio Display (BAD-D): sağ + sol göz (2 görüntü)",
+    "Show 2 Exams Topometric: both eyes (1 image)":"Show 2 Exams Topometric: iki göz birlikte (1 görüntü)",
+    "Enter patient details, procedure and refraction for each eye. Add the treatment card if available.":"Hasta bilgilerini, her göz için ameliyat türünü ve refraksiyonu girin. Varsa tedavi kartını ekleyin.",
+    "Run assessment; complete any requested values and review the report. For SMILE, enter the actual maximum lenticule thickness.":"Değerlendirmeyi başlatın; istenen eksikleri tamamlayıp raporu inceleyin. SMILE için gerçek maksimum lentikül kalınlığını girin.",
+    "Start in 3 steps":"3 adımda başlatın",
+    "Anonymized real images. Click to enlarge; examples only, do not upload as a new case.":"Anonim gerçek görüntüler. Büyütmek için tıklayın; örnektir, yeni vaka olarak yüklemeyin.",
+    "View anonymized image examples":"Anonim görüntü örneklerini göster",
+    "Calculation details":"Hesaplama ayrıntıları",
+    "Upload the reports":"Raporları yükleyin",
+    "Cataract Pre-Op: OD + OS (2 images)":"Cataract Pre-Op: sağ + sol göz (2 görüntü)",
+    "IOLMaster 500: both eyes on one report (1 image)":"IOLMaster 500: iki göz tek raporda (1 görüntü)",
+    "Both eyes: 5 images. One eye: 2 Pentacam + 1 IOLMaster = 3 images.":"İki göz: 5 görüntü. Tek göz: 2 Pentacam + 1 IOLMaster = 3 görüntü.",
+    "Enter patient details and visual goals; click Read and evaluate images.":"Hasta bilgileri ve görme beklentilerini girin; Görüntüleri oku ve değerlendir düğmesine basın.",
+    "Review values, complete marked fields, then Recommend a lens → select lens → Calculate.":"Değerleri kontrol edin, işaretli alanları tamamlayın; Mercek öner → merceği seç → Hesapla.",
+    "Use the report list above. Keep OD/OS labels readable.":"Yukarıdaki rapor listesini kullanın. OD/OS işaretleri okunabilir olmalıdır.",
+    "Enter patient name, age and manifest refraction for both eyes.":"Hasta adı, yaş ve iki gözün refraksiyonunu girin.",
+    "Click Run screening; complete any unreadable values, then review or download the report.":"Taramayı başlat düğmesine basın; okunamayan değerleri tamamlayıp raporu inceleyin veya indirin.",
+    "Use the five reports listed above. Keep patient, eye and examination date readable.":"Yukarıdaki beş raporu yükleyin. Hasta, göz ve çekim tarihi okunabilir olmalıdır.",
+
     "Enter the actual MAXIMUM lenticule thickness from the VisuMax treatment screen and recalculate. Central thickness is acceptable only if confirmed identical to the maximum. Theoretical estimates cannot establish surgical clearance.":"VisuMax tedavi ekranındaki gerçek MAKSİMUM lentikül kalınlığını girip yeniden hesaplayın. Santral kalınlık ancak maksimum ile aynı olduğu doğrulanırsa kullanılabilir. Teorik tahminler kesin cerrahi uygunluk oluşturamaz.",
     "SMILE RSB 300 um and cap-inclusive PTA 40% are retained institutional precaution rules, not independently validated SMILE safety thresholds. ERSS is LASIK-derived. Calculations use thinnest pachymetry, not central corneal thickness.":"SMILE için RSB 300 µm ve kap dahil PTA %40, korunan kurumsal ihtiyat kurallarıdır; SMILE için bağımsız doğrulanmış güvenlik eşikleri değildir. ERSS, LASIK kökenlidir. Hesaplamalarda santral kornea kalınlığı değil en ince pakimetri kullanılır.",
     "smile_device_max_lenticule_um":"VisuMax ekranındaki gerçek maksimum lentikül kalınlığı (µm)",

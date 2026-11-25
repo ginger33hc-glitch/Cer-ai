@@ -910,8 +910,12 @@ def _real_case_materials(slug: str, locale: str) -> str:
     heading = "Gerçek vaka dosyaları" if tr else "Real case files"
     link = f'<p><a class="text-link" href="{report}" target="_blank" rel="noopener">{report_label}</a></p>'
     if key == "iol":
-        note = "Kaynak IOLMaster görüntüleri bu arşiv kaydında sunulmuyor. Bu dosya çıktı örneğidir." if tr else "Source IOLMaster images are not available in this archive entry. This file is an output example."
-        return f'<section><h2>{heading}</h2>{link}<p>{note}</p></section>'
+        captions = ((4, "OD — Cataract Pre-Op"), (5, "OD — 4 Maps Refractive"),
+                    (2, "OS — Cataract Pre-Op"), (3, "OS — 4 Maps Refractive"),
+                    (1, "OD/OS — IOLMaster 500"))
+        cards = "".join(f'<figure class="case-source-card"><a href="{base}/source-{n}.jpg" target="_blank" rel="noopener"><img src="{base}/source-{n}.jpg" loading="lazy" alt="{escape(caption)}"></a><figcaption><strong>{escape(caption)}</strong></figcaption></figure>' for n, caption in captions)
+        note = "Arşiv IOL raporuna ait beş gerçek kaynak görüntüsü. Kimlik alanları kalıcı olarak silinmiştir. Görüntüler eğitim örneğidir; yeni vaka olarak yüklemeyin." if tr else "Five real source images belonging to the archived IOL report. Identity fields were permanently removed. Educational examples only; do not upload as a new case."
+        return f'<section class="case-source-section"><h2>{heading}</h2>{link}<p>{note}</p><div class="case-source-grid">{cards}</div></section>'
     captions = ((5, "OD — 4 Maps Refractive"), (3, "OS — 4 Maps Refractive"),
                 (4, "OD — Belin/Ambrósio BAD Display"), (2, "OS — Belin/Ambrósio BAD Display"),
                 (1, "OD/OS — Show 2 Exams Topometric"))

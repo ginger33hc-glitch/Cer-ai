@@ -401,11 +401,11 @@
     },
     "learning_points": {
       "en": [
-        "The source IOLMaster images are not exposed by this archived IOL entry; the PDF is an output example, not an IOLMaster input file.",
+        "The five anonymized source images accompany this archived IOL report. The PDF is an output example, not an IOLMaster input file.",
         "Verify model, power, axis and residual independently as stated in the original report."
       ],
       "tr": [
-        "Bu arşiv IOL kaydında kaynak IOLMaster görüntüleri sunulmuyor; PDF bir çıktı örneğidir, IOLMaster girdi dosyası değildir.",
+        "Bu arşiv IOL raporuna ait beş anonim kaynak görüntüsü eklenmiştir. PDF bir çıktı örneğidir, IOLMaster girdi dosyası değildir.",
         "Özgün raporda belirtildiği gibi model, güç, aks ve rezidüel bağımsız doğrulanmalıdır."
       ]
     }
