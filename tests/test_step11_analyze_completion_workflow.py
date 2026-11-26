@@ -449,4 +449,4 @@ def test_single_eye_completion_ignores_empty_fellow_eye_plan_and_reaches_report(
     ps3 = response["decision"]["eyes"][0]["ps3"]
     assert not ps3["complete"]
     assert "inter_eye_asymmetry" in ps3["missing_keys"]
-    assert any("Single-eye assessment" in note for note in response["decision"]["global_warnings"])
+    assert any("Single-eye assessment" in note for note in response["decision"]["warnings"])

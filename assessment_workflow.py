@@ -792,7 +792,11 @@ def _respond(core, token, session, age, plans, modifiers, metadata, overrides, s
                 "The PS3 result remains incomplete; unavailable comparison is not a normal finding. / "
                 "Tek göz değerlendirmesi: PS3 gözler arası asimetri değerlendirilemedi. "
                 "PS3 sonucu eksiktir; yapılamayan karşılaştırma normal kabul edilmez.")
-        decision.setdefault("global_warnings", []).append(note)
+        decision.setdefault("warnings", []).append(note)
+        for eye_result in decision.get("eyes") or []:
+            eye_result.setdefault("warnings", []).append(note)
+            if isinstance(eye_result.get("ps3"), dict):
+                eye_result["ps3"].setdefault("review_notes", []).append(note)
     effective = deepcopy(decision.get("effective_eye_plans") or {})
     missing = missing_items(decision, extracted)
     missing.extend(planning_missing_items(decision, extracted))
