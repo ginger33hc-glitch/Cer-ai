@@ -450,3 +450,43 @@ def test_single_eye_completion_ignores_empty_fellow_eye_plan_and_reaches_report(
     assert not ps3["complete"]
     assert "inter_eye_asymmetry" in ps3["missing_keys"]
     assert any("Single-eye assessment" in note for note in response["decision"]["warnings"])
+
+
+@pytest.mark.parametrize("eye", ["OD", "OS"])
+def test_single_eye_ready_exports_and_indexes_encrypted_archive(eye):
+    from io import BytesIO
+    from pypdf import PdfReader
+    import case_archive
+    import reports
+
+    session = {"extracted": {"eyes": [_eye(eye)],
+               "mandatory_source_set": {"assessed_eyes": [eye]}},
+               "ready": None, "source_images": []}
+    core = SimpleNamespace(APP_VERSION="test", build_pdf=reports.build_pdf,
+                           build_docx=reports.build_docx,
+                           build_conclusion_pdf=reports.build_conclusion_pdf)
+    response = workflow._respond(core, "single-eye-token", session, 35,
+                                 {eye: _plan()}, {}, {"name": "Synthetic Test"}, {})
+    assert response["workflow_status"] == "READY"
+    archive = case_archive.EncryptedArchive(case_archive.MemoryObjectStore(), bytes(range(32)))
+    runtime = case_archive.CaseArchiveRuntime(archive, required=True)
+    runtime.begin_case("single-eye-token", [], patient_metadata=session["patient_metadata"],
+                       extracted=session["extracted"])
+    completed = runtime.finalize_ready(core, response, session["ready"])
+    assert completed["archive"]["status"] == "ARCHIVED"
+    assert completed["archive"]["catalog_status"] == "INDEXED"
+    ref = completed["archive"]
+    saved = archive.load_assessment(ref["case_id"], ref["revision_id"])
+    ps3 = saved["decision"]["eyes"][0]["report_payload"]["ps3"]
+    assert not ps3["complete"]
+    assert ps3["missing_keys"] == ["inter_eye_asymmetry"]
+    for locale in ("en", "tr"):
+        for kind in ("pdf", "docx", "conclusion"):
+            artifact = archive.find_report(ref["case_id"], ref["revision_id"], kind=kind, locale=locale)
+            assert artifact is not None
+            assert archive.get_bytes(artifact)
+        pdf = reports.build_pdf({**saved, "locale": locale})
+        assert PdfReader(BytesIO(pdf)).pages
+    summary = reports.build_conclusion_pdf({**saved, "locale": "en"})
+    text = " ".join(page.extract_text() for page in PdfReader(BytesIO(summary)).pages)
+    assert "Single-eye assessment" in text

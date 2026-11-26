@@ -797,6 +797,9 @@ def _respond(core, token, session, age, plans, modifiers, metadata, overrides, s
             eye_result.setdefault("warnings", []).append(note)
             if isinstance(eye_result.get("ps3"), dict):
                 eye_result["ps3"].setdefault("review_notes", []).append(note)
+            report_ps3 = (eye_result.get("report_payload") or {}).get("ps3")
+            if isinstance(report_ps3, dict):
+                report_ps3.setdefault("review_notes", []).append(note)
     effective = deepcopy(decision.get("effective_eye_plans") or {})
     missing = missing_items(decision, extracted)
     missing.extend(planning_missing_items(decision, extracted))

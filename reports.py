@@ -267,6 +267,9 @@ def assert_complete_report_payload(payload: Mapping[str, Any]) -> list[dict[str,
     """Enforce the full-report gate without calculating clinical results."""
     reports = _canonical_eyes(payload)
     errors = []
+    assessed_eyes = ((payload.get("extracted") or {}).get("mandatory_source_set") or {}).get("assessed_eyes", [])
+    unilateral = (len(reports) == 1 and assessed_eyes == [reports[0].get("eye")]
+                  and assessed_eyes[0] in {"OD", "OS"})
     for report in reports:
         eye = report.get("eye") or "Eye"
         procedure = str(report.get("procedure") or "").upper()
@@ -285,7 +288,16 @@ def assert_complete_report_payload(payload: Mapping[str, Any]) -> list[dict[str,
         if bad.get("final_d") is None or bad.get("classification") == "UNAVAILABLE":
             errors.append(f"{eye}: Final BAD-D is incomplete")
         ps3 = report.get("ps3") or {}
-        if not ps3.get("complete") or ps3.get("missing_keys"):
+        # A source-confirmed single-eye case cannot supply inter-eye comparison.
+        # Export that explicitly limited result without marking PS3 complete or
+        # relaxing any other measurement/report requirement.
+        comparison_only = (
+            unilateral
+            and not ps3.get("complete")
+            and set(ps3.get("missing_keys") or []) == {"inter_eye_asymmetry"}
+            and report.get("status") in {"ASSESSMENT INCOMPLETE", "STOP-DEFER"}
+        )
+        if (not ps3.get("complete") or ps3.get("missing_keys")) and not comparison_only:
             errors.append(f"{eye}: PS3 is incomplete")
     if errors:
         raise ReportContractError("; ".join(errors))

@@ -332,3 +332,24 @@ def test_report_module_has_no_scorer_import_threshold_or_runtime_patch():
     assert "SimpleDocTemplate.build =" not in source
     assert "reports._" not in source
 
+
+
+@pytest.mark.parametrize("invalid_scope", ["no_source_scope", "bilateral_scope", "other_ps3_missing", "false_pass"])
+def test_single_eye_export_exception_does_not_relax_other_report_gates(invalid_scope):
+    payload = _payload()
+    payload["decision"]["eyes"] = payload["decision"]["eyes"][:1]
+    report = payload["decision"]["eyes"][0]["report_payload"]
+    report["status"] = "ASSESSMENT INCOMPLETE"
+    report["ps3"]["complete"] = False
+    report["ps3"]["missing_keys"] = ["inter_eye_asymmetry"]
+    payload["extracted"] = {"mandatory_source_set": {"assessed_eyes": ["OD"]}}
+    if invalid_scope == "no_source_scope":
+        payload.pop("extracted")
+    elif invalid_scope == "bilateral_scope":
+        payload["extracted"]["mandatory_source_set"]["assessed_eyes"] = ["OD", "OS"]
+    elif invalid_scope == "other_ps3_missing":
+        report["ps3"]["missing_keys"].append("elevation")
+    else:
+        report["status"] = "PASS"
+    with pytest.raises(reports.ReportContractError, match="PS3 is incomplete"):
+        reports.canonical_report_model(payload)
