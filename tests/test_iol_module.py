@@ -684,3 +684,14 @@ def test_non_multifocal_recommendation_names_both_categories(overrides, toric):
     assert recommendation.formatted_recommendation == expected
     if overrides.get("total_corneal_hoa_4mm_um") == 0.51 or overrides.get("retina_status") == "SIGNIFICANT":
         assert recommendation.eligible_categories == ["MONOFOCAL"]
+
+
+@pytest.mark.parametrize("eye", ["OD", "OS"])
+@pytest.mark.parametrize("shared_biometry", [False, True])
+def test_unilateral_iol_needs_no_fellow_eye_biometry(eye, shared_biometry):
+    sources = _source_bundle(four_maps_eye=eye)
+    sources[0]["extraction"]["eye"] = eye
+    biometry = sources[2]["extraction"]
+    biometry["eye"] = "BOTH" if shared_biometry else eye
+    biometry["iolmaster500"] = {eye: {}}
+    assert validate_source_bundle(sources) == {"patient_name": "Patient Example", "eye": eye}

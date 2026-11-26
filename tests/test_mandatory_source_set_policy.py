@@ -229,8 +229,15 @@ def test_source_or_no_card_refraction_failure_prevents_all_enrichment(
     assert exc.value.detail["code"] == expected
 
 
-def test_complete_intake_runs_post_gate_enrichment_and_enters_workflow(monkeypatch):
+@pytest.mark.parametrize("operative_eye", [None, "OD", "OS"])
+def test_complete_intake_runs_post_gate_enrichment_and_enters_workflow(monkeypatch, operative_eye):
     sources = complete_set(False)
+    if operative_eye:
+        sources = [source for source in sources if
+                   policy.SHOW2 in policy.recognized_pentacam_families(source)
+                   or operative_eye in policy._eyes(source)]
+        sources[-1]["eyes"] = [{"eye": eye, "screen_types": ["SHOW_2_EXAMS_TOPOMETRIC"]}
+                                for eye in ("OD", "OS")]
     payloads = [(b"image", f"source-{index}.png") for index in range(len(sources))]
     by_name = {filename: source for source, (_raw, filename) in zip(sources, payloads)}
     calls = []
@@ -258,7 +265,7 @@ def test_complete_intake_runs_post_gate_enrichment_and_enters_workflow(monkeypat
     monkeypatch.setattr(
         assessment_workflow, "begin",
         lambda core, extracted, age, plans, modifiers, metadata, source_images: {
-            "entered_workflow": True, "extracted": extracted,
+            "entered_workflow": True, "extracted": extracted, "plans": plans,
         },
     )
 
@@ -267,8 +274,12 @@ def test_complete_intake_runs_post_gate_enrichment_and_enters_workflow(monkeypat
     ))
     assert result["entered_workflow"] is True
     assert result["extracted"]["mandatory_source_set"]["confirmed"] is True
-    assert len([call for call in calls if call[0] == "targeted"]) == 5
-    assert len([call for call in calls if call[0] == "geometric"]) == 5
+    assert len([call for call in calls if call[0] == "targeted"]) == len(sources)
+    assert len([call for call in calls if call[0] == "geometric"]) == len(sources)
+    if operative_eye:
+        assert set(result["plans"]) == {operative_eye}
+        assert {eye["eye"] for source in result["extracted"]["items"]
+                for eye in source["eyes"]} == {operative_eye}
 
 
 def test_false_primary_four_maps_date_conflict_requests_only_two_header_rereads(monkeypatch):
@@ -367,3 +378,20 @@ def test_show_two_topometric_retains_bilateral_extraction():
     items = complete_set()
     items[4]["eyes"].append({"eye":"OS", "screen_types":["SHOW_2_EXAMS_TOPOMETRIC"]})
     assert policy.validate_source_set(items)["confirmed"]
+
+
+@pytest.mark.parametrize("eye", ["OD", "OS"])
+def test_single_eye_sources_require_only_that_eyes_refraction(eye):
+    sources = [result("FOUR_MAPS_REFRACTIVE", eye),
+               result("BELIN_AMBROSIO_DISPLAY", eye),
+               result("SHOW_2_EXAMS_TOPOMETRIC", "OD")]
+    summary = policy.validate_preassessment_requirements(
+        sources, {eye: complete_refraction_plans()[eye]})
+    assert summary["assessed_eyes"] == [eye]
+    assert summary["mandatory_count"] == 3
+    assert summary["manual_refraction"]["complete"]
+    with pytest.raises(HTTPException):
+        policy.validate_source_set(sources, allow_single_eye=False)
+    with pytest.raises(HTTPException) as exc:
+        policy.validate_preassessment_requirements(sources, {})
+    assert {field["eye"] for field in exc.value.detail["missing_refraction"]} == {eye}

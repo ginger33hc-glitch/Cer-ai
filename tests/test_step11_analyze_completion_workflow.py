@@ -434,3 +434,19 @@ def test_supplemental_device_depth_rejects_invalid_values(value):
         _respond(plans={"OD": _plan(lasik_bc_ablation_um=value), "OS": _plan()})
     assert error.value.status_code == 422
 
+
+
+@pytest.mark.parametrize("eye", ["OD", "OS"])
+def test_single_eye_completion_ignores_empty_fellow_eye_plan_and_reaches_report(eye):
+    fellow = "OS" if eye == "OD" else "OD"
+    response = _respond(
+        plans={eye: _plan(), fellow: {}},
+        extracted_overrides={"eyes": [_eye(eye)],
+                             "mandatory_source_set": {"assessed_eyes": [eye]}},
+    )
+    assert response["workflow_status"] == "READY"
+    assert [item["eye"] for item in response["decision"]["eyes"]] == [eye]
+    ps3 = response["decision"]["eyes"][0]["ps3"]
+    assert not ps3["complete"]
+    assert "inter_eye_asymmetry" in ps3["missing_keys"]
+    assert any("Single-eye assessment" in note for note in response["decision"]["global_warnings"])

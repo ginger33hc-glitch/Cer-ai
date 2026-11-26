@@ -4,6 +4,8 @@
   const locale = stored === "tr" ? "tr" : "en";
   const TR = {
     "Data checks":"Veri kontrolleri",
+    "The optional treatment card was unreadable. Enter complete manifest and intended refraction values for the uploaded eye(s) before assessment.":"İsteğe bağlı tedavi kartı okunamadı. Değerlendirmeden önce yalnızca yüklenen göz veya gözler için manifest ve hedef refraksiyon değerlerini tamamlayın.",
+    "No treatment card was provided. Enter complete manifest and intended refraction values for the uploaded eye(s) before assessment.":"Tedavi kartı yüklenmedi. Değerlendirmeden önce yalnızca yüklenen göz veya gözler için manifest ve hedef refraksiyon değerlerini tamamlayın.",
     "Upload 5 Pentacam images together":"5 Pentacam görüntüsünü birlikte yükleyin",
     "4 Maps Refractive: OD + OS (2 images)":"4 Maps Refractive: sağ + sol göz (2 görüntü)",
     "Belin/Ambrósio Display (BAD-D): OD + OS (2 images)":"Belin/Ambrósio Display (BAD-D): sağ + sol göz (2 görüntü)",

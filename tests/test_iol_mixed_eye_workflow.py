@@ -49,6 +49,12 @@ const fn=source.slice(start,source.indexOf('  $("escrsTransferAll").addEventList
   assert.deepEqual(calls,['OD','OS']);
   assert.equal(status.textContent,'Completed. Review the separate OD and OS results below.');
   assert.equal(context.workflowBusy,false);
+  for (const eye of ['OD','OS']) {
+    context.loadedEyes=[eye]; calls.length=0;
+    await context.runLoadedEyes('calculate');
+    assert.deepEqual(calls,[eye]);
+    assert.equal(context.workflowBusy,false);
+  }
 })().catch(e=>{console.error(e);process.exitCode=1;});
 '''
     subprocess.run(['node', '-e', script], cwd=Path(__file__).resolve().parents[1],

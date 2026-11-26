@@ -1199,10 +1199,10 @@ async def _run_image_assessment(
                 flush=True,
             )
             # Page identity from the primary read is the single source-set authority.
-            # Stop here if one of the five mandatory sources is absent; no targeted
+            # Stop here if a required source for an assessed eye is absent; no targeted
             # reread, SRAX measurement, merge, clinical score, or report may start.
             if screening:
-                mandatory_source_set = mandatory_source_set_policy.validate_source_set(extraction_results)
+                mandatory_source_set = mandatory_source_set_policy.validate_source_set(extraction_results, allow_single_eye=False)
             else:
                 mandatory_source_set = mandatory_source_set_policy.validate_preassessment_requirements(
                     extraction_results, plans
@@ -1282,6 +1282,16 @@ async def _run_image_assessment(
         ) from exc
 
     from assessment_workflow import begin
+    if not screening:
+        assessed_eyes = set(mandatory_source_set["assessed_eyes"])
+        plans = {eye: plan for eye, plan in plans.items() if eye in assessed_eyes}
+        # Exclude fellow-eye data from shared reports before merge and completion.
+        extraction_results = [
+            {**result, **{key: [item for item in (result.get(key) or [])
+                                if item.get("eye") in assessed_eyes]
+                         for key in ("eyes", "treatment_corrections", "laser_plans")}}
+            for result in extraction_results
+        ]
     extracted = merge_extractions(extraction_results, surgeon_authority)
     extracted["mandatory_source_set"] = mandatory_source_set
     if screening:

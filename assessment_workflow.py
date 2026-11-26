@@ -153,6 +153,11 @@ def _expanded_ps3_missing(eye_id, message, decision, extracted):
         missing = [key for key in direct[factor] if not _finite(eye.get(key))]
         return [(eye_id, f"PS3: {key}") for key in missing] or [(eye_id, str(message))]
     if factor == "inter_eye_asymmetry":
+        assessed_eyes = (extracted.get("mandatory_source_set") or {}).get("assessed_eyes", [])
+        if len(assessed_eyes) == 1:
+            # Allow a report without requesting an absent fellow eye. Preserve
+            # the core NOT_EVALUATED/incomplete PS3 result; never imply normality.
+            return []
         missing = []
         for candidate_eye in ("OD", "OS"):
             record = _eye_record(extracted, candidate_eye)
@@ -731,6 +736,9 @@ def _respond(core, token, session, age, plans, modifiers, metadata, overrides, s
             raise HTTPException(422, "Clinical inputs must be objects.")
     if set(plans) - {"OD", "OS"} or any(not isinstance(value, dict) for value in plans.values()):
         raise HTTPException(422, "Plans must contain OD/OS objects.")
+    assessed_eyes = (session["extracted"].get("mandatory_source_set") or {}).get("assessed_eyes")
+    if not screening and assessed_eyes:
+        plans = {eye: plan for eye, plan in plans.items() if eye in assessed_eyes}
     for eye_id, plan in plans.items():
         for key in ("lasik_a_ablation_um", "lasik_bc_ablation_um"):
             value = plan.get(key)
@@ -779,6 +787,12 @@ def _respond(core, token, session, age, plans, modifiers, metadata, overrides, s
     )
     if extracted.get("surgeon_source_confirmations"):
         decision["identity_warnings"] = list(extracted.get("identity_warnings") or [])
+    if not screening and assessed_eyes and len(assessed_eyes) == 1:
+        note = ("Single-eye assessment: PS3 inter-eye asymmetry could not be evaluated. "
+                "The PS3 result remains incomplete; unavailable comparison is not a normal finding. / "
+                "Tek göz değerlendirmesi: PS3 gözler arası asimetri değerlendirilemedi. "
+                "PS3 sonucu eksiktir; yapılamayan karşılaştırma normal kabul edilmez.")
+        decision.setdefault("global_warnings", []).append(note)
     effective = deepcopy(decision.get("effective_eye_plans") or {})
     missing = missing_items(decision, extracted)
     missing.extend(planning_missing_items(decision, extracted))

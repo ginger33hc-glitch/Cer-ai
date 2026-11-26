@@ -32,7 +32,8 @@ def test_upload_returns_job_then_background_calls_canonical_analyze(monkeypatch)
     expected = {"workflow_status": "READY", "sentinel": "canonical-result"}
     calls = []
 
-    async def fake_analyze(**kwargs):
+    async def fake_analyze(*, images, age, eye_plans, patient_metadata, assessment_request_id):
+        kwargs = dict(images=images, age=age, eye_plans=eye_plans, patient_metadata=patient_metadata, assessment_request_id=assessment_request_id)
         calls.append(kwargs)
         return expected
 

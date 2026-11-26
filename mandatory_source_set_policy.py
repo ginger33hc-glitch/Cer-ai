@@ -2,7 +2,7 @@
 
 The clinical engine must not run until the mandatory Pentacam source set is
 present. The excimer treatment card is optional; when it is absent, the surgeon
-must provide complete bilateral manifest and intended refraction before the
+must provide complete manifest and intended refraction for the assessed eyes before the
 engine runs. The gate is active only during an actual clinical image-assessment
 request so internal merge utilities and isolated regression fixtures remain
 reusable.
@@ -207,7 +207,7 @@ def _unreadable_optional_card_results(
     return list({id(result): result for result in recognized + residual}.values())
 
 
-def classify_source_set(results: list[dict[str, Any]]) -> dict[str, Any]:
+def classify_source_set(results: list[dict[str, Any]], *, allow_single_eye: bool = True) -> dict[str, Any]:
     present = {label: False for label in MANDATORY_LABELS}
     treatment_cards = 0
     recognized_mandatory_images = 0
@@ -222,6 +222,15 @@ def classify_source_set(results: list[dict[str, Any]]) -> dict[str, Any]:
         if mandatory_labels:
             recognized_mandatory_images += 1
 
+    # Dedicated map/BAD pages establish the operative eyes. A shared bilateral
+    # topometric page or treatment card does not enroll the fellow eye.
+    assessed_eyes = sorted({label[:2] for label, available in present.items()
+                            if available and label[:2] in {"OD", "OS"}})
+    if allow_single_eye and len(assessed_eyes) == 1:
+        present = {label: available for label, available in present.items()
+                   if label[:2] not in {"OD", "OS"} or label[:2] in assessed_eyes}
+    else:
+        assessed_eyes = ["OD", "OS"]
     conflicts = [ordinal for ordinal, result in enumerate(results, start=1) if source_laterality_conflict(result)]
     missing = [label for label, available in present.items() if not available]
     unreadable_cards = _unreadable_optional_card_results(
@@ -242,6 +251,7 @@ def classify_source_set(results: list[dict[str, Any]]) -> dict[str, Any]:
         else "NOT_PROVIDED"
     )
     return {
+        "assessed_eyes": assessed_eyes,
         "present": present,
         "required_sources": [
             {"label": label, "present": available}
@@ -273,9 +283,9 @@ def validate_upload_count(count: int) -> None:
         )
 
 
-def validate_source_set(results: list[dict[str, Any]]) -> dict[str, Any]:
+def validate_source_set(results: list[dict[str, Any]], *, allow_single_eye: bool = True) -> dict[str, Any]:
     validate_upload_count(len(results))
-    summary = classify_source_set(results)
+    summary = classify_source_set(results, allow_single_eye=allow_single_eye)
     if summary["laterality_conflict_images"]:
         raise HTTPException(422, {
             "code": "SOURCE_LATERALITY_CONFLICT",
@@ -308,10 +318,11 @@ def _finite(value: Any) -> bool:
     )
 
 
-def missing_manual_refraction(plans: dict[str, Any]) -> list[dict[str, str]]:
+def missing_manual_refraction(plans: dict[str, Any], eyes=("OD", "OS")) -> list[dict[str, str]]:
     """Return surgeon fields required when no treatment card was uploaded."""
     missing: list[dict[str, str]] = []
-    for eye, prefix in (("OD", "od"), ("OS", "os")):
+    for eye in eyes:
+        prefix = eye.lower()
         plan = plans.get(eye) if isinstance(plans, dict) else None
         plan = plan if isinstance(plan, dict) else {}
         roles = (
@@ -365,7 +376,7 @@ def validate_preassessment_requirements(
             (result.setdefault("document_context", {}))[
                 "optional_treatment_card_status"
             ] = "UNREADABLE"
-    missing_refraction = [] if card_usable else missing_manual_refraction(plans)
+    missing_refraction = [] if card_usable else missing_manual_refraction(plans, summary["assessed_eyes"])
     summary["manual_refraction"] = {
         "required": not card_usable,
         "complete": not missing_refraction,
@@ -384,7 +395,7 @@ def validate_preassessment_requirements(
                 "code": "PREASSESSMENT_REFRACTION_REQUIRED",
                 "message": (
                     f"Assessment not started. {source_message} Enter the complete "
-                    f"manifest and intended refraction for both eyes: {labels}."
+                    f"manifest and intended refraction for the uploaded eye(s): {labels}."
                 ),
                 "refraction_reason": card["status"],
                 "source_set": summary,

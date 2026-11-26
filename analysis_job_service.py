@@ -130,7 +130,6 @@ async def _run(core, job_id: str) -> None:
                 images=_uploads(captured),
                 age=payload["age"],
                 eye_plans=payload["eye_plans"],
-                patient_modifiers=payload["patient_modifiers"],
                 patient_metadata=payload["patient_metadata"],
                 assessment_request_id=job_id,
             )
@@ -199,7 +198,6 @@ def install(core) -> None:
         images: list[UploadFile] = File(...),
         age: int | None = Form(None),
         eye_plans: str = Form("{}"),
-        patient_modifiers: str = Form("{}"),
         patient_metadata: str = Form("{}"),
         assessment_request_id: str | None = Form(None),
     ) -> JSONResponse:
@@ -237,7 +235,6 @@ def install(core) -> None:
                 "payload": {
                     "age": age,
                     "eye_plans": eye_plans,
-                    "patient_modifiers": patient_modifiers,
                     "patient_metadata": patient_metadata,
                     "client_request_id": str(assessment_request_id or "") or None,
                 },
