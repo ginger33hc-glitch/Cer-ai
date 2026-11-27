@@ -326,6 +326,9 @@ def set_session_archive(archive) -> None:
 
 
 def _session_account(username):
+    configured = _users_by_username.get(normalize_username(username))
+    if configured is not None and configured.principal.role == ROLE_OWNER:
+        return configured
     account = _dynamic_account_lookup(normalize_username(username)) if _dynamic_account_lookup is not None else None
     if account is None:
         account = _users_by_username.get(normalize_username(username))
