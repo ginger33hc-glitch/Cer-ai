@@ -110,6 +110,9 @@ def test_source_upload_is_encrypted_idempotent_and_linked_to_versioned_report(mo
     assert SOFTWARE_VERSION in text and IOL_POLICY_VERSION in text and 'a'*40 in text
     other, _ = setup_archive('OWNER', core._cerai_case_archive_runtime)
     base = f"/archive/cases/{info['case_id']}/revisions/{response.headers['X-CERAI-Revision-ID']}"
+    entries = client.post('/archive/search', json={}).json()['results']
+    assert entries[0]['original_source_access'] is True
+    assert client.get(base + '/sources').json()['count'] == 3
     assert client.get(base + '/sources/1/download').content == b'synthetic-source-0'
     # Source access continues to use the archive's existing role-scoped policy.
     assert other.get(base + '/sources/1/download').status_code == 403

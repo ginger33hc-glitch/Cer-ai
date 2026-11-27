@@ -197,3 +197,35 @@ def test_owner_can_retrieve_original_sources_for_owner_created_case(monkeypatch)
     assert preview.status_code == 200
     assert preview.content == b"owner-image"
     assert client.get(f"{base}/sources.zip").status_code == 200
+
+
+def test_all_module_sources_are_exposed_to_the_case_creator():
+    for module in ('REFRACTIVE', 'KERATOCONUS', 'IOL', 'TORIC'):
+        entry = {'module': module, 'created_by': {'user_id': 'doctor-1', 'role': 'DOCTOR'}}
+        assert case_catalog._present_entry(principal('doctor-1'), entry)['original_source_access']
+        assert not case_catalog._present_entry(principal('owner', 'OWNER'), entry)['original_source_access']
+
+
+def test_tiff_preview_is_browser_compatible_but_download_remains_original(monkeypatch):
+    from PIL import Image
+    original = BytesIO()
+    Image.new('RGB', (80, 60), (20, 40, 60)).save(original, format='TIFF')
+    raw = original.getvalue()
+    archive = case_archive.EncryptedArchive(case_archive.MemoryObjectStore(), KEY)
+    archive.archive_sources(CASE_ID, [(raw, 'Pentacam.tiff')], patient_metadata={}, extracted={})
+    actor = principal('doctor-1')
+    case_catalog.write_entry(archive, case_archive.RevisionRef(CASE_ID, REVISION_ID, tuple()), ready_payload(), actor=actor)
+    monkeypatch.setattr(user_access, 'require_current_principal', lambda: actor)
+    core = SimpleNamespace(app=FastAPI(), _cerai_named_users_enabled=True)
+    case_catalog.install(core, case_archive.CaseArchiveRuntime(archive, required=False))
+    client = TestClient(core.app)
+    base = f'/archive/cases/{CASE_ID}/revisions/{REVISION_ID}/sources/1'
+    preview = client.get(base+'/preview')
+    assert preview.status_code == 200
+    assert preview.headers['content-type'] == 'image/png'
+    with Image.open(BytesIO(preview.content)) as image:
+        assert image.size == (80, 60)
+        assert image.getpixel((0, 0)) == (20, 40, 60)
+    download = client.get(base+'/download')
+    assert download.content == raw
+    assert download.headers['content-type'] == 'image/tiff'

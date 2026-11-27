@@ -281,7 +281,8 @@ def test_archive_ui_has_authenticated_case_reopen_and_inline_pdf_actions():
     assert 'class="case-button"' in text
     assert "showCase(caseButton.dataset.caseId" in text
     assert "Archived canonical assessment reopened" in text
-    assert "target=\"_blank\"" in text
+    assert 'window.open("about:blank","_blank")' in text
+    assert 'class="archive-file" data-url="${itemBase}/preview"' in text
     assert "no clinical score was recalculated" in text
 
 

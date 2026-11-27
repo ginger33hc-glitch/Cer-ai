@@ -103,7 +103,7 @@
     return `<div class="links">${original}${summary}${regenerated}</div>`;
   };
   const retrieveArchiveFile = async link => {
-    const status=$("searchStatus"),mode=link.dataset.mode||"download",url=link.dataset.url,filename=link.dataset.filename||"CER-AI_Archive_File";
+    const status=link.closest("#sourceModal") ? $("sourceStatus") : $("searchStatus"),mode=link.dataset.mode||"download",url=link.dataset.url,filename=link.dataset.filename||"CER-AI_Archive_File";
     const previewWindow=mode==="open" ? window.open("about:blank","_blank") : null;
     if(previewWindow) previewWindow.opener=null;
     link.setAttribute("aria-disabled","true");status.className="status";status.textContent="Retrieving authenticated archive file…";
@@ -120,7 +120,11 @@
   const sourceSize = value => {
     const bytes=Number(value||0); if(bytes<1024) return `${bytes} B`; if(bytes<1048576) return `${(bytes/1024).toFixed(1)} KB`; return `${(bytes/1048576).toFixed(1)} MB`;
   };
-  const closeSources = () => { $("sourceModal").hidden=true; $("sourceGallery").innerHTML=""; $("sourceActions").innerHTML=""; };
+  let sourceGeneration=0;
+  const sourceObjectUrls=new Set();
+  const clearSourcePreviews=()=>{sourceGeneration++;for(const url of sourceObjectUrls)URL.revokeObjectURL(url);sourceObjectUrls.clear();};
+  const sourceButton=entry=>entry.original_source_access ? `<button class="source-button" type="button" data-case-id="${escapeHtml(entry.case_id||"")}" data-revision-id="${escapeHtml(entry.revision_id||"")}">View source images</button>` : "";
+  const closeSources = () => { clearSourcePreviews(); $("sourceModal").hidden=true; $("sourceGallery").innerHTML=""; $("sourceActions").innerHTML=""; };
   const closeCase = () => { $("caseModal").hidden=true; $("caseDetail").innerHTML=""; };
   const showCase = async (caseId, revisionId) => {
     const modal=$("caseModal"),status=$("caseStatus"),detail=$("caseDetail"),base=sourceBase(caseId,revisionId);
@@ -135,21 +139,36 @@
   };
   const showSources = async (caseId, revisionId) => {
     const modal=$("sourceModal"), status=$("sourceStatus"), gallery=$("sourceGallery"), actions=$("sourceActions"), base=sourceBase(caseId,revisionId);
+    clearSourcePreviews(); const generation=sourceGeneration;
     modal.hidden=false; status.className="status"; status.textContent="Loading encrypted source inventory…"; gallery.innerHTML=""; actions.innerHTML="";
     try {
       const response=await request(`${base}/sources`); if(!response.ok) throw new Error(await readError(response));
       const data=await response.json(), sources=data.sources||[];
-      if(!sources.length){status.textContent="No source images are archived for this case.";return;}
+      if(generation!==sourceGeneration)return;
+      if(!sources.length){status.textContent="No source images were saved with this assessment. Original files must be uploaded again; reports cannot reconstruct them.";return;}
       status.textContent=`${sources.length} source image(s). Original filenames are shown only to the account that created this case.`;
-      actions.innerHTML=`<a href="${base}/sources.zip">Download all source images (ZIP)</a>`;
+      actions.innerHTML=`<a href="#" class="archive-file" data-url="${base}/sources.zip" data-mode="download" data-filename="CER-AI_Sources.zip">Download all source images (ZIP)</a>`;
       gallery.innerHTML=sources.map(source=>{
         const itemBase=`${base}/sources/${encodeURIComponent(source.ordinal)}`;
         const previewable=["image/bmp","image/gif","image/jpeg","image/png","image/tiff","image/webp"].includes(source.media_type);
-        const preview=previewable ? `<img src="${itemBase}/preview" alt="${escapeHtml(source.original_filename)}" loading="lazy">` : `<div class="source-placeholder">Preview unavailable for this file type.</div>`;
-        const open=previewable ? `<a href="${itemBase}/preview" target="_blank" rel="noopener">Open full size</a>` : "";
-        return `<article class="source-card">${preview}<div class="source-name">${escapeHtml(source.original_filename)}</div><div class="source-meta">Source ${escapeHtml(source.ordinal)} · ${escapeHtml(source.media_type)} · ${sourceSize(source.plaintext_bytes)}</div><div class="links">${open}<a href="${itemBase}/download">Download</a></div></article>`;
+        const preview=previewable ? `<img data-preview-url="${itemBase}/preview" alt="${escapeHtml(source.original_filename)}"><div class="source-preview-status" role="status">Loading image…</div>` : `<div class="source-placeholder">Preview unavailable for this file type.</div>`;
+        const open=previewable ? `<a href="#" class="archive-file" data-url="${itemBase}/preview" data-mode="open" data-filename="CER-AI_Source_${source.ordinal}">Open full size</a>` : "";
+        return `<article class="source-card">${preview}<div class="source-name">${escapeHtml(source.original_filename)}</div><div class="source-meta">Source ${escapeHtml(source.ordinal)} · ${escapeHtml(source.media_type)} · ${sourceSize(source.plaintext_bytes)}</div><div class="links">${open}<a href="#" class="archive-file" data-url="${itemBase}/download" data-mode="download" data-filename="${escapeHtml(source.original_filename)}">Download</a></div></article>`;
       }).join("");
-    } catch(exc){status.className="status error";status.textContent=exc.message||"Unable to load archived source images.";}
+      await Promise.all(Array.from(gallery.querySelectorAll("img[data-preview-url]")).map(async img=>{
+        const message=img.nextElementSibling;
+        try{
+          const response=await request(img.dataset.previewUrl);
+          if(!response.ok)throw new Error(await readError(response));
+          const blob=await response.blob();
+          if(generation!==sourceGeneration)return;
+          const url=URL.createObjectURL(blob);sourceObjectUrls.add(url);
+          img.onload=()=>{message.textContent="";};
+          img.onerror=()=>{img.hidden=true;message.textContent="Preview unavailable. Download the original file.";};
+          img.src=url;
+        }catch(error){if(generation===sourceGeneration){img.hidden=true;message.textContent=error.message;}}
+      }));
+    } catch(exc){if(generation===sourceGeneration){status.className="status error";status.textContent=exc.message||"Unable to load archived source images.";}}
   };
   const renderResults = results => {
     const body = $("resultsBody");
@@ -158,13 +177,13 @@
       const patient = entry.patient || {}, decision = entry.decision || {}, creator = entry.created_by || {};
       return `<tr>
         <td>${escapeHtml(entry.report_date || "")}</td>
-        <td>${escapeHtml(patient.name || "")}</td>
+        <td>${escapeHtml(patient.name || "")}<div class="links">${sourceButton(entry)}</div></td>
         <td><span class="decision ${decisionClass(decision.status)}">${escapeHtml(decision.status || "")}</span></td>
         <td>${escapeHtml(entry.reviewer || "")}</td>
         <td>${escapeHtml(creator.display_name || (creator.user_id ? creator.user_id : "Legacy / unassigned"))}</td>
         <td><button class="case-button" type="button" data-case-id="${escapeHtml(entry.case_id||"")}" data-revision-id="${escapeHtml(entry.revision_id||"")}">Open case</button><div class="mono">${escapeHtml(entry.revision_id || "")}</div></td>
         <td>${reportLinks(entry)}</td>
-        <td>${entry.original_source_access ? `<button class="source-button" type="button" data-case-id="${escapeHtml(entry.case_id||"")}" data-revision-id="${escapeHtml(entry.revision_id||"")}">View source images</button>` : (entry.module === "IOL" ? "—" : "Restricted to case creator")}</td>
+        <td>${sourceButton(entry) || "Restricted to case creator"}</td>
       </tr>`;
     }).join("");
   };

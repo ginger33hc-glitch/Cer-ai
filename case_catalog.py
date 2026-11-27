@@ -258,7 +258,7 @@ def _present_entry(principal: Any, entry: Dict[str, Any]) -> Dict[str, Any]:
     )
     presented["owner_deidentified"] = bool(principal.role == "OWNER" and not identifiable)
     presented["identifiable_access"] = identifiable
-    presented["original_source_access"] = identifiable and entry.get("module") != "IOL"
+    presented["original_source_access"] = identifiable
     return presented
 
 
@@ -508,6 +508,19 @@ def install(core: Any, archive_runtime: Any) -> None:
             content = archive_runtime.archive.get_bytes(source.artifact)
             media_type = source.artifact.media_type
             filename = _generic_source_filename(source)
+            if disposition == "inline" and media_type in {"image/tiff", "image/bmp"}:
+                # Browsers cannot reliably display TIFF. Preserve the original for downloads.
+                from PIL import Image, UnidentifiedImageError
+                try:
+                    with Image.open(BytesIO(content)) as image:
+                        image.load()
+                        output = BytesIO()
+                        image.convert("RGB").save(output, format="PNG")
+                        content = output.getvalue()
+                    media_type = "image/png"
+                    filename = f"CER-AI_Source_{source.ordinal:03d}.png"
+                except (OSError, ValueError, UnidentifiedImageError, Image.DecompressionBombError) as exc:
+                    raise HTTPException(415, "Source preview unavailable; download the original file.") from exc
             audit(
                 "SOURCE_PREVIEW" if disposition == "inline" else "SOURCE_DOWNLOAD",
                 actor=principal,
