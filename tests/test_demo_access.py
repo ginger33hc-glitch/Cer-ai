@@ -226,3 +226,49 @@ def test_unknown_email_requires_explicit_retry_and_accepted_is_never_resent(ledg
     ledger.notify_approval(request["request_id"], notifier, retry_unknown_email=True)
     assert calls == ["email", "sms", "email"]
 
+
+@pytest.mark.parametrize('persistent', [False, True])
+@pytest.mark.parametrize('source', ['demo', 'full', 'configured'])
+def test_owner_changes_access_for_every_account_source(ledger, persistent, source):
+    owner = user_access.Principal('owner-1', 'owner', 'Owner', 'OWNER')
+    password = 'strong-doctor-password'
+    if source == 'demo':
+        ledger.approve(_request(ledger)['request_id'], 'doctor', password, owner)
+    elif source == 'full':
+        ledger.create_full_doctor('Doctor', 'doctor', password, owner)
+    else:
+        user_access._users_by_username['doctor'] = user_access.UserAccount(
+            user_access.Principal('static-doctor', 'doctor', 'Doctor', 'DOCTOR'),
+            user_access.hash_password(password))
+    if persistent:
+        user_access.set_session_archive(ledger.archive)
+    principal = user_access.authenticate_credentials('doctor', password)
+    token = user_access.create_session(principal)
+    ledger.update_doctor(principal.user_id, {'access_plan': 'DEMO'}, owner)
+    assert user_access.principal_for_token(token).access_plan == 'DEMO'
+    ledger.consume(principal.user_id, 'case-1', 'REFRACTIVE')
+    ledger.update_doctor(principal.user_id, {'access_plan': 'FULL'}, owner)
+    assert user_access.principal_for_token(token).access_plan == 'FULL'
+    assert ledger.status_for_user_id(principal.user_id)['quota_limit'] is None
+    ledger.update_doctor(principal.user_id, {'enabled': False}, owner)
+    assert user_access.principal_for_token(token) is None
+    with pytest.raises(Exception) as error:
+        user_access.authenticate_credentials('doctor', password)
+    assert error.value.status_code == 401
+    ledger.update_doctor(principal.user_id, {'enabled': True, 'access_plan': 'DEMO'}, owner)
+    assert user_access.authenticate_credentials('doctor', password).access_plan == 'DEMO'
+    assert ledger.status_for_user_id(principal.user_id)['credits_used'] == 1
+    assert ledger.doctor_accounts()[0]['access_plan'] == 'DEMO'
+    restored = demo_access.DemoAccessLedger(ledger.archive)
+    assert restored.account_for_user_id(principal.user_id).principal.access_plan == 'DEMO'
+
+
+def test_doctor_cannot_modify_access_or_owner(ledger):
+    doctor = user_access.Principal('doctor', 'doctor', 'Doctor', 'DOCTOR')
+    with pytest.raises(Exception) as error:
+        ledger.update_doctor('doctor', {'enabled': False}, doctor)
+    assert error.value.status_code == 403
+    owner = user_access.Principal('owner-1', 'owner', 'Owner', 'OWNER')
+    with pytest.raises(Exception) as error:
+        ledger.update_doctor(owner.user_id, {'enabled': False}, owner)
+    assert error.value.status_code == 404

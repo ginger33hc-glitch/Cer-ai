@@ -264,9 +264,7 @@ def authenticate_credentials(username: Any, password: Any) -> Principal:
                 headers={"Retry-After": str(LOGIN_FAILURE_WINDOW_SECONDS)},
             )
         raise HTTPException(401, "Invalid username or password.")
-    account = _users_by_username.get(normalized)
-    if account is None and _dynamic_account_lookup is not None:
-        account = _dynamic_account_lookup(normalized)
+    account = _session_account(normalized)
     if not account or not account.enabled or not verify_password(str(password or ""), account.password_hash):
         _record_login_failure(normalized)
         raise HTTPException(401, "Invalid username or password.")
@@ -328,9 +326,9 @@ def set_session_archive(archive) -> None:
 
 
 def _session_account(username):
-    account = _users_by_username.get(normalize_username(username))
-    if account is None and _dynamic_account_lookup is not None:
-        account = _dynamic_account_lookup(normalize_username(username))
+    account = _dynamic_account_lookup(normalize_username(username)) if _dynamic_account_lookup is not None else None
+    if account is None:
+        account = _users_by_username.get(normalize_username(username))
     return account
 
 
@@ -387,6 +385,11 @@ def principal_for_token(token: str) -> Optional[Principal]:
         if not record:
             return None
         principal, _expires = record
+        account = _session_account(principal.username)
+        if account is None or not account.enabled or account.principal.user_id != principal.user_id:
+            _sessions.pop(str(token), None)
+            return None
+        principal = account.principal
         _sessions[str(token)] = (principal, monotonic() + SESSION_TTL_SECONDS)
         _sessions.move_to_end(str(token))
         return principal
